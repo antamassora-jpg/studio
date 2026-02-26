@@ -19,15 +19,24 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
 
   useEffect(() => {
-    setSettings(getDB().school_settings);
+    const db = getDB();
+    setSettings(db.school_settings);
   }, []);
 
   const handleSave = () => {
-    if (!settings) return;
-    const db = getDB();
-    db.school_settings = settings;
-    saveDB(db);
-    toast({ title: "Tersimpan", description: "Pengaturan sekolah berhasil diperbarui." });
+    if (!settings) {
+      toast({ variant: "destructive", title: "Gagal", description: "Data pengaturan tidak ditemukan." });
+      return;
+    }
+    
+    try {
+      const db = getDB();
+      db.school_settings = { ...settings };
+      saveDB(db);
+      toast({ title: "Tersimpan", description: "Pengaturan sekolah berhasil diperbarui ke database lokal." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat menyimpan data." });
+    }
   };
 
   const handleFileUpload = (field: keyof SchoolSettings, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,15 +45,19 @@ export default function SettingsPage() {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setSettings({ ...settings, [field]: reader.result as string });
-      toast({ title: "Berhasil", description: "Aset telah diperbarui dari file." });
+      const result = reader.result as string;
+      setSettings(prev => prev ? ({ ...prev, [field]: result }) : null);
+      toast({ title: "Aset Dimuat", description: "Gambar berhasil dimuat, silakan klik Simpan untuk mempermanenkan." });
     };
     reader.readAsDataURL(file);
   };
 
   const handleUrlChange = (field: keyof SchoolSettings, url: string) => {
-    if (!settings) return;
-    setSettings({ ...settings, [field]: url });
+    setSettings(prev => prev ? ({ ...prev, [field]: url }) : null);
+  };
+
+  const updateSetting = (field: keyof SchoolSettings, value: any) => {
+    setSettings(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
 
   if (!settings) return null;
@@ -71,20 +84,36 @@ export default function SettingsPage() {
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-muted-foreground">Nama Institusi / Sekolah</Label>
-                <Input value={settings.school_name} onChange={e => setSettings({...settings, school_name: e.target.value})} className="h-11" />
+                <Input 
+                  value={settings.school_name} 
+                  onChange={e => updateSetting('school_name', e.target.value)} 
+                  className="h-11" 
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-muted-foreground">Alamat Operasional</Label>
-                <Textarea value={settings.address} onChange={e => setSettings({...settings, address: e.target.value})} className="min-h-[80px]" />
+                <Textarea 
+                  value={settings.address} 
+                  onChange={e => updateSetting('address', e.target.value)} 
+                  className="min-h-[80px]" 
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase text-muted-foreground">Nama Kepala Sekolah</Label>
-                  <Input value={settings.principal_name} onChange={e => setSettings({...settings, principal_name: e.target.value})} className="h-11" />
+                  <Input 
+                    value={settings.principal_name} 
+                    onChange={e => updateSetting('principal_name', e.target.value)} 
+                    className="h-11" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase text-muted-foreground">NIP Kepala Sekolah</Label>
-                  <Input value={settings.principal_nip} onChange={e => setSettings({...settings, principal_nip: e.target.value})} className="h-11" />
+                  <Input 
+                    value={settings.principal_nip} 
+                    onChange={e => updateSetting('principal_nip', e.target.value)} 
+                    className="h-11" 
+                  />
                 </div>
               </div>
             </CardContent>
@@ -110,22 +139,28 @@ export default function SettingsPage() {
                 </TabsList>
                 <div className="p-6">
                   <TabsContent value="student" className="mt-0">
-                    <div className="flex justify-between items-center mb-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan Kartu Pelajar</Label>
-                    </div>
-                    <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_student} onChange={e => setSettings({...settings, terms_student: e.target.value})} />
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan Kartu Pelajar</Label>
+                    <Textarea 
+                      className="min-h-[120px] font-mono text-sm" 
+                      value={settings.terms_student} 
+                      onChange={e => updateSetting('terms_student', e.target.value)} 
+                    />
                   </TabsContent>
                   <TabsContent value="exam" className="mt-0">
-                    <div className="flex justify-between items-center mb-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan Kartu Ujian</Label>
-                    </div>
-                    <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_exam} onChange={e => setSettings({...settings, terms_exam: e.target.value})} />
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan Kartu Ujian</Label>
+                    <Textarea 
+                      className="min-h-[120px] font-mono text-sm" 
+                      value={settings.terms_exam} 
+                      onChange={e => updateSetting('terms_exam', e.target.value)} 
+                    />
                   </TabsContent>
                   <TabsContent value="id" className="mt-0">
-                    <div className="flex justify-between items-center mb-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan ID Card</Label>
-                    </div>
-                    <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_id} onChange={e => setSettings({...settings, terms_id: e.target.value})} />
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan ID Card</Label>
+                    <Textarea 
+                      className="min-h-[120px] font-mono text-sm" 
+                      value={settings.terms_id} 
+                      onChange={e => updateSetting('terms_id', e.target.value)} 
+                    />
                   </TabsContent>
                 </div>
               </Tabs>
@@ -137,7 +172,7 @@ export default function SettingsPage() {
           <Card className="border-orange-200/50 shadow-sm overflow-hidden">
             <CardHeader className="bg-orange-50 border-b">
               <CardTitle className="text-lg">Aset & Identitas Visual</CardTitle>
-              <CardDescription>Upload Logo, TTD, dan Stempel (File/URL) serta atur penempatannya.</CardDescription>
+              <CardDescription>Upload Logo, TTD, dan Stempel serta atur penempatannya.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="student" className="w-full">
@@ -148,7 +183,6 @@ export default function SettingsPage() {
                 </TabsList>
                 
                 <div className="p-6 space-y-6">
-                  {/* Student Config */}
                   <TabsContent value="student" className="mt-0 space-y-6">
                     <AssetUploader 
                       label="Logo Kiri (Sekolah)" 
@@ -156,9 +190,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('logo_left', e)} 
                       onUrlChange={url => handleUrlChange('logo_left', url)}
                       showFront={settings.student_show_logo_front}
-                      onShowFrontChange={v => setSettings({...settings, student_show_logo_front: v})}
+                      onShowFrontChange={v => updateSetting('student_show_logo_front', v)}
                       showBack={settings.student_show_logo_back}
-                      onShowBackChange={v => setSettings({...settings, student_show_logo_back: v})}
+                      onShowBackChange={v => updateSetting('student_show_logo_back', v)}
                     />
                     <AssetUploader 
                       label="Logo Kanan (Tut Wuri)" 
@@ -166,9 +200,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('logo_right', e)} 
                       onUrlChange={url => handleUrlChange('logo_right', url)}
                       showFront={settings.student_show_logo_right_front}
-                      onShowFrontChange={v => setSettings({...settings, student_show_logo_right_front: v})}
+                      onShowFrontChange={v => updateSetting('student_show_logo_right_front', v)}
                       showBack={settings.student_show_logo_right_back}
-                      onShowBackChange={v => setSettings({...settings, student_show_logo_right_back: v})}
+                      onShowBackChange={v => updateSetting('student_show_logo_right_back', v)}
                     />
                     <AssetUploader 
                       label="Tanda Tangan" 
@@ -177,9 +211,9 @@ export default function SettingsPage() {
                       onUrlChange={url => handleUrlChange('signature_image', url)}
                       aspect="wide"
                       showFront={settings.student_show_sig_front}
-                      onShowFrontChange={v => setSettings({...settings, student_show_sig_front: v})}
+                      onShowFrontChange={v => updateSetting('student_show_sig_front', v)}
                       showBack={settings.student_show_sig_back}
-                      onShowBackChange={v => setSettings({...settings, student_show_sig_back: v})}
+                      onShowBackChange={v => updateSetting('student_show_sig_back', v)}
                     />
                     <AssetUploader 
                       label="Stempel" 
@@ -187,13 +221,12 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('stamp_image', e)} 
                       onUrlChange={url => handleUrlChange('stamp_image', url)}
                       showFront={settings.student_show_stamp_front}
-                      onShowFrontChange={v => setSettings({...settings, student_show_stamp_front: v})}
+                      onShowFrontChange={v => updateSetting('student_show_stamp_front', v)}
                       showBack={settings.student_show_stamp_back}
-                      onShowBackChange={v => setSettings({...settings, student_show_stamp_back: v})}
+                      onShowBackChange={v => updateSetting('student_show_stamp_back', v)}
                     />
                   </TabsContent>
 
-                  {/* Exam Config */}
                   <TabsContent value="exam" className="mt-0 space-y-6">
                     <AssetUploader 
                       label="Logo Kiri (Sekolah)" 
@@ -201,9 +234,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('logo_left_exam', e)} 
                       onUrlChange={url => handleUrlChange('logo_left_exam', url)}
                       showFront={settings.exam_show_logo_front}
-                      onShowFrontChange={v => setSettings({...settings, exam_show_logo_front: v})}
+                      onShowFrontChange={v => updateSetting('exam_show_logo_front', v)}
                       showBack={settings.exam_show_logo_back}
-                      onShowBackChange={v => setSettings({...settings, exam_show_logo_back: v})}
+                      onShowBackChange={v => updateSetting('exam_show_logo_back', v)}
                     />
                     <AssetUploader 
                       label="Logo Kanan (Tut Wuri)" 
@@ -211,9 +244,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('logo_right_exam', e)} 
                       onUrlChange={url => handleUrlChange('logo_right_exam', url)}
                       showFront={settings.exam_show_logo_right_front}
-                      onShowFrontChange={v => setSettings({...settings, exam_show_logo_right_front: v})}
+                      onShowFrontChange={v => updateSetting('exam_show_logo_right_front', v)}
                       showBack={settings.exam_show_logo_right_back}
-                      onShowBackChange={v => setSettings({...settings, exam_show_logo_right_back: v})}
+                      onShowBackChange={v => updateSetting('exam_show_logo_right_back', v)}
                     />
                     <AssetUploader 
                       label="Tanda Tangan" 
@@ -222,9 +255,9 @@ export default function SettingsPage() {
                       onUrlChange={url => handleUrlChange('signature_exam', url)}
                       aspect="wide"
                       showFront={settings.exam_show_sig_front}
-                      onShowFrontChange={v => setSettings({...settings, exam_show_sig_front: v})}
+                      onShowFrontChange={v => updateSetting('exam_show_sig_front', v)}
                       showBack={settings.exam_show_sig_back}
-                      onShowBackChange={v => setSettings({...settings, exam_show_sig_back: v})}
+                      onShowBackChange={v => updateSetting('exam_show_sig_back', v)}
                     />
                     <AssetUploader 
                       label="Stempel" 
@@ -232,13 +265,12 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('stamp_exam', e)} 
                       onUrlChange={url => handleUrlChange('stamp_exam', url)}
                       showFront={settings.exam_show_stamp_front}
-                      onShowFrontChange={v => setSettings({...settings, exam_show_stamp_front: v})}
+                      onShowFrontChange={v => updateSetting('exam_show_stamp_front', v)}
                       showBack={settings.exam_show_stamp_back}
-                      onShowBackChange={v => setSettings({...settings, exam_show_stamp_back: v})}
+                      onShowBackChange={v => updateSetting('exam_show_stamp_back', v)}
                     />
                   </TabsContent>
 
-                  {/* ID Config */}
                   <TabsContent value="id" className="mt-0 space-y-6">
                     <AssetUploader 
                       label="Logo Utama" 
@@ -246,9 +278,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('logo_left_id', e)} 
                       onUrlChange={url => handleUrlChange('logo_left_id', url)}
                       showFront={settings.id_show_logo_front}
-                      onShowFrontChange={v => setSettings({...settings, id_show_logo_front: v})}
+                      onShowFrontChange={v => updateSetting('id_show_logo_front', v)}
                       showBack={settings.id_show_logo_back}
-                      onShowBackChange={v => setSettings({...settings, id_show_logo_back: v})}
+                      onShowBackChange={v => updateSetting('id_show_logo_back', v)}
                     />
                     <AssetUploader 
                       label="Tanda Tangan" 
@@ -257,9 +289,9 @@ export default function SettingsPage() {
                       onUrlChange={url => handleUrlChange('signature_id', url)}
                       aspect="wide"
                       showFront={settings.id_show_sig_front}
-                      onShowFrontChange={v => setSettings({...settings, id_show_sig_front: v})}
+                      onShowFrontChange={v => updateSetting('id_show_sig_front', v)}
                       showBack={settings.id_show_sig_back}
-                      onShowBackChange={v => setSettings({...settings, id_show_sig_back: v})}
+                      onShowBackChange={v => updateSetting('id_show_sig_back', v)}
                     />
                     <AssetUploader 
                       label="Stempel" 
@@ -267,9 +299,9 @@ export default function SettingsPage() {
                       onUpload={e => handleFileUpload('stamp_id', e)} 
                       onUrlChange={url => handleUrlChange('stamp_id', url)}
                       showFront={settings.id_show_stamp_front}
-                      onShowFrontChange={v => setSettings({...settings, id_show_stamp_front: v})}
+                      onShowFrontChange={v => updateSetting('id_show_stamp_front', v)}
                       showBack={settings.id_show_stamp_back}
-                      onShowBackChange={v => setSettings({...settings, id_show_stamp_back: v})}
+                      onShowBackChange={v => updateSetting('id_show_stamp_back', v)}
                     />
                   </TabsContent>
                 </div>
@@ -315,7 +347,7 @@ function AssetUploader({
       )}>
         {image ? (
           <>
-            <Image src={image} alt={label} fill className="object-contain p-2" />
+            <Image src={image} alt={label} fill className="object-contain p-2" unoptimized />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Label className="cursor-pointer bg-white text-black p-2 rounded-full shadow-lg hover:scale-110 transition-transform">
                 <Camera className="h-4 w-4" />
