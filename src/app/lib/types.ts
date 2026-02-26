@@ -75,7 +75,8 @@ export interface AttendanceLog {
   student_id: string;
   card_code: string;
   date: string;
-  session_id: string;
+  session_id: string; // 's1', 's2', or 'exam'
+  exam_id?: string; // Link to ExamEvent if session_id is 'exam'
   scanned_at: string;
   scanned_by_user_id: string;
   is_valid: boolean;
