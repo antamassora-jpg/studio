@@ -15,11 +15,11 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   school_name: 'SMKN 2 Tana Toraja',
   address: 'Jl. Poros Makale-Rantepao, Tana Toraja',
   logo_left: 'https://iili.io/KAqSZhb.png',
-  logo_right: 'https://picsum.photos/seed/dikdasmen/200/200',
+  logo_right: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop',
   principal_name: 'Drs. Nama Kepala Sekolah, M.Pd.',
   principal_nip: '19700101 199501 1 001',
-  signature_image: 'https://picsum.photos/seed/sig/200/100',
-  stamp_image: 'https://picsum.photos/seed/stamp/200/200',
+  signature_image: 'https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=200&h=100&auto=format&fit=crop',
+  stamp_image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=200&h=200&auto=format&fit=crop',
   terms_text: '1. Kartu wajib dibawa setiap hari.\n2. Dilarang dipinjamkan.\n3. Jika hilang segera lapor ke sekolah.\n4. Berlaku selama siswa aktif.\n5. Kartu dipakai untuk scan layanan/absen.',
 };
 
@@ -62,8 +62,10 @@ const INITIAL_DB: DB = {
     { id: 'e1', name: 'Ujian Tengah Semester Ganjil', school_year: '2023/2024', semester: 'Ganjil', start_date: '2023-10-01', end_date: '2023-10-10' }
   ],
   templates: [
-    { id: 't1', type: 'STUDENT_CARD', name: 'Default Student Card', config_json: '{}', is_active: true },
-    { id: 't2', type: 'EXAM_CARD', name: 'Default Exam Card', config_json: '{}', is_active: true }
+    { id: 't1', type: 'STUDENT_CARD', name: 'Modern Blue Style', config_json: '{"primary": "#2E50B8"}', is_active: true, preview_color: 'bg-blue-600' },
+    { id: 't2', type: 'EXAM_CARD', name: 'Professional Exam Card', config_json: '{"primary": "#F97316"}', is_active: true, preview_color: 'bg-orange-500' },
+    { id: 't3', type: 'ID_CARD', name: 'Minimalist ID Card', config_json: '{"primary": "#0F172A"}', is_active: true, preview_color: 'bg-slate-900' },
+    { id: 't4', type: 'ID_CARD', name: 'Corporate Green', config_json: '{"primary": "#059669"}', is_active: false, preview_color: 'bg-emerald-600' }
   ]
 };
 

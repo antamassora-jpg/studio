@@ -10,7 +10,8 @@ import {
   LogOut,
   ChevronsLeftRight,
   LayoutDashboard,
-  Award
+  Award,
+  Contact
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -32,9 +33,10 @@ const adminItems = [
   { title: 'Data Siswa', icon: Users, url: '/admin/students' },
   { title: 'Kartu Pelajar', icon: CreditCard, url: '/admin/cards' },
   { title: 'Kartu Ujian', icon: Award, url: '/admin/exam-cards' },
+  { title: 'ID Card Umum', icon: Contact, url: '/admin/id-cards' },
   { title: 'Absensi', icon: CalendarCheck, url: '/admin/attendance' },
   { title: 'Event Ujian', icon: FileText, url: '/admin/exams' },
-  { title: 'Template', icon: Layout, url: '/admin/templates' },
+  { title: 'Template Desain', icon: Layout, url: '/admin/templates' },
   { title: 'Settings', icon: Settings, url: '/admin/settings' },
 ];
 
@@ -56,7 +58,7 @@ export function AppSidebar() {
     <Sidebar className="border-r">
       <SidebarHeader className="p-4 flex flex-row items-center gap-3">
         <div className="w-8 h-8 relative">
-          <Image src="https://iili.io/KAqSZhb.png" alt="Logo" fill className="object-contain" />
+          <Image src="https://iili.io/KAqSZhb.png" alt="Logo" fill className="object-contain" priority />
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-sm text-primary leading-tight">EduCard Sync</span>
@@ -89,7 +91,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleSwitchMode} className="gap-3 text-accent-foreground font-medium">
               <ChevronsLeftRight className="h-4 w-4" />
-              <span>Ganti Mode</span>
+              <span>Ganti Role</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

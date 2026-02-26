@@ -26,7 +26,7 @@ export interface SchoolSettings {
   terms_text: string;
 }
 
-export type TemplateType = 'STUDENT_CARD' | 'EXAM_CARD';
+export type TemplateType = 'STUDENT_CARD' | 'EXAM_CARD' | 'ID_CARD';
 
 export interface CardTemplate {
   id: string;
@@ -34,6 +34,7 @@ export interface CardTemplate {
   name: string;
   config_json: string;
   is_active: boolean;
+  preview_color: string;
 }
 
 export interface ExamEvent {
