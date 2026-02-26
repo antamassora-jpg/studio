@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -23,7 +24,10 @@ import {
   FileDown,
   Loader2,
   Calendar,
-  QrCode
+  QrCode,
+  Camera,
+  Link as LinkIcon,
+  User as UserIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -50,10 +54,12 @@ export default function StudentsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
     status: 'Aktif',
-    valid_until: '2025-06-30'
+    valid_until: '2025-06-30',
+    photo_url: ''
   });
 
   useEffect(() => {
@@ -82,7 +88,7 @@ export default function StudentsPage() {
     saveDB(db);
     setStudents(updated);
     setIsAddOpen(false);
-    setNewStudent({ status: 'Aktif', valid_until: '2025-06-30' });
+    setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '' });
     toast({ title: "Berhasil", description: `Siswa ${student.name} berhasil ditambahkan.` });
   };
 
@@ -95,9 +101,20 @@ export default function StudentsPage() {
     toast({ title: "Dihapus", description: "Data siswa berhasil dihapus." });
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setNewStudent({ ...newStudent, photo_url: reader.result as string });
+      toast({ title: "Foto Terpilih", description: "Foto berhasil dimuat dari penyimpanan lokal." });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleDownloadFormat = () => {
-    const headers = "name;nis;nisn;class;major;school_year;status;valid_until";
-    const sampleData = "Andi Pratama;2021001;0051234567;XII;Teknik Komputer & Jaringan;2024/2025;Aktif;2025-06-30";
+    const headers = "name;nis;nisn;class;major;school_year;status;valid_until;photo_url";
+    const sampleData = "Andi Pratama;2021001;0051234567;XII;Teknik Komputer & Jaringan;2024/2025;Aktif;2025-06-30;https://picsum.photos/seed/student1/300/400";
     const csvContent = `${headers}\n${sampleData}`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -152,7 +169,7 @@ export default function StudentsPage() {
               status: (entry.status as any) || 'Aktif',
               valid_until: entry.valid_until || '2025-06-30',
               card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-              photo_url: `https://picsum.photos/seed/${entry.nis}/300/400`
+              photo_url: entry.photo_url || `https://picsum.photos/seed/${entry.nis}/300/400`
             });
           }
         }
@@ -194,70 +211,108 @@ export default function StudentsPage() {
                 <Plus className="h-4 w-4" /> Siswa Baru
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Tambah Siswa Baru</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="space-y-2 col-span-2">
-                  <Label>Nama Lengkap</Label>
-                  <Input 
-                    value={newStudent.name || ''} 
-                    onChange={e => setNewStudent({...newStudent, name: e.target.value})}
-                    placeholder="Nama Lengkap"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+                {/* Photo Upload Section */}
+                <div className="md:col-span-1 space-y-4">
+                  <Label>Foto Siswa</Label>
+                  <div className="aspect-[3/4] bg-muted rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group">
+                    {newStudent.photo_url ? (
+                      <>
+                        <Image src={newStudent.photo_url} alt="Preview" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <Button variant="secondary" size="sm" onClick={() => setNewStudent({...newStudent, photo_url: ''})}>Hapus</Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <UserIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Belum Ada Foto</p>
+                      </div>
+                    )}
+                  </div>
+                  <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" size="sm" className="gap-2 w-full" onClick={() => photoInputRef.current?.click()}>
+                      <Camera className="h-3.5 w-3.5" /> Upload File
+                    </Button>
+                    <div className="relative">
+                      <LinkIcon className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input 
+                        placeholder="Link URL Foto" 
+                        className="pl-8 text-xs h-9"
+                        value={newStudent.photo_url || ''}
+                        onChange={(e) => setNewStudent({...newStudent, photo_url: e.target.value})}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>NIS</Label>
-                  <Input 
-                    value={newStudent.nis || ''} 
-                    onChange={e => setNewStudent({...newStudent, nis: e.target.value})}
-                    placeholder="NIS"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>NISN</Label>
-                  <Input 
-                    value={newStudent.nisn || ''} 
-                    onChange={e => setNewStudent({...newStudent, nisn: e.target.value})}
-                    placeholder="NISN"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Kelas</Label>
-                  <Input 
-                    value={newStudent.class || ''} 
-                    onChange={e => setNewStudent({...newStudent, class: e.target.value})}
-                    placeholder="Kelas"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Jurusan</Label>
-                  <Input 
-                    value={newStudent.major || ''} 
-                    onChange={e => setNewStudent({...newStudent, major: e.target.value})}
-                    placeholder="Jurusan"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tahun Ajaran</Label>
-                  <Input 
-                    value={newStudent.school_year || ''} 
-                    onChange={e => setNewStudent({...newStudent, school_year: e.target.value})}
-                    placeholder="2024/2025"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Berlaku Sampai</Label>
-                  <Input 
-                    type="date"
-                    value={newStudent.valid_until || ''} 
-                    onChange={e => setNewStudent({...newStudent, valid_until: e.target.value})}
-                  />
+
+                {/* Form Data Section */}
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2">
+                    <Label>Nama Lengkap</Label>
+                    <Input 
+                      value={newStudent.name || ''} 
+                      onChange={e => setNewStudent({...newStudent, name: e.target.value})}
+                      placeholder="Nama Lengkap"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>NIS</Label>
+                    <Input 
+                      value={newStudent.nis || ''} 
+                      onChange={e => setNewStudent({...newStudent, nis: e.target.value})}
+                      placeholder="NIS"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>NISN</Label>
+                    <Input 
+                      value={newStudent.nisn || ''} 
+                      onChange={e => setNewStudent({...newStudent, nisn: e.target.value})}
+                      placeholder="NISN"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Kelas</Label>
+                    <Input 
+                      value={newStudent.class || ''} 
+                      onChange={e => setNewStudent({...newStudent, class: e.target.value})}
+                      placeholder="Kelas"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Jurusan</Label>
+                    <Input 
+                      value={newStudent.major || ''} 
+                      onChange={e => setNewStudent({...newStudent, major: e.target.value})}
+                      placeholder="Jurusan"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tahun Ajaran</Label>
+                    <Input 
+                      value={newStudent.school_year || ''} 
+                      onChange={e => setNewStudent({...newStudent, school_year: e.target.value})}
+                      placeholder="2024/2025"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Berlaku Sampai</Label>
+                    <Input 
+                      type="date"
+                      value={newStudent.valid_until || ''} 
+                      onChange={e => setNewStudent({...newStudent, valid_until: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleAdd}>Simpan Data</Button>
+                <Button onClick={handleAdd} className="w-full md:w-auto">Simpan Data Siswa</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -291,14 +346,30 @@ export default function StudentsPage() {
               <TableRow key={student.id}>
                 <TableCell>
                   <div className="flex items-center gap-4">
-                    <div className="relative w-14 h-14 bg-white border rounded p-1.5 shadow-inner shrink-0 group hover:scale-150 transition-transform origin-left z-10 cursor-zoom-in">
-                      <Image 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
-                        alt="QR Code"
-                        fill
-                        className="object-contain"
-                        unoptimized
-                      />
+                    <div className="flex -space-x-3 items-center">
+                      <div className="relative w-14 h-14 bg-white border rounded p-1.5 shadow-inner shrink-0 group hover:scale-150 transition-transform origin-left z-20 cursor-zoom-in">
+                        <Image 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+                          alt="QR Code"
+                          fill
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="relative w-14 h-14 bg-slate-50 border rounded-full overflow-hidden shadow-inner shrink-0 z-10 border-white ring-2 ring-slate-100">
+                        {student.photo_url ? (
+                          <Image 
+                            src={student.photo_url}
+                            alt={student.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <UserIcon className="h-6 w-6" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <div className="font-bold text-slate-900 leading-tight">{student.name}</div>
