@@ -6,16 +6,40 @@ import { CardTemplate, SchoolSettings, Student } from '@/app/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Layout, Palette, CheckCircle2, Copy, Trash2, Plus, Eye } from 'lucide-react';
+import { 
+  Layout, 
+  Palette, 
+  CheckCircle2, 
+  Trash2, 
+  Plus, 
+  Eye, 
+  Settings2,
+  Save
+} from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
 import { ExamCardVisual } from '@/components/exam-card-visual';
 import { IdCardVisual } from '@/components/id-card-visual';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<CardTemplate[]>([]);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [previewStudent, setPreviewStudent] = useState<Student | null>(null);
+  
+  // State for Configuration Dialog
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<CardTemplate | null>(null);
 
   useEffect(() => {
     const db = getDB();
@@ -41,11 +65,36 @@ export default function TemplatesPage() {
     toast({ title: "Template Diperbarui", description: "Template aktif berhasil diubah." });
   };
 
+  const openConfig = (template: CardTemplate) => {
+    setEditingTemplate({ ...template });
+    setIsConfigOpen(true);
+  };
+
+  const handleSaveConfig = () => {
+    if (!editingTemplate) return;
+
+    const db = getDB();
+    const updated = db.templates.map(t => 
+      t.id === editingTemplate.id ? editingTemplate : t
+    );
+    
+    db.templates = updated;
+    saveDB(db);
+    setTemplates(updated);
+    setIsConfigOpen(false);
+    toast({ title: "Tersimpan", description: `Konfigurasi ${editingTemplate.name} telah diperbarui.` });
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
-        <p className="text-muted-foreground">Pilih dan aktifkan gaya kartu untuk sekolah Anda.</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
+          <p className="text-muted-foreground">Pilih, aktifkan, dan kustomisasi gaya kartu sekolah Anda.</p>
+        </div>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" /> Template Baru
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -56,11 +105,16 @@ export default function TemplatesPage() {
                 <div className={`p-2 rounded-lg border shadow-sm ${template.preview_color} text-white`}>
                   <Layout className="h-5 w-5" />
                 </div>
-                {template.is_active && (
-                  <Badge className="gap-1 bg-primary">
-                    <CheckCircle2 className="h-3 w-3" /> Digunakan
-                  </Badge>
-                )}
+                <div className="flex gap-2">
+                  {template.is_active && (
+                    <Badge className="gap-1 bg-primary">
+                      <CheckCircle2 className="h-3 w-3" /> Aktif
+                    </Badge>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openConfig(template)}>
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="mt-4">
                 <CardTitle className="text-xl">{template.name}</CardTitle>
@@ -79,30 +133,30 @@ export default function TemplatesPage() {
                   ) : template.type === 'ID_CARD' && previewStudent && settings ? (
                     <IdCardVisual student={previewStudent} settings={settings} />
                   ) : (
-                    <div className="w-[340px] h-[215px] bg-white border rounded-xl flex flex-col items-center justify-center p-4">
-                      <div className={`w-full h-10 ${template.preview_color} rounded-t-lg mb-4`}></div>
-                      <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Preview {template.name}</p>
+                    <div className="w-[340px] h-[215px] bg-white border rounded-xl flex flex-col items-center justify-center p-4 text-center">
+                      <div className={`w-full h-10 ${template.preview_color} rounded-t-lg mb-4 opacity-50`}></div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Desain {template.name}</p>
                     </div>
                   )}
                 </div>
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button size="sm" variant="secondary" className="gap-2">
-                    <Eye className="h-4 w-4" /> Pratinjau
+                    <Eye className="h-4 w-4" /> Zoom Preview
                   </Button>
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-auto">
+              <div className="flex gap-2 mt-auto pt-4">
                 <Button 
                   className="flex-1 gap-2" 
                   variant={template.is_active ? 'secondary' : 'default'}
                   disabled={template.is_active}
                   onClick={() => handleToggleActive(template.id)}
                 >
-                  {template.is_active ? 'Aktif' : 'Gunakan'}
+                  {template.is_active ? 'Sedang Digunakan' : 'Aktifkan Template'}
                 </Button>
-                <Button variant="outline" size="icon">
-                  <Palette className="h-4 w-4" />
+                <Button variant="outline" size="icon" onClick={() => openConfig(template)}>
+                  <Palette className="h-4 w-4 text-primary" />
                 </Button>
                 <Button variant="outline" size="icon" className="text-destructive">
                   <Trash2 className="h-4 w-4" />
@@ -116,12 +170,60 @@ export default function TemplatesPage() {
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
             <Plus className="h-8 w-8" />
           </div>
-          <div className="text-center">
-            <h4 className="font-bold">Rancang Desain</h4>
-            <p className="text-xs text-muted-foreground">Mulai kustomisasi baru</p>
+          <div className="text-center px-4">
+            <h4 className="font-bold">Buat Desain Baru</h4>
+            <p className="text-xs text-muted-foreground">Rancang template kustom untuk sekolah Anda.</p>
           </div>
         </Card>
       </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Template</DialogTitle>
+            <DialogDescription>
+              Kustomisasi properti visual untuk template <strong>{editingTemplate?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTemplate && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="t-name">Nama Template</Label>
+                <Input 
+                  id="t-name" 
+                  value={editingTemplate.name} 
+                  onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="t-color">Preview Color (Tailwind Class)</Label>
+                <Input 
+                  id="t-color" 
+                  value={editingTemplate.preview_color} 
+                  onChange={e => setEditingTemplate({...editingTemplate, preview_color: e.target.value})}
+                  placeholder="bg-blue-600"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="t-config">Konfigurasi JSON (Advanced)</Label>
+                <Textarea 
+                  id="t-config" 
+                  className="font-mono text-xs min-h-[100px]"
+                  value={editingTemplate.config_json} 
+                  onChange={e => setEditingTemplate({...editingTemplate, config_json: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsConfigOpen(false)}>Batal</Button>
+            <Button className="gap-2" onClick={handleSaveConfig}>
+              <Save className="h-4 w-4" /> Simpan Konfigurasi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
