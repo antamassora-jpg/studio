@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Camera, CreditCard, Award, Contact, Link as LinkIcon } from 'lucide-react';
+import { Save, Upload, Camera, CreditCard, Award, Contact, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,25 +17,40 @@ import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const db = getDB();
     setSettings(db.school_settings);
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!settings) {
       toast({ variant: "destructive", title: "Gagal", description: "Data pengaturan tidak ditemukan." });
       return;
     }
     
+    setIsSaving(true);
+    
+    // Simulate a bit of processing for better UX feedback
+    await new Promise(resolve => setTimeout(resolve, 800));
+
     try {
       const db = getDB();
       db.school_settings = { ...settings };
       saveDB(db);
-      toast({ title: "Tersimpan", description: "Pengaturan sekolah berhasil diperbarui ke database lokal." });
+      toast({ 
+        title: "Perubahan Tersimpan", 
+        description: "Pengaturan sekolah berhasil diperbarui ke database lokal.",
+      });
     } catch (error) {
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat menyimpan data." });
+      toast({ 
+        variant: "destructive", 
+        title: "Gagal Menyimpan", 
+        description: "Terjadi kesalahan saat menyimpan data." 
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -47,7 +62,7 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const result = reader.result as string;
       setSettings(prev => prev ? ({ ...prev, [field]: result }) : null);
-      toast({ title: "Aset Dimuat", description: "Gambar berhasil dimuat, silakan klik Simpan untuk mempermanenkan." });
+      toast({ title: "Aset Dimuat", description: "Gambar berhasil dimuat, silakan klik Simpan Perubahan untuk mempermanenkan." });
     };
     reader.readAsDataURL(file);
   };
@@ -69,8 +84,13 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold font-headline text-primary">Pengaturan Sekolah</h1>
           <p className="text-muted-foreground">Kelola identitas, ketentuan, dan aset visual tiap kartu.</p>
         </div>
-        <Button onClick={handleSave} className="gap-2 h-11 px-6 shadow-lg shadow-primary/20">
-          <Save className="h-4 w-4" /> Simpan Perubahan
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="gap-2 h-11 px-6 shadow-lg shadow-primary/20 min-w-[160px]"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
         </Button>
       </div>
 
@@ -370,7 +390,7 @@ function AssetUploader({
         </Label>
         <Input 
           placeholder="https://example.com/logo.png" 
-          value={image.startsWith('data:') ? '' : image}
+          value={image && image.startsWith('data:') ? '' : (image || '')}
           onChange={(e) => onUrlChange(e.target.value)}
           className="text-[10px] h-8"
         />
