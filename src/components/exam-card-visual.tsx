@@ -80,7 +80,7 @@ export function ExamCardVisual({
               )}
             </div>
           </div>
-          <div className="flex-1 py-4 px-3 space-y-2 text-slate-900 relative">
+          <div className="flex-1 py-4 px-3 space-y-1.5 text-slate-900 relative">
             <div className="flex flex-col">
               <span className="text-slate-400 text-[6px] uppercase font-bold">Nama Peserta</span>
               <span className="font-bold text-[11px] uppercase">{student.name}</span>
@@ -91,7 +91,11 @@ export function ExamCardVisual({
             </div>
             <div className="flex flex-col">
               <span className="text-slate-400 text-[6px] uppercase font-bold">Event Ujian</span>
-              <span className="font-bold text-[8px] uppercase">{exam?.name || 'UJIAN SEKOLAH'}</span>
+              <span className="font-bold text-[8px] uppercase">{exam?.name || 'UJIAN AKHIR SEKOLAH'}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-slate-400 text-[6px] uppercase font-bold">Berlaku Sampai</span>
+              <span className="font-bold text-[8px] text-orange-600">{student.valid_until}</span>
             </div>
 
             {(showSig || showStamp) && (
@@ -106,7 +110,8 @@ export function ExamCardVisual({
                     <div className="w-14 h-7 relative">
                       <Image src={settings.signature_exam} alt="TTD" fill className="object-contain" />
                     </div>
-                    <p className="text-[6px] font-bold border-t border-slate-300">{settings.principal_name}</p>
+                    <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
+                    <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
                   </div>
                 )}
               </div>
@@ -134,7 +139,7 @@ export function ExamCardVisual({
         )}
       </div>
       <div className="flex gap-4 flex-1">
-        <div className="flex-1 whitespace-pre-line text-slate-600 leading-tight italic px-2">
+        <div className="flex-1 whitespace-pre-line text-slate-600 leading-tight italic px-2 text-[7px]">
           {settings.terms_exam}
         </div>
         <div className="w-16 flex flex-col items-center justify-center gap-1">
@@ -151,7 +156,7 @@ export function ExamCardVisual({
         <div className="mt-2 flex justify-end items-end relative z-10">
           <div className="text-center scale-90 origin-bottom-right relative">
              {showStamp && (
-                <div className="absolute -left-8 top-0 w-16 h-8 relative mx-auto">
+                <div className="absolute -left-8 top-0 w-16 h-8 pointer-events-none">
                    <Image src={settings.stamp_exam} alt="STAMP" fill className="object-contain opacity-70" />
                 </div>
              )}
@@ -160,7 +165,8 @@ export function ExamCardVisual({
                   <Image src={settings.signature_exam} alt="SIG" fill className="object-contain" />
                </div>
              )}
-             <p className="text-[7px] font-bold border-t pt-0.5 text-slate-800">{settings.principal_name}</p>
+             <p className="text-[7px] font-bold border-t pt-0.5 text-slate-800 leading-none">{settings.principal_name}</p>
+             <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
           </div>
         </div>
       )}

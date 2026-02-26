@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -89,23 +88,22 @@ export default function TemplatesPage() {
     setTemplates(db.templates);
     setSettings(db.school_settings);
     
-    // Ambil data siswa asli pertama dari database untuk pratinjau
+    // Sinkronisasi Data Siswa Riil untuk Pratinjau
     if (db.students.length > 0) {
       setPreviewStudent(db.students[0]);
     } else {
-      // Data simulasi jika database siswa kosong
       setPreviewStudent({
         id: 'mock',
         name: 'CONTOH NAMA SISWA',
-        nis: '12345678',
-        nisn: '0012345678',
+        nis: '2021001',
+        nisn: '0051234567',
         class: 'XII',
         major: 'TEKNIK KOMPUTER & JARINGAN',
         school_year: '2024/2025',
-        photo_url: 'https://picsum.photos/seed/sample/300/400',
+        photo_url: 'https://picsum.photos/seed/student-mock/300/400',
         status: 'Aktif',
         valid_until: '2025-06-30',
-        card_code: 'VERIFY-MOCK-123'
+        card_code: 'ED-SYNC-001'
       });
     }
   }, []);
@@ -154,7 +152,6 @@ export default function TemplatesPage() {
     const template = db.templates.find(t => t.id === id);
     if (!template) return;
 
-    // Aktifkan satu template dan nonaktifkan template lain dalam kategori yang sama
     const updated = db.templates.map(t => {
       if (t.type === template.type) {
         return { ...t, is_active: t.id === id };
@@ -224,7 +221,7 @@ export default function TemplatesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
-          <p className="text-muted-foreground">Konfigurasi visual otomatis menggunakan aset sekolah dan data siswa asli.</p>
+          <p className="text-muted-foreground">Kustomisasi visual kartu menggunakan data asli dari Data Siswa & Settings.</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -325,11 +322,7 @@ export default function TemplatesPage() {
                     <ExamCardVisual student={previewStudent} settings={settings} template={template} />
                   ) : template.type === 'ID_CARD' && previewStudent && settings ? (
                     <IdCardVisual student={previewStudent} settings={settings} side="front" template={template} />
-                  ) : (
-                    <div className="text-center p-8 text-muted-foreground italic">
-                      Data tidak tersedia
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -356,7 +349,7 @@ export default function TemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Template?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini permanen. Template "{templates.find(t => t.id === templateToDelete)?.name}" akan dihapus dari sistem.
+              Tindakan ini permanen. Template "{templates.find(t => t.id === templateToDelete)?.name}" akan dihapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -375,7 +368,7 @@ export default function TemplatesPage() {
               <div>
                 <DialogTitle className="text-2xl font-bold">Kustomisasi Desain</DialogTitle>
                 <DialogDescription>
-                  Atur warna, font, dan background. Pratinjau otomatis menggunakan data sekolah.
+                  Data siswa & sekolah dari database Anda ditampilkan di sini secara real-time.
                 </DialogDescription>
               </div>
               <Button variant="outline" size="sm" className="gap-2 text-muted-foreground" onClick={handleResetConfig}>
@@ -417,10 +410,10 @@ export default function TemplatesPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <ColorInput label="Warna Header" value={localConfig[side].headerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: val}})} />
-                        <ColorInput label="Warna Body" value={localConfig[side].bodyBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: val}})} />
-                        <ColorInput label="Warna Footer" value={localConfig[side].footerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: val}})} />
-                        <ColorInput label="Warna Teks" value={localConfig[side].textColor} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: val}})} />
+                        <ColorInput label="Header" value={localConfig[side].headerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: val}})} />
+                        <ColorInput label="Body" value={localConfig[side].bodyBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: val}})} />
+                        <ColorInput label="Footer" value={localConfig[side].footerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: val}})} />
+                        <ColorInput label="Teks" value={localConfig[side].textColor} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: val}})} />
                       </div>
                     </div>
 
@@ -435,7 +428,7 @@ export default function TemplatesPage() {
                         ) : (
                           <div className="text-center py-4 opacity-50">
                             <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-                            <p className="text-[9px] font-bold">Upload file gambar latar</p>
+                            <p className="text-[9px] font-bold">Upload latar khusus</p>
                           </div>
                         )}
                         <Label className="w-full">
@@ -452,7 +445,7 @@ export default function TemplatesPage() {
             </div>
 
             <div className="flex flex-col items-center justify-center bg-slate-100 rounded-2xl border-2 border-slate-200 p-8 min-h-[400px]">
-              <div className="text-[10px] font-black uppercase text-slate-400 mb-6">Live Pratinjau (Aset Riil)</div>
+              <div className="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">Live Pratinjau (Data Riil)</div>
               <div className={cn(
                 "transform transition-transform scale-90",
                 editingTemplate?.type === 'ID_CARD' ? 'scale-[0.8]' : 'scale-[1]'

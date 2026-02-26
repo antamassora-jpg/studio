@@ -80,7 +80,7 @@ export function StudentCardVisual({
           </div>
 
           <div className="flex-1 py-3 px-4 flex flex-col justify-center gap-3 relative">
-            <div className="space-y-2 text-slate-700">
+            <div className="space-y-1.5 text-slate-700">
               <div className="flex flex-col">
                 <span className="text-muted-foreground text-[6px] uppercase font-bold tracking-wider">Nama Lengkap</span>
                 <span className="font-extrabold text-[11px] uppercase leading-tight">{student.name}</span>
@@ -90,8 +90,12 @@ export function StudentCardVisual({
                 <span className="font-bold text-[9px]">{student.nis} / {student.nisn || '-'}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-muted-foreground text-[6px] uppercase font-bold tracking-wider">Program Keahlian</span>
-                <span className="font-bold text-[9px] uppercase">{student.major}</span>
+                <span className="text-muted-foreground text-[6px] uppercase font-bold tracking-wider">Kelas & Jurusan</span>
+                <span className="font-bold text-[8px] uppercase">{student.class} - {student.major}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-muted-foreground text-[6px] uppercase font-bold tracking-wider">Berlaku Sampai</span>
+                <span className="font-bold text-[8px] text-primary">{student.valid_until}</span>
               </div>
             </div>
 
@@ -107,7 +111,8 @@ export function StudentCardVisual({
                     <div className="w-14 h-7 relative">
                       <Image src={settings.signature_image} alt="TTD" fill className="object-contain" />
                     </div>
-                    <p className="text-[6px] font-bold border-t border-slate-300">{settings.principal_name}</p>
+                    <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
+                    <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
                   </div>
                 )}
               </div>
@@ -166,6 +171,7 @@ export function StudentCardVisual({
                 </div>
               )}
               <p className="text-[7px] font-bold border-t pt-0.5" style={{ color: current.headerBg }}>{settings.principal_name}</p>
+              <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
            </div>
         </div>
       )}
