@@ -18,11 +18,9 @@ import {
   Plus, 
   Search, 
   Upload, 
-  Download, 
   MoreVertical, 
   Edit, 
   Trash2,
-  FileSpreadsheet,
   FileDown,
   Loader2
 } from 'lucide-react';
@@ -96,8 +94,9 @@ export default function StudentsPage() {
   };
 
   const handleDownloadFormat = () => {
-    const headers = "name,nis,nisn,class,major,school_year,status,valid_until";
-    const sampleData = "Andi Pratama,2021001,0051234567,XII,Teknik Komputer & Jaringan,2023/2024,Aktif,2025-06-30";
+    // Menggunakan semicolon (;) sebagai pemisah sesuai permintaan (agar tidak menggunakan koma)
+    const headers = "name;nis;nisn;class;major;school_year;status;valid_until";
+    const sampleData = "Andi Pratama;2021001;0051234567;XII;Teknik Komputer & Jaringan;2024/2025;Aktif;2025-06-30";
     const csvContent = `${headers}\n${sampleData}`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -109,7 +108,7 @@ export default function StudentsPage() {
     link.click();
     document.body.removeChild(link);
     
-    toast({ title: "Format Diunduh", description: "Silahkan isi data pada file CSV tersebut." });
+    toast({ title: "Format Diunduh", description: "Gunakan titik koma (;) sebagai pemisah kolom." });
   };
 
   const handleImportClick = () => {
@@ -126,33 +125,36 @@ export default function StudentsPage() {
       try {
         const text = event.target?.result as string;
         const lines = text.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
+        // Mendukung pemisahan dengan semicolon (;)
+        const headers = lines[0].split(';').map(h => h.trim());
         
         const db = getDB();
         const newStudents: Student[] = [];
 
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
-          const values = lines[i].split(',').map(v => v.trim());
+          const values = lines[i].split(';').map(v => v.trim());
           const entry: any = {};
           
           headers.forEach((header, index) => {
             entry[header] = values[index];
           });
 
-          newStudents.push({
-            id: Math.random().toString(36).substr(2, 9),
-            name: entry.name || 'Unknown',
-            nis: entry.nis || '000',
-            nisn: entry.nisn || '',
-            class: entry.class || '-',
-            major: entry.major || '-',
-            school_year: entry.school_year || '2024/2025',
-            status: (entry.status as any) || 'Aktif',
-            valid_until: entry.valid_until || '2025-06-30',
-            card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-            photo_url: `https://picsum.photos/seed/${entry.nis || Math.random()}/300/400`
-          });
+          if (entry.name && entry.nis) {
+            newStudents.push({
+              id: Math.random().toString(36).substr(2, 9),
+              name: entry.name,
+              nis: entry.nis,
+              nisn: entry.nisn || '',
+              class: entry.class || '-',
+              major: entry.major || '-',
+              school_year: entry.school_year || '2024/2025',
+              status: (entry.status as any) || 'Aktif',
+              valid_until: entry.valid_until || '2025-06-30',
+              card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+              photo_url: `https://picsum.photos/seed/${entry.nis}/300/400`
+            });
+          }
         }
 
         const updated = [...db.students, ...newStudents];
@@ -167,7 +169,7 @@ export default function StudentsPage() {
         toast({ 
           variant: "destructive", 
           title: "Import Gagal", 
-          description: "Pastikan format file CSV benar." 
+          description: "Pastikan menggunakan format titik koma (;) dan kolom yang benar." 
         });
       } finally {
         setIsImporting(false);
@@ -193,7 +195,7 @@ export default function StudentsPage() {
             className="hidden" 
           />
           <Button variant="outline" className="gap-2" onClick={handleDownloadFormat}>
-            <FileDown className="h-4 w-4" /> Format CSV
+            <FileDown className="h-4 w-4" /> Format CSV (;)
           </Button>
           <Button variant="outline" className="gap-2" onClick={handleImportClick} disabled={isImporting}>
             {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
