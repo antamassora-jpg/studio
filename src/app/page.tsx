@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -23,7 +23,8 @@ import {
   XCircle,
   Loader2,
   Zap,
-  Navigation
+  Navigation,
+  ArrowRight
 } from 'lucide-react';
 import {
   Dialog,
@@ -64,7 +65,7 @@ export default function LandingPage() {
     setIsSearching(true);
     setHasSearched(false);
     
-    // Simulasi pencarian database riil
+    // Simulasi pencarian database
     setTimeout(() => {
       const db = getDB();
       const found = db.students.find(s => 
@@ -82,7 +83,7 @@ export default function LandingPage() {
         toast({
           variant: "destructive",
           title: "Data Tidak Ditemukan",
-          description: "Pastikan NIS/NISN atau Kode Kartu yang Anda masukkan benar."
+          description: "Pastikan NIS/NISN atau Kode Kartu benar."
         });
       }
     }, 800);
@@ -115,7 +116,7 @@ export default function LandingPage() {
             <div className="relative w-12 h-12">
               <Image 
                 src="https://iili.io/KAqSZhb.png" 
-                alt="Logo SMKN 2 Tana Toraja" 
+                alt="Logo Sekolah" 
                 fill 
                 className="object-contain"
                 priority
@@ -129,9 +130,8 @@ export default function LandingPage() {
           </div>
           
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-            <Link href="#features" className="hover:text-primary transition-colors">Fitur Utama</Link>
             <Link href="#tracking" className="hover:text-primary transition-colors">Tracer System</Link>
-            <Link href="#stats" className="hover:text-primary transition-colors">Statistik</Link>
+            <Link href="#features" className="hover:text-primary transition-colors">Fitur Utama</Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -148,7 +148,7 @@ export default function LandingPage() {
                    </div>
                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Login Akses</DialogTitle>
                    <DialogDescription className="text-white/70 font-bold text-xs">
-                     Manajemen Kartu & Absensi Digital Terpadu
+                     Akses Internal Sistem Kartu & Absensi
                    </DialogDescription>
                 </div>
                 <form onSubmit={handleLogin} className="p-8 space-y-6">
@@ -185,7 +185,7 @@ export default function LandingPage() {
                   <Alert className="bg-primary/5 border-none rounded-xl">
                     <Info className="h-4 w-4 text-primary" />
                     <AlertDescription className="text-[10px] uppercase font-bold text-muted-foreground">
-                      Demo Mode: admin123 / password123
+                      Demo: admin123 / password123
                     </AlertDescription>
                   </Alert>
                   <Button type="submit" className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20" disabled={isLoggingIn}>
@@ -202,29 +202,20 @@ export default function LandingPage() {
       <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-48 bg-white overflow-hidden">
         <div className="container mx-auto px-4 relative z-10 text-center space-y-10">
            <Badge className="bg-primary/10 text-primary border-none px-6 py-2 text-[10px] font-black tracking-[0.3em] uppercase rounded-full">
-              Digital Educational Identity v2.5
+              Identity Management SMKN 2 Tana Toraja
            </Badge>
            <h1 className="text-6xl md:text-9xl font-black text-slate-900 leading-[0.9] tracking-tighter">
-             Masa Depan <br/><span className="text-primary italic">Kartu Digital.</span>
+             Verifikasi & <br/><span className="text-primary italic">Lacak Identitas.</span>
            </h1>
            <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-             Platform terpadu untuk pencetakan kartu pelajar, kartu ujian, dan sistem absensi cerdas berbasis QR Code. Cepat, akurat, dan profesional.
+             Platform digital terpadu untuk pencetakan kartu, absensi cerdas berbasis QR Code, dan pelacakan data siswa secara real-time.
            </p>
-           <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button size="lg" className="h-16 px-10 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20" asChild>
-                 <Link href="#tracking">Mulai Melacak</Link>
-              </Button>
-              <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl text-sm font-black uppercase tracking-widest border-2" asChild>
-                 <Link href="#features">Pelajari Fitur</Link>
-              </Button>
-           </div>
         </div>
-        {/* Background Decorative Elements */}
         <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
       </section>
 
-      {/* Tracer Section */}
+      {/* Tracer Section (The Core Feature) */}
       <section id="tracking" className="py-24 bg-slate-50 border-y relative">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -235,10 +226,10 @@ export default function LandingPage() {
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-primary">
                          <Navigation className="h-5 w-5 fill-primary" />
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Tracer Identity Tool</span>
+                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Identity Tracer Tool</span>
                       </div>
-                      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none">Verifikasi Kartu Secara Real-Time.</h3>
-                      <p className="text-muted-foreground font-medium">Lacak keabsahan kartu melalui database pusat SMKN 2 Tana Toraja.</p>
+                      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none">Cek Validitas Kartu.</h3>
+                      <p className="text-muted-foreground font-medium">Masukkan parameter untuk mengidentifikasi data dari database admin.</p>
                     </div>
 
                     <form onSubmit={handleSearch} className="relative group">
@@ -246,7 +237,7 @@ export default function LandingPage() {
                         <Search />
                       </div>
                       <Input 
-                        placeholder="NISN / NIS / ID KARTU..." 
+                        placeholder="NIS / NISN / KODE KARTU..." 
                         className="pl-14 h-16 text-xl border-2 border-slate-100 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-primary focus-visible:border-primary rounded-2xl transition-all font-bold"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -256,14 +247,23 @@ export default function LandingPage() {
                         className="absolute right-3 top-3 h-10 px-8 font-black rounded-xl text-[10px] tracking-widest"
                         disabled={isSearching}
                       >
-                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SEARCH'}
+                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'LACAK'}
                       </Button>
                     </form>
 
                     <div className="grid grid-cols-3 gap-4">
-                      <TracerToolBadge icon={UserCheck} label="NISN/NIS" active={searchQuery.length > 5} />
-                      <TracerToolBadge icon={Camera} label="Scan Foto" />
-                      <TracerToolBadge icon={QrCode} label="ID Kartu" />
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                         <UserCheck className="h-6 w-6 text-primary" />
+                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">NIS/NISN</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                         <QrCode className="h-6 w-6 text-primary" />
+                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">ID Barcode</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                         <Camera className="h-6 w-6 text-primary" />
+                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">Photo Scan</span>
+                      </div>
                     </div>
                   </div>
 
@@ -284,7 +284,7 @@ export default function LandingPage() {
                           <div className="space-y-2">
                              <div className="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5">
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Status</span>
-                                <Badge className="bg-emerald-500 text-emerald-950 border-none text-[10px] font-black">{searchResult.status}</Badge>
+                                <Badge className="bg-emerald-500 text-emerald-950 border-none text-[10px] font-black uppercase">{searchResult.status}</Badge>
                              </div>
                              <div className="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5">
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Berlaku</span>
@@ -292,7 +292,7 @@ export default function LandingPage() {
                              </div>
                           </div>
                           <Button variant="secondary" className="w-full font-black h-12 rounded-xl text-[10px] tracking-[0.2em] uppercase" asChild>
-                            <Link href={`/verify/${searchResult.card_code}`}>VERIFIKASI LANJUT</Link>
+                            <Link href={`/verify/${searchResult.card_code}`}>DETAIL VERIFIKASI</Link>
                           </Button>
                         </div>
                       ) : hasSearched ? (
@@ -300,23 +300,18 @@ export default function LandingPage() {
                           <XCircle className="h-16 w-16 text-red-500 mx-auto opacity-50" />
                           <div className="space-y-2">
                             <h4 className="text-xl font-black tracking-tight uppercase">Data Tidak Ditemukan</h4>
-                            <p className="text-xs opacity-60 font-medium italic">Silakan hubungi Admin Sekolah jika kartu Anda belum terdaftar.</p>
+                            <p className="text-xs opacity-60 font-medium italic">Data tidak terdaftar di log database admin.</p>
                           </div>
                         </div>
                       ) : (
                         <div className="text-center space-y-8 opacity-40 flex flex-col items-center py-10">
                           <Zap className="h-24 w-24 text-white" fill="white" />
                           <div className="space-y-2">
-                            <h4 className="text-xl font-black tracking-tight uppercase">Ready to Scan</h4>
-                            <p className="text-xs font-medium">Input parameter untuk melihat profil siswa.</p>
+                            <h4 className="text-xl font-black tracking-tight uppercase">Ready to Trace</h4>
+                            <p className="text-xs font-medium">Input parameter untuk memuat identitas.</p>
                           </div>
                         </div>
                       )}
-                    </div>
-                    {/* Abstract background for right side */}
-                    <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
-                       <div className="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full blur-3xl -mr-32 -mt-32"></div>
-                       <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary rounded-full blur-3xl -ml-32 -mb-32"></div>
                     </div>
                   </div>
                 </div>
@@ -326,90 +321,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features & Stats */}
-      <section id="features" className="py-32 bg-white">
+      {/* Stats Section */}
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <LandingFeature 
-                icon={CreditCard} 
-                title="Smart ID Card" 
-                desc="Desain modern dengan QR Code unik yang terenkripsi untuk setiap siswa."
-              />
-              <LandingFeature 
-                icon={BarChart3} 
-                title="AI Analytics" 
-                desc="Monitoring tren kehadiran dan statistik harian secara otomatis."
-              />
-              <LandingFeature 
-                icon={ShieldCheck} 
-                title="Data Security" 
-                desc="Penyimpanan data aman dengan protokol verifikasi ganda."
-              />
-           </div>
-
-           <div id="stats" className="mt-32 p-16 bg-primary rounded-[3rem] text-white flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0,transparent_100%)]"></div>
-              <LandingStat value="1.5K+" label="Siswa Terdata" />
-              <LandingStat value="20K+" label="Log Scan" />
-              <LandingStat value="100%" label="Akurasi Data" />
-              <LandingStat value="24/7" label="Uptime Server" />
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center">
+              <div>
+                <div className="text-4xl font-black text-primary mb-2">1.500+</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Siswa Terdata</div>
+              </div>
+              <div>
+                <div className="text-4xl font-black text-primary mb-2">24/7</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">System Uptime</div>
+              </div>
+              <div>
+                <div className="text-4xl font-black text-primary mb-2">100%</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verifikasi Akurat</div>
+              </div>
+              <div>
+                <div className="text-4xl font-black text-primary mb-2">Real-Time</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sinkronisasi Log</div>
+              </div>
            </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-50 border-t py-20">
-        <div className="container mx-auto px-4 text-center space-y-8">
-          <div className="flex justify-center items-center gap-4">
-              <div className="relative w-12 h-12">
-                <Image src="https://iili.io/KAqSZhb.png" alt="Logo" fill className="object-contain" unoptimized />
-              </div>
-              <div className="text-left">
-                <span className="font-black text-primary text-xl leading-none uppercase">EduCard Sync</span>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">SMKN 2 Tana Toraja</p>
-              </div>
-          </div>
+      <footer className="bg-slate-50 border-t py-12">
+        <div className="container mx-auto px-4 text-center">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-             &copy; {new Date().getFullYear()} EDU-SYNC SYSTEM. ALL RIGHTS RESERVED.
+             &copy; {new Date().getFullYear()} EDU-SYNC SYSTEM. SMKN 2 TANA TORAJA.
           </p>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function TracerToolBadge({ icon: Icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
-  return (
-    <div className={`flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer group ${
-      active ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-slate-50/50 border-transparent hover:border-slate-200'
-    }`}>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm transition-all group-hover:scale-110 ${
-        active ? 'bg-primary text-white' : 'bg-white text-slate-400'
-      }`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <span className={`text-[9px] font-black uppercase tracking-widest ${active ? 'text-primary' : 'text-slate-400'}`}>{label}</span>
-    </div>
-  );
-}
-
-function LandingFeature({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) {
-  return (
-    <div className="space-y-6 group">
-       <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm">
-          <Icon className="h-8 w-8" />
-       </div>
-       <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{title}</h4>
-       <p className="text-muted-foreground font-medium leading-relaxed">{desc}</p>
-    </div>
-  );
-}
-
-function LandingStat({ value, label }: { value: string, label: string }) {
-  return (
-    <div className="text-center relative z-10">
-       <div className="text-5xl font-black mb-2 tracking-tighter">{value}</div>
-       <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-60">{label}</div>
     </div>
   );
 }
