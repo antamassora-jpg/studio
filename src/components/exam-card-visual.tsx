@@ -60,7 +60,11 @@ export function ExamCardVisual({
         <div className="flex h-[calc(100%-56px)] relative z-10">
           <div className="w-[100px] flex flex-col items-center justify-center p-2 gap-2 border-r border-slate-100">
             <div className="w-[75px] h-[95px] bg-slate-50 relative rounded-md overflow-hidden border border-slate-200">
-              {student.photo_url && <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority />}
+              {student.photo_url ? (
+                <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-200 text-[8px]">FOTO</div>
+              )}
             </div>
           </div>
           <div className="flex-1 py-4 px-3 space-y-2 text-slate-900">
@@ -70,7 +74,7 @@ export function ExamCardVisual({
             </div>
             <div className="flex flex-col">
               <span className="text-slate-400 text-[6px] uppercase font-bold">NIS / NISN</span>
-              <span className="font-bold text-[9px]">{student.nis} / {student.nisn}</span>
+              <span className="font-bold text-[9px]">{student.nis} / {student.nisn || '-'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-slate-400 text-[6px] uppercase font-bold">Event Ujian</span>
@@ -88,8 +92,19 @@ export function ExamCardVisual({
       <div className="text-center mb-3">
         <h4 className="font-black text-[10px] uppercase border-b pb-1 text-slate-800">Tata Tertib Ujian</h4>
       </div>
-      <div className="flex-1 whitespace-pre-line text-slate-600 leading-tight italic px-2">
-        {settings.terms_exam}
+      <div className="flex gap-4 flex-1">
+        <div className="flex-1 whitespace-pre-line text-slate-600 leading-tight italic px-2">
+          {settings.terms_exam}
+        </div>
+        <div className="w-16 flex flex-col items-center justify-center gap-1">
+           <div className="w-14 h-14 bg-white p-1 rounded border shadow-inner relative">
+             <Image 
+               src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=VERIFY-${student.card_code}`}
+               alt="QR" fill className="object-contain" unoptimized
+             />
+           </div>
+           <div className="text-[5px] font-bold text-slate-400">{student.card_code}</div>
+        </div>
       </div>
       <div className="mt-2 flex justify-end items-end">
         <div className="text-center scale-90 origin-bottom-right">

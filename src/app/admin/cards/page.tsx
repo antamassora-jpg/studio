@@ -22,7 +22,8 @@ import {
   CheckSquare, 
   Square,
   Loader2,
-  FileDown
+  Filter,
+  Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
@@ -61,13 +62,15 @@ export default function CardsPage() {
     if (db.students.length > 0) setPreviewId(db.students[0].id);
   }, []);
 
-  const classes = Array.from(new Set(students.map(s => s.class)));
-  const majors = Array.from(new Set(students.map(s => s.major)));
+  const classes = Array.from(new Set(students.map(s => s.class))).sort();
+  const majors = Array.from(new Set(students.map(s => s.major))).sort();
 
   const filteredStudents = students.filter(s => {
     const matchClass = selectedClass === 'all' || s.class === selectedClass;
     const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
-    const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.nis.includes(searchQuery);
+    const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       s.nis.includes(searchQuery) || 
+                       (s.nisn && s.nisn.includes(searchQuery));
     return matchClass && matchMajor && matchSearch;
   });
 
@@ -142,25 +145,24 @@ export default function CardsPage() {
           <p className="text-muted-foreground">Generate dan cetak kartu pelajar siswa secara massal.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => toast({title: "Segera Hadir"})}>
-            <FileDown className="h-4 w-4" /> Export CSV
-          </Button>
-          <Button className="gap-2" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
+          <Button className="gap-2 shadow-lg shadow-primary/20" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
             <Printer className="h-4 w-4" /> Cetak Massal ({selectedIds.size})
           </Button>
         </div>
       </div>
 
       <div className="no-print grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 border-none shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Filter & Navigasi</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" /> Daftar Siswa
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Cari nama atau NIS..." 
+                placeholder="Cari nama, NIS, atau NISN..." 
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -184,75 +186,96 @@ export default function CardsPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Daftar Siswa</label>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={toggleSelectAll}>
-                  {selectedIds.size === filteredStudents.length ? 'Batal' : 'Pilih Semua'}
+                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Pilih Siswa ({filteredStudents.length})</label>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold" onClick={toggleSelectAll}>
+                  {selectedIds.size === filteredStudents.length ? 'Batal Semua' : 'Pilih Semua'}
                 </Button>
               </div>
-              <div className="max-h-[400px] overflow-y-auto border rounded divide-y bg-muted/5">
-                {filteredStudents.map(s => (
+              <div className="max-h-[450px] overflow-y-auto border rounded-xl divide-y bg-muted/5 scrollbar-thin">
+                {filteredStudents.length > 0 ? filteredStudents.map(s => (
                   <div 
                     key={s.id} 
-                    className={`p-2.5 text-xs cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-primary' : ''}`}
+                    className={`p-3 text-xs cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-primary shadow-sm' : ''}`}
                     onClick={() => setPreviewId(s.id)}
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div onClick={(e) => toggleSelect(s.id, e)}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div onClick={(e) => toggleSelect(s.id, e)} className="shrink-0">
                         {selectedIds.has(s.id) ? (
                           <CheckSquare className="h-4 w-4 text-primary" />
                         ) : (
                           <Square className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
-                      <span className="font-semibold truncate">{s.name}</span>
+                      <div className="truncate">
+                         <div className="font-bold truncate text-slate-800">{s.name}</div>
+                         <div className="text-[9px] text-muted-foreground">{s.nis} • {s.class}</div>
+                      </div>
                     </div>
-                    <Eye className={`h-3 w-3 ${previewId === s.id ? 'text-primary' : 'opacity-20'}`} />
+                    <Eye className={`h-4 w-4 shrink-0 ${previewId === s.id ? 'text-primary' : 'opacity-10'}`} />
                   </div>
-                ))}
+                )) : (
+                  <div className="p-10 text-center text-xs text-muted-foreground italic">Siswa tidak ditemukan</div>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg">Pratinjau Kartu</CardTitle>
+        <Card className="lg:col-span-2 border-none shadow-sm">
+          <CardHeader className="border-b bg-slate-50/50">
+            <div className="flex justify-between items-center">
+               <CardTitle className="text-lg">Pratinjau Hasil Cetak</CardTitle>
+               <Badge variant="outline" className="bg-white">{activeTemplate?.name || 'Default Template'}</Badge>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-8 py-10 bg-muted/5 rounded-b-lg">
+          <CardContent className="flex flex-col items-center gap-10 py-12 bg-muted/10 rounded-b-lg">
             {previewStudent && settings ? (
               <>
-                <div ref={cardRefFront} className="shadow-2xl">
-                  <StudentCardVisual student={previewStudent} settings={settings} side="front" template={activeTemplate} />
+                <div className="space-y-4 flex flex-col items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Tampak Depan</span>
+                  <div ref={cardRefFront} className="shadow-2xl hover:scale-[1.02] transition-transform duration-500">
+                    <StudentCardVisual student={previewStudent} settings={settings} side="front" template={activeTemplate} />
+                  </div>
                 </div>
-                <div ref={cardRefBack} className="shadow-2xl">
-                  <StudentCardVisual student={previewStudent} settings={settings} side="back" template={activeTemplate} />
+                <div className="space-y-4 flex flex-col items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Tampak Belakang</span>
+                  <div ref={cardRefBack} className="shadow-2xl hover:scale-[1.02] transition-transform duration-500">
+                    <StudentCardVisual student={previewStudent} settings={settings} side="back" template={activeTemplate} />
+                  </div>
                 </div>
-                <div className="flex gap-3 w-full max-w-sm">
-                   <Button variant="outline" className="flex-1 gap-2" onClick={handleDownloadSingle} disabled={isProcessing}>
+                <div className="flex gap-3 w-full max-w-sm pt-6 border-t">
+                   <Button variant="outline" className="flex-1 gap-2 h-12 font-bold" onClick={handleDownloadSingle} disabled={isProcessing}>
                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                     PDF
+                     UNDUH PDF
                    </Button>
-                   <Button className="flex-1 gap-2" onClick={handlePrint}>
-                     <Printer className="h-4 w-4" /> Cetak
+                   <Button className="flex-1 gap-2 h-12 font-bold" onClick={handlePrint}>
+                     <Printer className="h-4 w-4" /> CETAK
                    </Button>
                 </div>
               </>
             ) : (
-              <div className="py-20 text-muted-foreground italic">Pilih siswa untuk melihat pratinjau</div>
+              <div className="py-32 flex flex-col items-center gap-4 text-muted-foreground italic">
+                <Users className="h-12 w-12 opacity-10" />
+                <span>Pilih siswa di sebelah kiri untuk pratinjau</span>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-        <DialogContent className="max-w-2xl no-print">
+        <DialogContent className="max-w-md no-print rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Konfirmasi Cetak Massal</DialogTitle>
-            <DialogDescription>Anda akan mencetak {selectedIds.size} kartu pelajar.</DialogDescription>
+            <DialogTitle className="text-xl">Konfirmasi Cetak</DialogTitle>
+            <DialogDescription>
+              Anda akan mencetak <strong>{selectedIds.size}</strong> kartu pelajar sekaligus. Pastikan kertas kartu sudah siap di printer.
+            </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
-            <Button className="gap-2" onClick={handlePrint}><Printer className="h-4 w-4" /> Mulai Cetak</Button>
+            <Button className="gap-2 px-8 shadow-lg shadow-primary/20" onClick={handlePrint}>
+              <Printer className="h-4 w-4" /> Mulai Cetak Massal
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

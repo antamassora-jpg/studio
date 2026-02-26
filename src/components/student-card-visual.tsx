@@ -91,13 +91,26 @@ export function StudentCardVisual({
 
   return (
     <div style={cardStyle} className="relative rounded-xl shadow-lg border overflow-hidden text-[10px] select-none font-sans p-6 flex flex-col">
-      <div className="text-center mb-4 relative z-10">
+      <div className="text-center mb-3 relative z-10">
         <h4 className="font-bold text-[11px] uppercase border-b-2 pb-1 tracking-widest" style={{ color: current.headerBg, borderColor: current.headerBg }}>Ketentuan Pengguna</h4>
       </div>
-      <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[8.5px] px-2 leading-relaxed relative z-10">
-        {settings.terms_student}
+      
+      <div className="flex gap-4 flex-1 items-start relative z-10">
+        <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed">
+          {settings.terms_student}
+        </div>
+        <div className="w-16 flex flex-col items-center gap-2">
+           <div className="w-14 h-14 bg-white p-1 rounded border shadow-sm relative">
+             <Image 
+               src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=VERIFY-${student.card_code}`}
+               alt="QR" fill className="object-contain" unoptimized
+             />
+           </div>
+           <div className="text-[6px] font-bold text-center text-slate-400">{student.card_code}</div>
+        </div>
       </div>
-      <div className="mt-4 flex justify-end items-end relative z-10">
+
+      <div className="mt-2 flex justify-end items-end relative z-10">
          <div className="text-center space-y-1">
             <p className="text-[6px] font-bold text-slate-500 uppercase">Kepala Sekolah,</p>
             <div className="w-16 h-8 relative mx-auto">
