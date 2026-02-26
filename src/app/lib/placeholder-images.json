@@ -1,3 +1,4 @@
+
 {
   "placeholderImages": [
     {
@@ -11,6 +12,18 @@
       "description": "Student placeholder photo",
       "imageUrl": "https://picsum.photos/seed/student-placeholder/300/400",
       "imageHint": "student portrait"
+    },
+    {
+      "id": "hero-bg",
+      "description": "Educational background for hero section",
+      "imageUrl": "https://picsum.photos/seed/school-hero/1200/600",
+      "imageHint": "modern school"
+    },
+    {
+      "id": "feature-card",
+      "description": "Illustration for digital ID cards",
+      "imageUrl": "https://picsum.photos/seed/digital-card/600/400",
+      "imageHint": "identity card"
     }
   ]
 }
