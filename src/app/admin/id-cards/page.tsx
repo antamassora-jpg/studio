@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
-import { StudentCardVisual } from '@/components/student-card-visual';
+import { IdCardVisual } from '@/components/id-card-visual';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -31,7 +31,8 @@ export default function IDCardsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRefFront = useRef<HTMLDivElement>(null);
+  const cardRefBack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const db = getDB();
@@ -69,13 +70,23 @@ export default function IDCardsPage() {
   };
 
   const handleDownload = async () => {
-    if (!previewStudent || !cardRef.current) return;
+    if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     try {
-      const canvas = await html2canvas(cardRef.current, { scale: 3, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
-      pdf.addImage(imgData, 'PNG', 0, 0, 85.6, 54);
+      const canvasFront = await html2canvas(cardRefFront.current, { scale: 3, useCORS: true });
+      const canvasBack = await html2canvas(cardRefBack.current, { scale: 3, useCORS: true });
+
+      // Ukuran 73mm x 111mm
+      const pdf = new jsPDF({ 
+        orientation: 'portrait', 
+        unit: 'mm', 
+        format: [73, 111] 
+      });
+      
+      pdf.addImage(canvasFront.toDataURL('image/png'), 'PNG', 0, 0, 73, 111);
+      pdf.addPage([73, 111], 'portrait');
+      pdf.addImage(canvasBack.toDataURL('image/png'), 'PNG', 0, 0, 73, 111);
+      
       pdf.save(`ID_Card_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
       toast({ title: "Berhasil", description: "ID Card telah diunduh." });
     } catch (error) {
@@ -93,12 +104,12 @@ export default function IDCardsPage() {
     <div className="space-y-6">
       <div id="print-area">
         <div className="flex flex-col items-center gap-10 p-10">
-          {(selectedIds.size > 0 ? Array.from(selectedIds) : [previewId]).map(id => {
+          {(selectedIds.size > 0 ? Array.from(selectedIds) : (previewId ? [previewId] : [])).map(id => {
             const s = students.find(x => x.id === id);
             return s && settings ? (
               <div key={id} className="page-break flex flex-col gap-6 items-center mb-10 pb-10 border-b border-dashed">
-                <StudentCardVisual student={s} settings={settings} side="front" />
-                <StudentCardVisual student={s} settings={settings} side="back" />
+                <IdCardVisual student={s} settings={settings} side="front" />
+                <IdCardVisual student={s} settings={settings} side="back" />
               </div>
             ) : null;
           })}
@@ -107,8 +118,8 @@ export default function IDCardsPage() {
 
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">ID Card Umum</h1>
-          <p className="text-muted-foreground">Manajemen cetak kartu identitas umum untuk staff atau tamu.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary">ID Card Corporate</h1>
+          <p className="text-muted-foreground">Cetak kartu identitas eksklusif dengan ukuran 7.3 x 11.1 cm.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={handlePrint} disabled={selectedIds.size === 0}>
@@ -173,26 +184,37 @@ export default function IDCardsPage() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-lg">Pratinjau Desain: {activeTemplate?.name || 'Default'}</CardTitle>
-                <CardDescription>Menggunakan template ID Card aktif.</CardDescription>
+                <CardTitle className="text-lg">Pratinjau: Corporate Green Style</CardTitle>
+                <CardDescription>Layout Vertikal 7.3 x 11.1 cm.</CardDescription>
               </div>
               <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-8 py-10 bg-muted/10 rounded-b-lg">
+          <CardContent className="flex flex-col items-center gap-12 py-10 bg-muted/10 rounded-b-lg overflow-x-auto">
             {previewStudent && settings ? (
               <>
-                <div ref={cardRef} className="shadow-2xl">
-                  <StudentCardVisual student={previewStudent} settings={settings} side="front" />
+                <div className="flex flex-col md:flex-row gap-12 items-start justify-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Front</span>
+                    <div ref={cardRefFront} className="shadow-2xl">
+                      <IdCardVisual student={previewStudent} settings={settings} side="front" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-4">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Back</span>
+                    <div ref={cardRefBack} className="shadow-2xl">
+                      <IdCardVisual student={previewStudent} settings={settings} side="back" />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-3 w-full max-w-sm">
-                  <Button variant="outline" className="flex-1 gap-2" onClick={handleDownload} disabled={isProcessing}>
+                <div className="flex gap-3 w-full max-w-md pt-8 border-t">
+                  <Button variant="outline" className="flex-1 gap-2 h-12" onClick={handleDownload} disabled={isProcessing}>
                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                    Unduh PDF
+                    Download PDF
                   </Button>
-                  <Button className="flex-1 gap-2" onClick={handlePrint}>
+                  <Button className="flex-1 gap-2 h-12" onClick={handlePrint}>
                     <Printer className="h-4 w-4" /> Cetak Sekarang
                   </Button>
                 </div>
