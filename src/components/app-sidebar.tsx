@@ -9,7 +9,8 @@ import {
   Layout, 
   LogOut,
   ChevronsLeftRight,
-  LayoutDashboard
+  LayoutDashboard,
+  Award
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -30,8 +31,9 @@ const adminItems = [
   { title: 'Dashboard', icon: LayoutDashboard, url: '/admin' },
   { title: 'Data Siswa', icon: Users, url: '/admin/students' },
   { title: 'Kartu Pelajar', icon: CreditCard, url: '/admin/cards' },
+  { title: 'Kartu Ujian', icon: Award, url: '/admin/exam-cards' },
   { title: 'Absensi', icon: CalendarCheck, url: '/admin/attendance' },
-  { title: 'Ujian', icon: FileText, url: '/admin/exams' },
+  { title: 'Event Ujian', icon: FileText, url: '/admin/exams' },
   { title: 'Template', icon: Layout, url: '/admin/templates' },
   { title: 'Settings', icon: Settings, url: '/admin/settings' },
 ];
