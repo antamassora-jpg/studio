@@ -6,24 +6,26 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
   LogIn, 
   ShieldCheck, 
-  Info, 
   Loader2, 
   Zap, 
-  Navigation,
-  CheckCircle2,
-  Users,
-  CreditCard,
-  CalendarCheck,
-  QrCode,
-  Camera,
-  X
+  CheckCircle2, 
+  Users, 
+  CreditCard, 
+  CalendarCheck, 
+  QrCode, 
+  Camera, 
+  X,
+  Download,
+  FileText,
+  Award,
+  Contact
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,12 +34,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getDB } from '@/app/lib/db';
-import { Student } from '@/app/lib/types';
+import { Student, SchoolSettings, CardTemplate, ExamEvent } from '@/app/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { 
   BarChart, 
@@ -48,6 +49,11 @@ import {
   Tooltip as RechartsTooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { StudentCardVisual } from '@/components/student-card-visual';
+import { ExamCardVisual } from '@/components/exam-card-visual';
+import { IdCardVisual } from '@/components/id-card-visual';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -56,6 +62,9 @@ export default function LandingPage() {
   const [searchResult, setSearchResult] = useState<Student | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [settings, setSettings] = useState<SchoolSettings | null>(null);
+  const [templates, setTemplates] = useState<CardTemplate[]>([]);
+  const [exams, setExams] = useState<ExamEvent[]>([]);
 
   // Login States
   const [username, setUsername] = useState('');
@@ -63,12 +72,20 @@ export default function LandingPage() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Download States
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const downloadRef = useRef<HTMLDivElement>(null);
+
   // Camera Scan States
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    const db = getDB();
+    setSettings(db.school_settings);
+    setTemplates(db.templates);
+    setExams(db.exams);
     setIsMounted(true);
   }, []);
 
@@ -80,7 +97,6 @@ export default function LandingPage() {
     
     setTimeout(() => {
       const db = getDB();
-      // Menghapus prefix VERIFY- jika ada (biasanya dari QR)
       const cleanQuery = query.replace('VERIFY-', '').trim();
       
       const found = db.students.find(s => 
@@ -102,7 +118,7 @@ export default function LandingPage() {
           description: "Nomor induk atau kode kartu tidak terdaftar di database kami."
         });
       }
-    }, 1000);
+    }, 800);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -119,7 +135,7 @@ export default function LandingPage() {
         setLoginError('Kredensial tidak valid. Silahkan hubungi IT sekolah.');
         setIsLoggingIn(false);
       }
-    }, 1500);
+    }, 1200);
   };
 
   const startScanner = async () => {
@@ -131,7 +147,6 @@ export default function LandingPage() {
         videoRef.current.srcObject = stream;
       }
       
-      // Simulasi penemuan QR code setelah 3 detik
       setTimeout(() => {
         const db = getDB();
         if (db.students.length > 0) {
@@ -141,10 +156,9 @@ export default function LandingPage() {
           handleSearch(randomStudent.card_code);
           toast({ title: "Barcode Terdeteksi", description: `Memproses kartu: ${randomStudent.card_code}` });
         }
-      }, 3500);
+      }, 3000);
 
     } catch (err) {
-      console.error("Error accessing camera:", err);
       setHasCameraPermission(false);
     }
   };
@@ -154,6 +168,42 @@ export default function LandingPage() {
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
       tracks.forEach(track => track.stop());
+    }
+  };
+
+  const handleDownloadCard = async (type: 'STUDENT' | 'EXAM' | 'ID') => {
+    if (!searchResult || !settings || !downloadRef.current) return;
+    setIsDownloading(type);
+
+    try {
+      // Tunggu render sebentar
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const frontElement = downloadRef.current.querySelector('#card-front') as HTMLElement;
+      const backElement = downloadRef.current.querySelector('#card-back') as HTMLElement;
+
+      if (!frontElement || !backElement) throw new Error("Card elements not found");
+
+      const canvasFront = await html2canvas(frontElement, { scale: 3, useCORS: true });
+      const canvasBack = await html2canvas(backElement, { scale: 3, useCORS: true });
+
+      const isID = type === 'ID';
+      const dimensions: [number, number] = isID ? [73, 111] : [85.6, 54];
+      const orientation = isID ? 'portrait' : 'landscape';
+
+      const pdf = new jsPDF({ orientation, unit: 'mm', format: dimensions });
+      pdf.addImage(canvasFront.toDataURL('image/png'), 'PNG', 0, 0, dimensions[0], dimensions[1]);
+      pdf.addPage(dimensions, orientation);
+      pdf.addImage(canvasBack.toDataURL('image/png'), 'PNG', 0, 0, dimensions[0], dimensions[1]);
+      
+      const filename = `Kartu_${type}_${searchResult.name.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(filename);
+      
+      toast({ title: "Berhasil", description: `${filename} telah diunduh.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF." });
+    } finally {
+      setIsDownloading(null);
     }
   };
 
@@ -167,21 +217,40 @@ export default function LandingPage() {
 
   if (!isMounted) return null;
 
+  const activeStudentTemplate = templates.find(t => t.type === 'STUDENT_CARD' && t.is_active);
+  const activeExamTemplate = templates.find(t => t.type === 'EXAM_CARD' && t.is_active);
+  const activeIdTemplate = templates.find(t => t.type === 'ID_CARD' && t.is_active);
+  const latestExam = exams.length > 0 ? exams[0] : undefined;
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-body selection:bg-primary/20">
-      {/* Header Portal */}
+      {/* Hidden Card Container for Export */}
+      <div className="fixed -left-[2000px] top-0 pointer-events-none" ref={downloadRef}>
+        {searchResult && settings && isDownloading === 'STUDENT' && (
+          <div className="flex flex-col gap-4">
+            <div id="card-front"><StudentCardVisual student={searchResult} settings={settings} side="front" template={activeStudentTemplate} /></div>
+            <div id="card-back"><StudentCardVisual student={searchResult} settings={settings} side="back" template={activeStudentTemplate} /></div>
+          </div>
+        )}
+        {searchResult && settings && isDownloading === 'EXAM' && (
+          <div className="flex flex-col gap-4">
+            <div id="card-front"><ExamCardVisual student={searchResult} settings={settings} exam={latestExam} side="front" template={activeExamTemplate} /></div>
+            <div id="card-back"><ExamCardVisual student={searchResult} settings={settings} exam={latestExam} side="back" template={activeExamTemplate} /></div>
+          </div>
+        )}
+        {searchResult && settings && isDownloading === 'ID' && (
+          <div className="flex flex-col gap-4">
+            <div id="card-front"><IdCardVisual student={searchResult} settings={settings} side="front" template={activeIdTemplate} /></div>
+            <div id="card-back"><IdCardVisual student={searchResult} settings={settings} side="back" template={activeIdTemplate} /></div>
+          </div>
+        )}
+      </div>
+
       <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative w-12 h-12 bg-slate-50 rounded-xl p-2 shadow-sm border border-slate-100">
-              <Image 
-                src="https://iili.io/KAqSZhb.png" 
-                alt="Logo Sekolah" 
-                fill 
-                className="object-contain"
-                priority
-                unoptimized
-              />
+              <Image src="https://iili.io/KAqSZhb.png" alt="Logo Sekolah" fill className="object-contain" priority unoptimized />
             </div>
             <div className="flex flex-col">
               <span className="font-black text-xl text-primary leading-none tracking-tighter uppercase">EduCard Portal</span>
@@ -210,24 +279,11 @@ export default function LandingPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Username</Label>
-                    <Input 
-                      value={username} 
-                      onChange={(e) => setUsername(e.target.value)} 
-                      placeholder="Masukkan ID Anda"
-                      required 
-                      className="h-12 rounded-xl border-slate-200 bg-slate-50"
-                    />
+                    <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Masukkan ID Anda" required className="h-12 rounded-xl border-slate-200 bg-slate-50" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
-                    <Input 
-                      type="password" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      placeholder="••••••••"
-                      required 
-                      className="h-12 rounded-xl border-slate-200 bg-slate-50"
-                    />
+                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-12 rounded-xl border-slate-200 bg-slate-50" />
                   </div>
                 </div>
                 {loginError && (
@@ -244,7 +300,6 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="pt-20 pb-16 bg-white relative overflow-hidden">
         <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
           <div className="space-y-8 text-center lg:text-left">
@@ -257,16 +312,6 @@ export default function LandingPage() {
             <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-lg mx-auto lg:mx-0">
               Verifikasi identitas siswa, cek keabsahan kartu, dan pantau log kehadiran melalui portal terpadu SMKN 2 Tana Toraja.
             </p>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
-               <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border">
-                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Verified Database</span>
-               </div>
-               <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border">
-                 <Zap className="h-4 w-4 text-orange-500" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Instant Sync</span>
-               </div>
-            </div>
           </div>
 
           <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100 shadow-2xl relative">
@@ -289,13 +334,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Identity Tracer - CORE FEATURE */}
       <section className="py-24 bg-slate-900 relative">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-12">
             <div className="space-y-4">
                <h2 className="text-4xl font-black text-white tracking-tight uppercase">Identity Tracer System</h2>
-               <p className="text-white/40 font-medium max-w-xl mx-auto">Verifikasi identitas siswa secara instan melalui sistem sinkronisasi database log admin menggunakan NIS atau pemindaian barcode langsung.</p>
+               <p className="text-white/40 font-medium max-w-xl mx-auto">Verifikasi identitas siswa dan unduh kartu digital Anda secara instan menggunakan NIS atau pemindaian barcode.</p>
             </div>
 
             <Card className="bg-white/5 border-white/10 rounded-[3rem] overflow-hidden backdrop-blur-xl shadow-[0_0_100px_rgba(0,0,0,0.5)]">
@@ -305,25 +349,17 @@ export default function LandingPage() {
                     <Search className="absolute left-6 top-6 h-8 w-8 text-white/20 group-focus-within:text-primary transition-colors" />
                     <Input 
                       placeholder="Masukkan NIS / NISN / Kode Kartu..." 
-                      className="pl-20 h-20 text-lg border-2 border-white/10 bg-white/5 text-white focus-visible:ring-primary rounded-[1.5rem] font-black uppercase placeholder:normal-case placeholder:font-medium placeholder:text-white/20"
+                      className="pl-20 h-20 text-lg border-2 border-white/10 bg-white/5 text-white focus-visible:ring-primary rounded-[1.5rem] font-black uppercase"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
                   <div className="flex gap-2 w-full md:w-auto">
-                    <Button 
-                      onClick={() => handleSearch()}
-                      className="h-20 px-8 font-black rounded-[1.5rem] text-[10px] tracking-widest shadow-2xl bg-primary hover:bg-primary/90 min-w-[150px]"
-                      disabled={isSearching}
-                    >
+                    <Button onClick={() => handleSearch()} className="h-20 px-8 font-black rounded-[1.5rem] text-[10px] tracking-widest shadow-2xl bg-primary hover:bg-primary/90 min-w-[150px]" disabled={isSearching}>
                       {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'TELUSURI DATA'}
                     </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={startScanner}
-                      className="h-20 w-20 flex flex-col items-center justify-center rounded-[1.5rem] border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-                    >
+                    <Button variant="outline" onClick={startScanner} className="h-20 w-20 flex flex-col items-center justify-center rounded-[1.5rem] border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
                       <QrCode className="h-6 w-6 mb-1" />
                       <span className="text-[7px] font-black uppercase tracking-tighter">SCAN</span>
                     </Button>
@@ -331,40 +367,51 @@ export default function LandingPage() {
                 </div>
 
                 {hasSearched && searchResult ? (
-                  <div className="animate-in fade-in zoom-in-95 duration-700 bg-white rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row gap-12 items-center text-left">
-                    <div className="w-48 h-64 bg-slate-100 rounded-3xl overflow-hidden relative shadow-2xl shrink-0 border-4 border-slate-50">
-                       <Image 
-                         src={searchResult.photo_url || 'https://picsum.photos/seed/placeholder/300/400'} 
-                         alt="Foto Siswa" fill className="object-cover" unoptimized 
-                       />
+                  <div className="space-y-8 animate-in fade-in zoom-in-95 duration-700">
+                    <div className="bg-white rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row gap-12 items-center text-left">
+                      <div className="w-48 h-64 bg-slate-100 rounded-3xl overflow-hidden relative shadow-2xl shrink-0 border-4 border-slate-50">
+                        <Image src={searchResult.photo_url || 'https://picsum.photos/seed/placeholder/300/400'} alt="Foto Siswa" fill className="object-cover" unoptimized />
+                      </div>
+                      <div className="flex-1 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <Badge className="bg-emerald-500 text-white font-black uppercase text-[9px] tracking-[0.2em] px-4 py-1.5 rounded-full">Kartu Aktif & Terverifikasi</Badge>
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{searchResult.card_code}</span>
+                        </div>
+                        <div>
+                          <h3 className="text-5xl font-black text-slate-900 leading-none uppercase tracking-tighter">{searchResult.name}</h3>
+                          <p className="text-primary font-black uppercase tracking-[0.3em] text-xs mt-3">{searchResult.class} - {searchResult.major}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100">
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Identitas (NIS/NISN)</p>
+                                <p className="text-base font-bold text-slate-800">{searchResult.nis} / {searchResult.nisn || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Masa Berlaku</p>
+                                <p className="text-base font-bold text-slate-800">{searchResult.valid_until}</p>
+                            </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-6">
-                       <div className="flex items-center justify-between">
-                          <Badge className="bg-emerald-500 text-white font-black uppercase text-[9px] tracking-[0.2em] px-4 py-1.5 rounded-full">Kartu Aktif & Terverifikasi</Badge>
-                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{searchResult.card_code}</span>
-                       </div>
-                       <div>
-                         <h3 className="text-5xl font-black text-slate-900 leading-none uppercase tracking-tighter">{searchResult.name}</h3>
-                         <p className="text-primary font-black uppercase tracking-[0.3em] text-xs mt-3">{searchResult.class} - {searchResult.major}</p>
-                       </div>
-                       <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100">
-                          <div>
-                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Identitas (NIS/NISN)</p>
-                             <p className="text-base font-bold text-slate-800">{searchResult.nis} / {searchResult.nisn || '-'}</p>
-                          </div>
-                          <div>
-                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Tahun Ajaran</p>
-                             <p className="text-base font-bold text-slate-800">{searchResult.school_year}</p>
-                          </div>
-                       </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Button onClick={() => handleDownloadCard('STUDENT')} className="h-16 rounded-2xl gap-3 font-black text-[10px] tracking-widest bg-white/10 hover:bg-white/20 text-white border border-white/10" disabled={!!isDownloading}>
+                        {isDownloading === 'STUDENT' ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5 text-primary" />}
+                        UNDUH KARTU PELAJAR
+                      </Button>
+                      <Button onClick={() => handleDownloadCard('EXAM')} className="h-16 rounded-2xl gap-3 font-black text-[10px] tracking-widest bg-white/10 hover:bg-white/20 text-white border border-white/10" disabled={!!isDownloading}>
+                        {isDownloading === 'EXAM' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Award className="h-5 w-5 text-orange-500" />}
+                        UNDUH KARTU UJIAN
+                      </Button>
+                      <Button onClick={() => handleDownloadCard('ID')} className="h-16 rounded-2xl gap-3 font-black text-[10px] tracking-widest bg-white/10 hover:bg-white/20 text-white border border-white/10" disabled={!!isDownloading}>
+                        {isDownloading === 'ID' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Contact className="h-5 w-5 text-emerald-500" />}
+                        UNDUH ID CARD UMUM
+                      </Button>
                     </div>
                   </div>
                 ) : hasSearched && !searchResult ? (
                    <div className="py-24 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/10">
-                      <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xl animate-pulse">
-                        Data Tidak Ditemukan Dalam Log Database
-                      </p>
-                      <p className="text-white/10 text-xs font-bold uppercase mt-4">Pastikan NIS atau Kode Kartu sudah benar</p>
+                      <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xl animate-pulse">Data Tidak Ditemukan Dalam Database</p>
                    </div>
                 ) : (
                   <div className="flex justify-center gap-16 opacity-10 py-10">
@@ -379,7 +426,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Camera Scan Modal */}
       {isScannerOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-lg relative space-y-6">
@@ -392,42 +438,24 @@ export default function LandingPage() {
                 <X className="h-6 w-6" />
               </Button>
             </div>
-            
             <div className="aspect-square w-full rounded-[3rem] border-4 border-dashed border-white/20 overflow-hidden relative bg-white/5 group">
               <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
               <div className="absolute inset-0 flex items-center justify-center">
                  <div className="w-64 h-64 border-2 border-primary rounded-3xl relative">
                     <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary -translate-x-1 -translate-y-1"></div>
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary translate-x-1 -translate-y-1"></div>
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary -translate-x-1 translate-y-1"></div>
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary translate-x-1 translate-y-1"></div>
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary animate-[bounce_3s_infinite] opacity-50 shadow-[0_0_20px_rgba(46,80,184,1)]"></div>
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary animate-[bounce_3s_infinite] opacity-50"></div>
                  </div>
               </div>
-              
-              {!hasCameraPermission && hasCameraPermission !== null && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 text-center p-8">
-                  <div className="space-y-4">
-                    <Camera className="h-12 w-12 text-destructive mx-auto" />
-                    <p className="text-white font-bold uppercase text-xs tracking-widest">Izin kamera diperlukan untuk memindai barcode</p>
-                  </div>
-                </div>
-              )}
             </div>
-            
-            <p className="text-center text-white/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-              Posisikan QR Code atau Barcode Kartu Pelajar di dalam bingkai pemindaian
-            </p>
           </div>
         </div>
       )}
 
-      {/* Footer Portal */}
       <footer className="bg-white py-20 border-t">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-12">
             <div className="flex items-center gap-6">
-               <div className="relative w-14 h-14 opacity-50 grayscale hover:grayscale-0 transition-all">
+               <div className="relative w-14 h-14 opacity-50">
                  <Image src="https://iili.io/KAqSZhb.png" alt="Logo" fill className="object-contain" unoptimized />
                </div>
                <div className="text-left">
@@ -435,19 +463,10 @@ export default function LandingPage() {
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 italic">Building a Smart & Digital Institution</p>
                </div>
             </div>
-            <div className="flex gap-8">
-               <Link href="#" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Panduan Penggunaan</Link>
-               <Link href="#" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Kebijakan Privasi</Link>
-               <Link href="#" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Support IT</Link>
-            </div>
-          </div>
-          <div className="mt-16 pt-8 border-t text-center">
-             <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
-               &copy; {new Date().getFullYear()} SMKN 2 Tana Toraja. SEMUA HAK CIPTA DILINDUNGI.
-             </p>
           </div>
         </div>
       </footer>
     </div>
   );
 }
+
