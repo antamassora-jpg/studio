@@ -11,17 +11,36 @@ export interface DB {
   templates: CardTemplate[];
 }
 
+const DEFAULT_ASSET_L = 'https://iili.io/KAqSZhb.png';
+const DEFAULT_ASSET_R = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop';
+const DEFAULT_SIG = 'https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=200&h=100&auto=format&fit=crop';
+const DEFAULT_STAMP = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=200&h=200&auto=format&fit=crop';
+
 const DEFAULT_SETTINGS: SchoolSettings = {
   school_name: 'SMKN 2 Tana Toraja',
   address: 'Jl. Poros Makale-Rantepao, Tana Toraja',
-  logo_left: 'https://iili.io/KAqSZhb.png',
-  logo_right: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop',
   principal_name: 'Drs. Nama Kepala Sekolah, M.Pd.',
   principal_nip: '19700101 199501 1 001',
-  signature_image: 'https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=200&h=100&auto=format&fit=crop',
-  stamp_image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=200&h=200&auto=format&fit=crop',
+  
+  // Student
+  logo_left: DEFAULT_ASSET_L,
+  logo_right: DEFAULT_ASSET_R,
+  signature_image: DEFAULT_SIG,
+  stamp_image: DEFAULT_STAMP,
   terms_student: '1. Kartu wajib dibawa setiap hari.\n2. Dilarang dipinjamkan.\n3. Jika hilang segera lapor ke sekolah.\n4. Berlaku selama siswa aktif.\n5. Kartu dipakai untuk scan layanan/absen.',
+
+  // Exam
+  logo_left_exam: DEFAULT_ASSET_L,
+  logo_right_exam: DEFAULT_ASSET_R,
+  signature_exam: DEFAULT_SIG,
+  stamp_exam: DEFAULT_STAMP,
   terms_exam: '1. Kartu wajib dibawa setiap sesi ujian.\n2. Hadir 15 menit sebelum ujian dimulai.\n3. Dilarang membawa alat komunikasi/HP.\n4. Menjaga ketertiban di dalam ruang ujian.',
+
+  // ID Card
+  logo_left_id: DEFAULT_ASSET_L,
+  logo_right_id: DEFAULT_ASSET_R,
+  signature_id: DEFAULT_SIG,
+  stamp_id: DEFAULT_STAMP,
   terms_id: '1. Kartu identitas resmi SMKN 2 Tana Toraja.\n2. Wajib dikenakan selama jam dinas/operasional.\n3. Penyalahgunaan kartu akan dikenakan sanksi.\n4. Temukan kartu? Hubungi admin sekolah.',
 };
 
@@ -79,13 +98,31 @@ export function getDB(): DB {
   }
   try {
     const parsed = JSON.parse(stored);
-    // Migration for new terms fields if they don't exist
+    
+    // Migration for new fields
+    let changed = false;
     if (parsed.school_settings && !parsed.school_settings.terms_student) {
       parsed.school_settings.terms_student = DEFAULT_SETTINGS.terms_student;
       parsed.school_settings.terms_exam = DEFAULT_SETTINGS.terms_exam;
       parsed.school_settings.terms_id = DEFAULT_SETTINGS.terms_id;
-      saveDB(parsed);
+      changed = true;
     }
+
+    // Migration for specific assets
+    if (parsed.school_settings && !parsed.school_settings.logo_left_exam) {
+      parsed.school_settings.logo_left_exam = parsed.school_settings.logo_left || DEFAULT_SETTINGS.logo_left;
+      parsed.school_settings.logo_right_exam = parsed.school_settings.logo_right || DEFAULT_SETTINGS.logo_right;
+      parsed.school_settings.signature_exam = parsed.school_settings.signature_image || DEFAULT_SETTINGS.signature_image;
+      parsed.school_settings.stamp_exam = parsed.school_settings.stamp_image || DEFAULT_SETTINGS.stamp_image;
+      
+      parsed.school_settings.logo_left_id = parsed.school_settings.logo_left || DEFAULT_SETTINGS.logo_left;
+      parsed.school_settings.logo_right_id = parsed.school_settings.logo_right || DEFAULT_SETTINGS.logo_right;
+      parsed.school_settings.signature_id = parsed.school_settings.signature_image || DEFAULT_SETTINGS.signature_image;
+      parsed.school_settings.stamp_id = parsed.school_settings.stamp_image || DEFAULT_SETTINGS.stamp_image;
+      changed = true;
+    }
+
+    if (changed) saveDB(parsed);
     return parsed;
   } catch (e) {
     return INITIAL_DB;

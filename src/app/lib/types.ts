@@ -17,14 +17,28 @@ export interface Student {
 export interface SchoolSettings {
   school_name: string;
   address: string;
-  logo_left: string;
-  logo_right: string;
   principal_name: string;
   principal_nip?: string;
+  
+  // Student Card Assets (Default)
+  logo_left: string;
+  logo_right: string;
   signature_image: string;
   stamp_image: string;
   terms_student: string;
+
+  // Exam Card Assets
+  logo_left_exam: string;
+  logo_right_exam: string;
+  signature_exam: string;
+  stamp_exam: string;
   terms_exam: string;
+
+  // ID Card Assets
+  logo_left_id: string;
+  logo_right_id: string;
+  signature_id: string;
+  stamp_id: string;
   terms_id: string;
 }
 

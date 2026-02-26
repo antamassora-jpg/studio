@@ -42,13 +42,18 @@ export function IdCardVisual({
     color: current.textColor
   };
 
+  // Use ID card specific assets
+  const logoL = settings.logo_left_id || settings.logo_left;
+  const sig = settings.signature_id || settings.signature_image;
+  const stamp = settings.stamp_id || settings.stamp_image;
+
   if (side === 'front') {
     return (
       <div style={cardStyle} className="relative rounded-2xl shadow-2xl border overflow-hidden select-none font-sans flex flex-col">
         <div style={{ backgroundColor: current.headerBg }} className="relative z-20 pt-10 pb-6 px-6 flex flex-col items-center shadow-lg">
           <div className="flex items-center gap-4 w-full text-white">
             <div className="w-12 h-12 relative bg-white rounded-xl p-2 shadow-inner">
-              <Image src={settings.logo_left} alt="Logo" fill className="object-contain" priority />
+              <Image src={logoL} alt="Logo" fill className="object-contain" priority />
             </div>
             <div className="flex flex-col">
               <h2 className="font-black text-[11px] uppercase leading-none tracking-tight drop-shadow-sm">{settings.school_name}</h2>
@@ -96,7 +101,7 @@ export function IdCardVisual({
     <div style={cardStyle} className="relative rounded-2xl shadow-2xl border overflow-hidden select-none font-sans flex flex-col p-8">
       <div className="relative z-10 flex flex-col items-center h-full text-center">
         <div className="w-14 h-14 relative mb-4">
-           <Image src={settings.logo_left} alt="Logo" fill className="object-contain" />
+           <Image src={logoL} alt="Logo" fill className="object-contain" />
         </div>
         <h3 className="font-black text-[12px] uppercase tracking-tight mb-8 text-slate-800">
           {settings.school_name}
@@ -126,7 +131,7 @@ export function IdCardVisual({
             </div>
             <div className="text-center">
                <div className="w-20 h-10 relative mb-1">
-                  <Image src={settings.stamp_image} alt="Stamp" fill className="object-contain" />
+                  <Image src={stamp} alt="Stamp" fill className="object-contain" />
                </div>
                <p className="text-[8px] font-bold uppercase text-slate-800">{settings.principal_name}</p>
             </div>
