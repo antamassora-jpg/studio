@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Sparkles, Upload, Camera, CreditCard, Award, Contact } from 'lucide-react';
-import { refineCardTerms } from '@/ai/flows/refine-card-terms-flow';
+import { Save, Upload, Camera, CreditCard, Award, Contact } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +17,6 @@ import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
-  const [isRefining, setIsRefining] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     setSettings(getDB().school_settings);
@@ -42,20 +40,6 @@ export default function SettingsPage() {
       toast({ title: "Berhasil", description: "Aset telah diperbarui." });
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleAiRefine = async (field: 'terms_student' | 'terms_exam' | 'terms_id') => {
-    if (!settings?.[field]) return;
-    setIsRefining(prev => ({ ...prev, [field]: true }));
-    try {
-      const result = await refineCardTerms({ rawTermsText: settings[field] });
-      setSettings({ ...settings, [field]: result.refinedTermsText });
-      toast({ title: "AI Refined", description: "Ketentuan kartu telah diperbaiki secara otomatis." });
-    } catch (err) {
-      toast({ title: "Gagal", description: "Gagal memproses AI." });
-    } finally {
-      setIsRefining(prev => ({ ...prev, [field]: false }));
-    }
   };
 
   if (!settings) return null;
@@ -123,27 +107,18 @@ export default function SettingsPage() {
                   <TabsContent value="student" className="mt-0">
                     <div className="flex justify-between items-center mb-2">
                       <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan Kartu Pelajar</Label>
-                      <Button variant="outline" size="sm" className="gap-2 text-secondary border-secondary h-8" onClick={() => handleAiRefine('terms_student')} disabled={isRefining['terms_student']}>
-                        <Sparkles className="h-3 w-3" /> AI Refine
-                      </Button>
                     </div>
                     <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_student} onChange={e => setSettings({...settings, terms_student: e.target.value})} />
                   </TabsContent>
                   <TabsContent value="exam" className="mt-0">
                     <div className="flex justify-between items-center mb-2">
                       <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan Kartu Ujian</Label>
-                      <Button variant="outline" size="sm" className="gap-2 text-secondary border-secondary h-8" onClick={() => handleAiRefine('terms_exam')} disabled={isRefining['terms_exam']}>
-                        <Sparkles className="h-3 w-3" /> AI Refine
-                      </Button>
                     </div>
                     <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_exam} onChange={e => setSettings({...settings, terms_exam: e.target.value})} />
                   </TabsContent>
                   <TabsContent value="id" className="mt-0">
                     <div className="flex justify-between items-center mb-2">
                       <Label className="text-xs font-bold uppercase text-muted-foreground">Ketentuan ID Card</Label>
-                      <Button variant="outline" size="sm" className="gap-2 text-secondary border-secondary h-8" onClick={() => handleAiRefine('terms_id')} disabled={isRefining['terms_id']}>
-                        <Sparkles className="h-3 w-3" /> AI Refine
-                      </Button>
                     </div>
                     <Textarea className="min-h-[120px] font-mono text-sm" value={settings.terms_id} onChange={e => setSettings({...settings, terms_id: e.target.value})} />
                   </TabsContent>
