@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, ArrowLeft, CheckCircle2, XCircle, Clock, History, ChevronsLeftRight } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, Clock, History, ChevronsLeftRight } from 'lucide-react';
 import { getDB, saveDB } from '@/app/lib/db';
 import { Student, AttendanceLog } from '@/app/lib/types';
 import Image from 'next/image';
@@ -18,12 +18,14 @@ export default function ScannerPage() {
   const [lastScan, setLastScan] = useState<{ status: 'valid' | 'invalid' | 'duplicate', student?: Student, reason?: string } | null>(null);
   const [todayLogs, setTodayLogs] = useState<AttendanceLog[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const db = getDB();
     setStudents(db.students);
     const todayStr = new Date().toISOString().split('T')[0];
     setTodayLogs(db.logs.filter(l => l.date === todayStr));
+    setIsMounted(true);
   }, []);
 
   const simulateScan = () => {
@@ -124,7 +126,7 @@ export default function ScannerPage() {
             {lastScan && (
               <div className={`p-4 rounded-xl flex items-center gap-4 border ${lastScan.status === 'valid' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
                 <div className="w-12 h-16 relative rounded-md overflow-hidden bg-muted flex-shrink-0">
-                   <Image src={lastScan.student?.photo_url || ''} alt="Foto" fill className="object-cover" />
+                   {lastScan.student?.photo_url && <Image src={lastScan.student.photo_url} alt="Foto" fill className="object-cover" />}
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <div className="flex items-center gap-2">
@@ -164,7 +166,7 @@ export default function ScannerPage() {
                     <div>
                       <div className="text-sm font-semibold">{s?.name}</div>
                       <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-                        <Clock className="h-3 w-3" /> {new Date(log.scanned_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <Clock className="h-3 w-3" /> {isMounted ? new Date(log.scanned_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}
                       </div>
                     </div>
                   </div>

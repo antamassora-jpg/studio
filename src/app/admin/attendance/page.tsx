@@ -25,11 +25,13 @@ export default function AttendanceAdminPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const db = getDB();
     setLogs(db.logs);
     setStudents(db.students);
+    setIsMounted(true);
   }, []);
 
   const handleAiAnalysis = async () => {
@@ -137,7 +139,9 @@ export default function AttendanceAdminPage() {
                   const s = students.find(x => x.id === log.student_id);
                   return (
                     <TableRow key={log.id}>
-                      <TableCell className="text-xs">{new Date(log.scanned_at).toLocaleTimeString()}</TableCell>
+                      <TableCell className="text-xs">
+                        {isMounted ? new Date(log.scanned_at).toLocaleTimeString() : '--:--'}
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{s?.name || 'Siswa'}</div>
                         <div className="text-[10px] text-muted-foreground">{s?.class} - {s?.major}</div>

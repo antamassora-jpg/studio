@@ -4,9 +4,9 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getDB } from '@/app/lib/db';
 import { Student, SchoolSettings } from '@/app/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
+import { XCircle, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 
 export default function VerifyPage() {
@@ -14,6 +14,7 @@ export default function VerifyPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const db = getDB();
@@ -21,6 +22,7 @@ export default function VerifyPage() {
     setStudent(s || null);
     setSettings(db.school_settings);
     setLoading(false);
+    setIsMounted(true);
   }, [params.code]);
 
   if (loading) return null;
@@ -41,7 +43,7 @@ export default function VerifyPage() {
             <div className={`h-2 ${student.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'}`}></div>
             <CardContent className="pt-8 pb-8 flex flex-col items-center">
               <div className={`w-32 h-40 bg-muted rounded-xl relative overflow-hidden border-4 ${student.status === 'Aktif' ? 'border-green-100' : 'border-red-100'} shadow-inner mb-6`}>
-                <Image src={student.photo_url || ''} alt={student.name} fill className="object-cover" />
+                {student.photo_url && <Image src={student.photo_url} alt={student.name} fill className="object-cover" />}
               </div>
 
               <div className="text-center space-y-1 mb-6">
@@ -83,7 +85,7 @@ export default function VerifyPage() {
         )}
 
         <p className="text-center mt-8 text-[10px] text-muted-foreground opacity-60">
-           &copy; {new Date().getFullYear()} EduCard Sync. SMKN 2 Tana Toraja.
+           &copy; {isMounted ? new Date().getFullYear() : '2024'} EduCard Sync. SMKN 2 Tana Toraja.
         </p>
       </div>
     </div>

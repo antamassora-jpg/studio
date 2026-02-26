@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,16 @@ import {
   ShieldCheck, 
   ArrowRight,
   ChevronRight,
-  Users,
   CheckCircle2
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Navigation */}
@@ -284,7 +289,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-xs opacity-50 uppercase tracking-widest font-bold">
-            <p>&copy; {new Date().getFullYear()} SMKN 2 TANA TORAJA. ALL RIGHTS RESERVED.</p>
+            <p>&copy; {isMounted ? new Date().getFullYear() : '2024'} SMKN 2 TANA TORAJA. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-8">
               <span>Privacy Policy</span>
               <span>Terms of Service</span>
