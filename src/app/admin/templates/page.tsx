@@ -89,10 +89,11 @@ export default function TemplatesPage() {
     setTemplates(db.templates);
     setSettings(db.school_settings);
     
-    // Gunakan siswa riil pertama jika ada, jika tidak sediakan data simulasi yang lengkap
+    // Ambil data siswa asli pertama dari database untuk pratinjau
     if (db.students.length > 0) {
       setPreviewStudent(db.students[0]);
     } else {
+      // Data simulasi jika database siswa kosong
       setPreviewStudent({
         id: 'mock',
         name: 'CONTOH NAMA SISWA',
@@ -153,6 +154,7 @@ export default function TemplatesPage() {
     const template = db.templates.find(t => t.id === id);
     if (!template) return;
 
+    // Aktifkan satu template dan nonaktifkan template lain dalam kategori yang sama
     const updated = db.templates.map(t => {
       if (t.type === template.type) {
         return { ...t, is_active: t.id === id };
@@ -222,7 +224,7 @@ export default function TemplatesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
-          <p className="text-muted-foreground">Otomatis sinkron dengan data Siswa & Settings Sekolah.</p>
+          <p className="text-muted-foreground">Konfigurasi visual otomatis menggunakan aset sekolah dan data siswa asli.</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -235,14 +237,14 @@ export default function TemplatesPage() {
               <DialogHeader>
                 <DialogTitle>Tambah Varian Desain</DialogTitle>
                 <DialogDescription>
-                  Data visual akan secara otomatis mengambil dari pengaturan sekolah yang aktif.
+                  Pilih tipe kartu untuk varian desain baru Anda.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Nama Template</Label>
                   <Input 
-                    placeholder="Contoh: Green Nature / Professional Blue" 
+                    placeholder="Contoh: Modern Dark / School Spirit" 
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
                   />
@@ -276,7 +278,7 @@ export default function TemplatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
           <Card key={template.id} className={cn(
-            "overflow-hidden border-2 transition-all flex flex-col group",
+            "overflow-hidden border-2 transition-all flex flex-col group relative",
             template.is_active ? "border-primary shadow-lg bg-primary/[0.02]" : "border-transparent hover:border-slate-200"
           )}>
             <CardHeader className="pb-4 relative">
@@ -324,9 +326,8 @@ export default function TemplatesPage() {
                   ) : template.type === 'ID_CARD' && previewStudent && settings ? (
                     <IdCardVisual student={previewStudent} settings={settings} side="front" template={template} />
                   ) : (
-                    <div className="text-center p-8 text-muted-foreground">
-                      <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                      <p className="text-[10px] uppercase font-bold">Data Settings Belum Siap</p>
+                    <div className="text-center p-8 text-muted-foreground italic">
+                      Data tidak tersedia
                     </div>
                   )}
                 </div>
@@ -355,12 +356,12 @@ export default function TemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Template?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Template yang dihapus akan hilang dari sistem secara permanen.
+              Tindakan ini permanen. Template "{templates.find(t => t.id === templateToDelete)?.name}" akan dihapus dari sistem.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground">
               Hapus Selamanya
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -374,10 +375,10 @@ export default function TemplatesPage() {
               <div>
                 <DialogTitle className="text-2xl font-bold">Kustomisasi Desain</DialogTitle>
                 <DialogDescription>
-                  Gunakan aset riil sekolah untuk pratinjau yang akurat.
+                  Atur warna, font, dan background. Pratinjau otomatis menggunakan data sekolah.
                 </DialogDescription>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground hover:text-destructive hover:border-destructive" onClick={handleResetConfig}>
+              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground" onClick={handleResetConfig}>
                 <RotateCcw className="h-3 w-3" /> Reset ke Default
               </Button>
             </div>
@@ -394,7 +395,7 @@ export default function TemplatesPage() {
                 {['front', 'back'].map((side) => (
                   <TabsContent key={side} value={side} className="space-y-6 py-4 border rounded-xl p-4 mt-4 bg-slate-50/50">
                     <div className="space-y-4">
-                      <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Warna & Tipografi</Label>
+                      <Label className="text-[10px] uppercase font-black text-muted-foreground">Warna & Tipografi</Label>
                       <div className="grid grid-cols-1 gap-3">
                         <div className="bg-white p-3 rounded-lg border shadow-sm space-y-2">
                           <Label className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
@@ -424,21 +425,21 @@ export default function TemplatesPage() {
                     </div>
 
                     <div className="space-y-3 pt-4 border-t">
-                      <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Background Image</Label>
+                      <Label className="text-[10px] uppercase font-black text-muted-foreground">Background Image</Label>
                       <div className="border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-3 bg-white">
                         {localConfig[side].bgImage ? (
-                          <div className="relative w-full aspect-video rounded-lg overflow-hidden border shadow-sm">
+                          <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                             <img src={localConfig[side].bgImage} className="w-full h-full object-cover" alt="BG" />
                             <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={() => setLocalConfig({...localConfig, [side]: {...localConfig[side], bgImage: ''}})}>×</Button>
                           </div>
                         ) : (
                           <div className="text-center py-4 opacity-50">
-                            <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-[9px] font-bold">Upload file PNG/JPG</p>
+                            <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                            <p className="text-[9px] font-bold">Upload file gambar latar</p>
                           </div>
                         )}
                         <Label className="w-full">
-                          <div className="w-full h-10 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-primary/90 transition-all shadow-md">
+                          <div className="w-full h-10 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 cursor-pointer">
                             <Upload className="h-3 w-3" /> Pilih Gambar
                           </div>
                           <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(side as 'front' | 'back', e)} />
@@ -451,7 +452,7 @@ export default function TemplatesPage() {
             </div>
 
             <div className="flex flex-col items-center justify-center bg-slate-100 rounded-2xl border-2 border-slate-200 p-8 min-h-[400px]">
-              <div className="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-[0.3em]">Live Pratinjau (Data Settings Aktif)</div>
+              <div className="text-[10px] font-black uppercase text-slate-400 mb-6">Live Pratinjau (Aset Riil)</div>
               <div className={cn(
                 "transform transition-transform scale-90",
                 editingTemplate?.type === 'ID_CARD' ? 'scale-[0.8]' : 'scale-[1]'
@@ -478,7 +479,7 @@ export default function TemplatesPage() {
 
           <DialogFooter className="border-t pt-6">
             <Button variant="ghost" onClick={() => setIsConfigOpen(false)}>Batal</Button>
-            <Button className="gap-2 px-8 font-bold shadow-lg shadow-primary/20 h-11" onClick={handleSaveConfig}>
+            <Button className="gap-2 px-8 font-bold" onClick={handleSaveConfig}>
               <Save className="h-4 w-4" /> Simpan Konfigurasi
             </Button>
           </DialogFooter>
@@ -491,10 +492,7 @@ export default function TemplatesPage() {
 function ColorInput({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-4 bg-white p-2.5 rounded-lg border shadow-sm">
-      <div className="flex flex-col">
-        <Label className="text-[11px] font-bold text-slate-700">{label}</Label>
-        <span className="text-[9px] font-mono text-slate-400 uppercase">{value}</span>
-      </div>
+      <Label className="text-[11px] font-bold text-slate-700">{label}</Label>
       <input 
         type="color" 
         className="w-10 h-10 p-0 border-none rounded-lg cursor-pointer bg-transparent"
