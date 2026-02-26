@@ -74,7 +74,7 @@ export function StudentCardVisual({
               {student.photo_url ? (
                 <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400">FOTO</div>
+                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO SISWA</div>
               )}
             </div>
           </div>

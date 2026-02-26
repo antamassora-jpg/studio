@@ -17,8 +17,7 @@ import {
   ChevronRight, 
   Type, 
   Plus, 
-  Trash2, 
-  AlertCircle
+  Trash2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
@@ -80,10 +79,8 @@ export default function TemplatesPage() {
 
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateType, setNewTemplateType] = useState<TemplateType>('STUDENT_CARD');
-  
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
-  // Fungsi untuk memuat ulang data dari DB
   const refreshData = () => {
     const db = getDB();
     setTemplates(db.templates);
@@ -93,17 +90,17 @@ export default function TemplatesPage() {
       setPreviewStudent(db.students[0]);
     } else {
       setPreviewStudent({
-        id: 'mock',
-        name: 'CONTOH NAMA SISWA',
-        nis: '2021001',
-        nisn: '0051234567',
+        id: 'mock-1',
+        name: 'CONTOH NAMA SISWA LENGKAP',
+        nis: '20210001',
+        nisn: '0059876543',
         class: 'XII',
         major: 'TEKNIK KOMPUTER & JARINGAN',
         school_year: '2024/2025',
-        photo_url: 'https://picsum.photos/seed/student-mock/300/400',
+        photo_url: 'https://picsum.photos/seed/student-demo/300/400',
         status: 'Aktif',
         valid_until: '2025-06-30',
-        card_code: 'ED-SYNC-001'
+        card_code: 'ED-SYNC-DEMO-01'
       });
     }
   };
@@ -128,10 +125,9 @@ export default function TemplatesPage() {
 
   const handleAddTemplate = () => {
     if (!newTemplateName.trim()) {
-      toast({ title: "Gagal", description: "Nama template tidak boleh kosong.", variant: "destructive" });
+      toast({ title: "Gagal", description: "Nama template wajib diisi.", variant: "destructive" });
       return;
     }
-
     const db = getDB();
     const newTemplate: CardTemplate = {
       id: Math.random().toString(36).substr(2, 9),
@@ -141,83 +137,52 @@ export default function TemplatesPage() {
       is_active: false,
       preview_color: 'bg-slate-500'
     };
-
-    const updated = [...db.templates, newTemplate];
-    db.templates = updated;
+    db.templates.push(newTemplate);
     saveDB(db);
-    setTemplates(updated);
+    setTemplates([...db.templates]);
     setIsAddOpen(false);
     setNewTemplateName('');
-    toast({ title: "Berhasil", description: "Template baru telah ditambahkan." });
+    toast({ title: "Berhasil", description: "Template baru ditambahkan." });
   };
 
   const handleToggleActive = (id: string) => {
     const db = getDB();
     const template = db.templates.find(t => t.id === id);
     if (!template) return;
-
-    const updated = db.templates.map(t => {
-      if (t.type === template.type) {
-        return { ...t, is_active: t.id === id };
-      }
+    db.templates = db.templates.map(t => {
+      if (t.type === template.type) return { ...t, is_active: t.id === id };
       return t;
     });
-    
-    db.templates = updated;
     saveDB(db);
-    setTemplates(updated);
-    toast({ title: "Template Diperbarui", description: `Template "${template.name}" sekarang aktif.` });
+    setTemplates(db.templates);
+    toast({ title: "Aktif", description: `Template ${template.name} diaktifkan.` });
   };
 
   const handleDeleteConfirm = () => {
     if (!templateToDelete) return;
-    
     const db = getDB();
-    const updated = db.templates.filter(t => t.id !== templateToDelete);
-    db.templates = updated;
+    db.templates = db.templates.filter(t => t.id !== templateToDelete);
     saveDB(db);
-    setTemplates(updated);
+    setTemplates(db.templates);
     setTemplateToDelete(null);
-    toast({ title: "Dihapus", description: "Template telah dihapus dari sistem." });
+    toast({ title: "Dihapus", description: "Template telah dihapus." });
   };
 
   const openConfig = (template: CardTemplate) => {
-    setEditingTemplate({ ...template });
+    setEditingTemplate(template);
     setIsConfigOpen(true);
-  };
-
-  const handleImageUpload = (side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLocalConfig({
-        ...localConfig,
-        [side]: { ...localConfig[side], bgImage: reader.result as string }
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleResetConfig = () => {
-    setLocalConfig(DEFAULT_CONFIG);
-    toast({ title: "Reset", description: "Konfigurasi dikembalikan ke pengaturan awal." });
   };
 
   const handleSaveConfig = () => {
     if (!editingTemplate) return;
     const db = getDB();
-    const updatedTemplate = {
-      ...editingTemplate,
-      config_json: JSON.stringify(localConfig)
-    };
-    const updated = db.templates.map(t => t.id === editingTemplate.id ? updatedTemplate : t);
-    db.templates = updated;
+    db.templates = db.templates.map(t => 
+      t.id === editingTemplate.id ? { ...t, config_json: JSON.stringify(localConfig) } : t
+    );
     saveDB(db);
-    setTemplates(updated);
+    setTemplates(db.templates);
     setIsConfigOpen(false);
-    toast({ title: "Tersimpan", description: `Desain ${editingTemplate.name} telah diperbarui.` });
+    toast({ title: "Tersimpan", description: "Konfigurasi desain diperbarui." });
   };
 
   return (
@@ -225,7 +190,7 @@ export default function TemplatesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
-          <p className="text-muted-foreground">Kustomisasi visual kartu menggunakan data asli dari Data Siswa & Settings.</p>
+          <p className="text-muted-foreground">Sesuaikan tampilan kartu dengan data riil dari Settings & Siswa.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={refreshData} className="gap-2">
@@ -234,34 +199,20 @@ export default function TemplatesPage() {
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20">
-                <Plus className="h-4 w-4" /> Buat Template Baru
+                <Plus className="h-4 w-4" /> Template Baru
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Tambah Varian Desain</DialogTitle>
-                <DialogDescription>
-                  Pilih tipe kartu untuk varian desain baru Anda.
-                </DialogDescription>
-              </DialogHeader>
+              <DialogHeader><DialogTitle>Tambah Varian Desain</DialogTitle></DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Nama Template</Label>
-                  <Input 
-                    placeholder="Contoh: Modern Dark / School Spirit" 
-                    value={newTemplateName}
-                    onChange={(e) => setNewTemplateName(e.target.value)}
-                  />
+                  <Input placeholder="Misal: Blue Modern" value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Tipe Kartu</Label>
-                  <Select 
-                    value={newTemplateType} 
-                    onValueChange={(val: TemplateType) => setNewTemplateType(val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={newTemplateType} onValueChange={(v: any) => setNewTemplateType(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="STUDENT_CARD">Kartu Pelajar</SelectItem>
                       <SelectItem value="EXAM_CARD">Kartu Ujian</SelectItem>
@@ -270,10 +221,7 @@ export default function TemplatesPage() {
                   </Select>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsAddOpen(false)}>Batal</Button>
-                <Button onClick={handleAddTemplate}>Simpan Template</Button>
-              </DialogFooter>
+              <DialogFooter><Button onClick={handleAddTemplate}>Simpan</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -282,67 +230,46 @@ export default function TemplatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
           <Card key={template.id} className={cn(
-            "overflow-hidden border-2 transition-all flex flex-col group relative",
-            template.is_active ? "border-primary shadow-lg bg-primary/[0.02]" : "border-transparent hover:border-slate-200"
+            "overflow-hidden border-2 transition-all group relative flex flex-col",
+            template.is_active ? "border-primary shadow-lg" : "border-transparent"
           )}>
-            <CardHeader className="pb-4 relative">
-              <div className="flex justify-between items-start">
-                <div className={cn("p-2 rounded-lg border shadow-sm text-white transition-transform group-hover:scale-110", template.preview_color || 'bg-slate-400')}>
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <div className={cn("p-2 rounded-lg text-white", template.preview_color || 'bg-slate-400')}>
                   <Layout className="h-5 w-5" />
                 </div>
                 <div className="flex gap-2">
-                  {template.is_active ? (
-                    <Badge className="gap-1 bg-primary px-3 py-1">
-                      <CheckCircle2 className="h-3 w-3" /> Aktif
-                    </Badge>
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-destructive opacity-40 hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTemplateToDelete(template.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                   {template.is_active ? (
+                     <Badge className="bg-primary">AKTIF</Badge>
+                   ) : (
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-30 group-hover:opacity-100" onClick={() => setTemplateToDelete(template.id)}>
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   )}
                 </div>
               </div>
-              <div className="mt-4">
-                <CardTitle className="text-xl font-bold">{template.name}</CardTitle>
-                <CardDescription className="flex items-center gap-1 font-medium italic">
-                  {template.type.replace('_', ' ')} <ChevronRight className="h-3 w-3" />
-                </CardDescription>
-              </div>
+              <CardTitle className="mt-4">{template.name}</CardTitle>
+              <CardDescription className="uppercase text-[10px] font-bold tracking-widest">{template.type.replace('_', ' ')}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col pt-2 space-y-6">
-              <div className="aspect-[4/5] bg-slate-50 rounded-xl flex items-center justify-center border-2 border-dashed relative overflow-hidden shadow-inner group-hover:bg-white transition-colors">
-                <div className={cn(
-                  "origin-center transform transition-transform duration-500 group-hover:scale-[0.65]",
-                  template.type === 'ID_CARD' ? 'scale-[0.5]' : 'scale-[0.6]'
-                )}>
-                  {template.type === 'STUDENT_CARD' && previewStudent && settings ? (
-                    <StudentCardVisual student={previewStudent} settings={settings} template={template} />
-                  ) : template.type === 'EXAM_CARD' && previewStudent && settings ? (
-                    <ExamCardVisual student={previewStudent} settings={settings} template={template} />
-                  ) : template.type === 'ID_CARD' && previewStudent && settings ? (
-                    <IdCardVisual student={previewStudent} settings={settings} side="front" template={template} />
-                  ) : null}
+            <CardContent className="flex-1 flex flex-col gap-6">
+              <div className="aspect-[4/5] bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed overflow-hidden group">
+                <div className="scale-[0.55] transition-transform group-hover:scale-[0.6]">
+                   {template.type === 'STUDENT_CARD' && previewStudent && settings && (
+                     <StudentCardVisual student={previewStudent} settings={settings} template={template} />
+                   )}
+                   {template.type === 'EXAM_CARD' && previewStudent && settings && (
+                     <ExamCardVisual student={previewStudent} settings={settings} template={template} />
+                   )}
+                   {template.type === 'ID_CARD' && previewStudent && settings && (
+                     <IdCardVisual student={previewStudent} settings={settings} side="front" template={template} />
+                   )}
                 </div>
               </div>
-
-              <div className="flex gap-2 mt-auto pt-4">
-                <Button 
-                  className="flex-1 gap-2 font-bold" 
-                  variant={template.is_active ? 'secondary' : 'default'}
-                  onClick={() => handleToggleActive(template.id)}
-                  disabled={template.is_active}
-                >
-                  {template.is_active ? 'Sedang Aktif' : 'Aktifkan'}
+              <div className="flex gap-2">
+                <Button className="flex-1" variant={template.is_active ? 'secondary' : 'default'} onClick={() => handleToggleActive(template.id)} disabled={template.is_active}>
+                  {template.is_active ? 'Digunakan' : 'Gunakan'}
                 </Button>
-                <Button variant="outline" size="icon" className="shadow-sm" onClick={() => openConfig(template)}>
+                <Button variant="outline" size="icon" onClick={() => openConfig(template)}>
                   <Palette className="h-4 w-4 text-primary" />
                 </Button>
               </div>
@@ -351,154 +278,95 @@ export default function TemplatesPage() {
         ))}
       </div>
 
-      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+      <AlertDialog open={!!templateToDelete} onOpenChange={o => !o && setTemplateToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Template?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini permanen. Template "{templates.find(t => t.id === templateToDelete)?.name}" akan dihapus.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tindakan ini permanen. Pastikan Anda tidak memerlukan desain ini lagi.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground">
-              Hapus Selamanya
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-white">Hapus</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <DialogTitle className="text-2xl font-bold">Kustomisasi Desain</DialogTitle>
-                <DialogDescription>
-                  Data siswa & sekolah dari database Anda ditampilkan di sini secara real-time.
-                </DialogDescription>
-              </div>
-              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground" onClick={handleResetConfig}>
-                <RotateCcw className="h-3 w-3" /> Reset ke Default
-              </Button>
+            <div className="flex justify-between items-center">
+               <DialogTitle>Kustomisasi Desain: {editingTemplate?.name}</DialogTitle>
+               <Button variant="ghost" size="sm" onClick={() => setLocalConfig(DEFAULT_CONFIG)} className="gap-2 text-muted-foreground">
+                 <RotateCcw className="h-4 w-4" /> Reset ke Default
+               </Button>
             </div>
           </DialogHeader>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
             <div className="space-y-6">
-              <Tabs defaultValue="front" className="w-full">
+              <Tabs defaultValue="front">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="front">Sisi Depan</TabsTrigger>
                   <TabsTrigger value="back">Sisi Belakang</TabsTrigger>
                 </TabsList>
-                
-                {['front', 'back'].map((side) => (
-                  <TabsContent key={side} value={side} className="space-y-6 py-4 border rounded-xl p-4 mt-4 bg-slate-50/50">
-                    <div className="space-y-4">
-                      <Label className="text-[10px] uppercase font-black text-muted-foreground">Warna & Tipografi</Label>
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="bg-white p-3 rounded-lg border shadow-sm space-y-2">
-                          <Label className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
-                            <Type className="h-3 w-3" /> Jenis Font
-                          </Label>
-                          <Select 
-                            value={localConfig[side].fontFamily} 
-                            onValueChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], fontFamily: val}})}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FONT_OPTIONS.map(font => (
-                                <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>
-                                  {font.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <ColorInput label="Header" value={localConfig[side].headerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: val}})} />
-                        <ColorInput label="Body" value={localConfig[side].bodyBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: val}})} />
-                        <ColorInput label="Footer" value={localConfig[side].footerBg} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: val}})} />
-                        <ColorInput label="Teks" value={localConfig[side].textColor} onChange={(val) => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: val}})} />
-                      </div>
+                {['front', 'back'].map(side => (
+                  <TabsContent key={side} value={side} className="space-y-4 p-4 bg-muted/20 rounded-xl mt-4 border">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase">Jenis Font</Label>
+                      <Select value={localConfig[side].fontFamily} onValueChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], fontFamily: v}})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {FONT_OPTIONS.map(f => <SelectItem key={f.value} value={f.value} style={{fontFamily: f.value}}>{f.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <div className="space-y-3 pt-4 border-t">
-                      <Label className="text-[10px] uppercase font-black text-muted-foreground">Background Image</Label>
-                      <div className="border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-3 bg-white">
-                        {localConfig[side].bgImage ? (
-                          <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                            <img src={localConfig[side].bgImage} className="w-full h-full object-cover" alt="BG" />
-                            <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={() => setLocalConfig({...localConfig, [side]: {...localConfig[side], bgImage: ''}})}>×</Button>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4 opacity-50">
-                            <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-                            <p className="text-[9px] font-bold">Upload latar khusus</p>
-                          </div>
-                        )}
-                        <Label className="w-full">
-                          <div className="w-full h-10 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 cursor-pointer">
-                            <Upload className="h-3 w-3" /> Pilih Gambar
-                          </div>
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(side as 'front' | 'back', e)} />
-                        </Label>
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ColorField label="Header" value={localConfig[side].headerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: v}})} />
+                      <ColorField label="Body" value={localConfig[side].bodyBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: v}})} />
+                      <ColorField label="Footer" value={localConfig[side].footerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: v}})} />
+                      <ColorField label="Teks" value={localConfig[side].textColor} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: v}})} />
                     </div>
                   </TabsContent>
                 ))}
               </Tabs>
             </div>
 
-            <div className="flex flex-col items-center justify-center bg-slate-100 rounded-2xl border-2 border-slate-200 p-8 min-h-[400px]">
-              <div className="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">Live Pratinjau (Data Riil)</div>
-              <div className={cn(
-                "transform transition-transform scale-90",
-                editingTemplate?.type === 'ID_CARD' ? 'scale-[0.8]' : 'scale-[1]'
-              )}>
-                 {editingTemplate?.type === 'STUDENT_CARD' && previewStudent && settings ? (
-                   <div className="flex flex-col gap-8">
+            <div className="bg-slate-100 rounded-2xl flex flex-col items-center justify-center p-8 border-2 border-dashed gap-8">
+              <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Live Preview (Data Riil)</div>
+              <div className="flex flex-col gap-6 scale-[0.85] origin-center">
+                 {editingTemplate?.type === 'STUDENT_CARD' && previewStudent && settings && (
+                   <>
                      <StudentCardVisual student={previewStudent} settings={settings} side="front" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
                      <StudentCardVisual student={previewStudent} settings={settings} side="back" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
-                   </div>
-                 ) : editingTemplate?.type === 'EXAM_CARD' && previewStudent && settings ? (
-                   <div className="flex flex-col gap-8">
+                   </>
+                 )}
+                 {editingTemplate?.type === 'EXAM_CARD' && previewStudent && settings && (
+                   <>
                      <ExamCardVisual student={previewStudent} settings={settings} side="front" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
                      <ExamCardVisual student={previewStudent} settings={settings} side="back" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
-                   </div>
-                 ) : editingTemplate?.type === 'ID_CARD' && previewStudent && settings ? (
-                   <div className="flex flex-col gap-8">
+                   </>
+                 )}
+                 {editingTemplate?.type === 'ID_CARD' && previewStudent && settings && (
+                   <>
                      <IdCardVisual student={previewStudent} settings={settings} side="front" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
                      <IdCardVisual student={previewStudent} settings={settings} side="back" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
-                   </div>
-                 ) : null}
+                   </>
+                 )}
               </div>
             </div>
           </div>
-
-          <DialogFooter className="border-t pt-6">
-            <Button variant="ghost" onClick={() => setIsConfigOpen(false)}>Batal</Button>
-            <Button className="gap-2 px-8 font-bold" onClick={handleSaveConfig}>
-              <Save className="h-4 w-4" /> Simpan Konfigurasi
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button onClick={handleSaveConfig} className="px-8"><Save className="h-4 w-4 mr-2" /> Simpan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
 
-function ColorInput({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) {
+function ColorField({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center justify-between gap-4 bg-white p-2.5 rounded-lg border shadow-sm">
-      <Label className="text-[11px] font-bold text-slate-700">{label}</Label>
-      <input 
-        type="color" 
-        className="w-10 h-10 p-0 border-none rounded-lg cursor-pointer bg-transparent"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
+    <div className="bg-white p-2 rounded-lg border flex items-center justify-between gap-3">
+      <span className="text-[10px] font-bold uppercase">{label}</span>
+      <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
     </div>
   );
 }
