@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,8 @@ import {
   ChevronRight, 
   Type, 
   Plus, 
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
@@ -71,6 +73,7 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<CardTemplate[]>([]);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [previewStudent, setPreviewStudent] = useState<Student | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -86,12 +89,14 @@ export default function TemplatesPage() {
     setTemplates(db.templates);
     setSettings(db.school_settings);
     
+    // Gunakan siswa pertama dari database untuk preview riil
     if (db.students && db.students.length > 0) {
       setPreviewStudent(db.students[0]);
     } else {
+      // Data dummy fallback jika siswa benar-benar kosong
       setPreviewStudent({
-        id: 'mock-1',
-        name: 'CONTOH NAMA SISWA LENGKAP',
+        id: 'demo-1',
+        name: 'SIMULASI NAMA SISWA LENGKAP',
         nis: '20210001',
         nisn: '0059876543',
         class: 'XII',
@@ -107,6 +112,7 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     refreshData();
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
@@ -142,7 +148,7 @@ export default function TemplatesPage() {
     setTemplates([...db.templates]);
     setIsAddOpen(false);
     setNewTemplateName('');
-    toast({ title: "Berhasil", description: "Template baru ditambahkan." });
+    toast({ title: "Template Ditambahkan", description: "Varian desain baru telah dibuat." });
   };
 
   const handleToggleActive = (id: string) => {
@@ -155,7 +161,7 @@ export default function TemplatesPage() {
     });
     saveDB(db);
     setTemplates(db.templates);
-    toast({ title: "Aktif", description: `Template ${template.name} diaktifkan.` });
+    toast({ title: "Template Aktif", description: `Template ${template.name} kini digunakan sebagai desain utama.` });
   };
 
   const handleDeleteConfirm = () => {
@@ -165,7 +171,7 @@ export default function TemplatesPage() {
     saveDB(db);
     setTemplates(db.templates);
     setTemplateToDelete(null);
-    toast({ title: "Dihapus", description: "Template telah dihapus." });
+    toast({ title: "Dihapus", description: "Template telah dihapus dari sistem." });
   };
 
   const openConfig = (template: CardTemplate) => {
@@ -182,37 +188,43 @@ export default function TemplatesPage() {
     saveDB(db);
     setTemplates(db.templates);
     setIsConfigOpen(false);
-    toast({ title: "Tersimpan", description: "Konfigurasi desain diperbarui." });
+    toast({ title: "Konfigurasi Disimpan", description: "Perubahan visual telah diperbarui secara global." });
   };
+
+  if (!isMounted || !settings) return (
+    <div className="h-full flex items-center justify-center">
+       <Loader2 className="h-10 w-10 animate-spin text-primary" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Template Desain</h1>
-          <p className="text-muted-foreground">Sesuaikan tampilan kartu dengan data riil dari Settings & Siswa.</p>
+          <h1 className="text-3xl font-black font-headline text-primary tracking-tighter uppercase">Template Desain</h1>
+          <p className="text-muted-foreground font-medium">Data di bawah adalah sinkronisasi otomatis dari Halaman Siswa & Settings.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={refreshData} className="gap-2">
+          <Button variant="outline" size="sm" onClick={refreshData} className="gap-2 h-10 px-6 rounded-xl font-bold uppercase text-[10px]">
             <RotateCcw className="h-4 w-4" /> Refresh Data
           </Button>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 shadow-lg shadow-primary/20">
+              <Button className="gap-2 shadow-xl shadow-primary/20 h-10 px-8 rounded-xl font-black uppercase text-[10px]">
                 <Plus className="h-4 w-4" /> Template Baru
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Tambah Varian Desain</DialogTitle></DialogHeader>
-              <div className="space-y-4 py-4">
+            <DialogContent className="rounded-[2rem]">
+              <DialogHeader><DialogTitle className="text-2xl font-black uppercase tracking-tight">Varian Desain Baru</DialogTitle></DialogHeader>
+              <div className="space-y-6 py-6">
                 <div className="space-y-2">
-                  <Label>Nama Template</Label>
-                  <Input placeholder="Misal: Blue Modern" value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} />
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nama Template</Label>
+                  <Input placeholder="Misal: Blue Modern" value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} className="h-12 rounded-xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Tipe Kartu</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipe Kartu</Label>
                   <Select value={newTemplateType} onValueChange={(v: any) => setNewTemplateType(v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="STUDENT_CARD">Kartu Pelajar</SelectItem>
                       <SelectItem value="EXAM_CARD">Kartu Ujian</SelectItem>
@@ -221,7 +233,7 @@ export default function TemplatesPage() {
                   </Select>
                 </div>
               </div>
-              <DialogFooter><Button onClick={handleAddTemplate}>Simpan</Button></DialogFooter>
+              <DialogFooter><Button onClick={handleAddTemplate} className="w-full h-12 rounded-xl font-black uppercase tracking-widest">BUAT TEMPLATE</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -230,30 +242,30 @@ export default function TemplatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
           <Card key={template.id} className={cn(
-            "overflow-hidden border-2 transition-all group relative flex flex-col",
-            template.is_active ? "border-primary shadow-lg" : "border-transparent"
+            "overflow-hidden border-4 transition-all group relative flex flex-col rounded-[2.5rem] shadow-sm",
+            template.is_active ? "border-primary bg-primary/5" : "border-transparent"
           )}>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-center">
-                <div className={cn("p-2 rounded-lg text-white", template.preview_color || 'bg-slate-400')}>
+                <div className={cn("p-3 rounded-2xl text-white shadow-lg", template.preview_color || 'bg-slate-400')}>
                   <Layout className="h-5 w-5" />
                 </div>
                 <div className="flex gap-2">
                    {template.is_active ? (
-                     <Badge className="bg-primary">AKTIF</Badge>
+                     <Badge className="bg-primary px-4 py-1 font-black text-[9px] rounded-full">DIGUNAKAN</Badge>
                    ) : (
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-30 group-hover:opacity-100" onClick={() => setTemplateToDelete(template.id)}>
+                     <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive opacity-30 group-hover:opacity-100 transition-opacity" onClick={() => setTemplateToDelete(template.id)}>
                        <Trash2 className="h-4 w-4" />
                      </Button>
                    )}
                 </div>
               </div>
-              <CardTitle className="mt-4">{template.name}</CardTitle>
-              <CardDescription className="uppercase text-[10px] font-bold tracking-widest">{template.type.replace('_', ' ')}</CardDescription>
+              <CardTitle className="mt-4 font-black uppercase tracking-tight">{template.name}</CardTitle>
+              <CardDescription className="uppercase text-[9px] font-black tracking-[0.2em] text-muted-foreground">{template.type.replace('_', ' ')}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-6">
-              <div className="aspect-[4/5] bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed overflow-hidden group">
-                <div className="scale-[0.55] transition-transform group-hover:scale-[0.6]">
+              <div className="aspect-[4/5] bg-slate-100 rounded-[2rem] flex items-center justify-center border-2 border-dashed border-slate-200 overflow-hidden group">
+                <div className="scale-[0.55] transition-transform group-hover:scale-[0.6] duration-500">
                    {template.type === 'STUDENT_CARD' && previewStudent && settings && (
                      <StudentCardVisual student={previewStudent} settings={settings} template={template} />
                    )}
@@ -265,12 +277,12 @@ export default function TemplatesPage() {
                    )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button className="flex-1" variant={template.is_active ? 'secondary' : 'default'} onClick={() => handleToggleActive(template.id)} disabled={template.is_active}>
-                  {template.is_active ? 'Digunakan' : 'Gunakan'}
+              <div className="flex gap-3">
+                <Button className="flex-1 h-12 rounded-xl font-black uppercase text-[10px] tracking-widest" variant={template.is_active ? 'secondary' : 'default'} onClick={() => handleToggleActive(template.id)} disabled={template.is_active}>
+                  {template.is_active ? 'AKTIF' : 'Gunakan'}
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => openConfig(template)}>
-                  <Palette className="h-4 w-4 text-primary" />
+                <Button variant="outline" className="h-12 w-12 rounded-xl border-2" onClick={() => openConfig(template)}>
+                  <Palette className="h-5 w-5 text-primary" />
                 </Button>
               </div>
             </CardContent>
@@ -279,65 +291,78 @@ export default function TemplatesPage() {
       </div>
 
       <AlertDialog open={!!templateToDelete} onOpenChange={o => !o && setTemplateToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[2rem]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Template?</AlertDialogTitle>
-            <AlertDialogDescription>Tindakan ini permanen. Pastikan Anda tidak memerlukan desain ini lagi.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Hapus Desain?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium">Tindakan ini permanen. Seluruh kustomisasi warna dan font pada template ini akan hilang.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-white">Hapus</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl font-bold uppercase text-[10px]">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-white rounded-xl font-bold uppercase text-[10px]">YA, HAPUS</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-        <DialogContent className="max-w-5xl">
-          <DialogHeader>
-            <div className="flex justify-between items-center">
-               <DialogTitle>Kustomisasi Desain: {editingTemplate?.name}</DialogTitle>
-               <Button variant="ghost" size="sm" onClick={() => setLocalConfig(DEFAULT_CONFIG)} className="gap-2 text-muted-foreground">
+        <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-slate-900 p-8 text-white flex justify-between items-center">
+               <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tighter">Editor Visual: {editingTemplate?.name}</h2>
+                  <p className="text-xs text-white/50 font-bold uppercase tracking-widest">Kustomisasi Warna & Font (Sisi Depan & Belakang)</p>
+               </div>
+               <Button variant="ghost" size="sm" onClick={() => setLocalConfig(DEFAULT_CONFIG)} className="gap-2 text-white/40 hover:text-white hover:bg-white/10 h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest">
                  <RotateCcw className="h-4 w-4" /> Reset ke Default
                </Button>
-            </div>
-          </DialogHeader>
+          </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+            <div className="p-10 space-y-8 bg-white border-r max-h-[70vh] overflow-y-auto scrollbar-thin">
               <Tabs defaultValue="front">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="front">Sisi Depan</TabsTrigger>
-                  <TabsTrigger value="back">Sisi Belakang</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 p-1 rounded-2xl">
+                  <TabsTrigger value="front" className="rounded-xl font-black text-[10px] tracking-widest uppercase data-[state=active]:shadow-md">Sisi Depan</TabsTrigger>
+                  <TabsTrigger value="back" className="rounded-xl font-black text-[10px] tracking-widest uppercase data-[state=active]:shadow-md">Sisi Belakang</TabsTrigger>
                 </TabsList>
                 {['front', 'back'].map(side => (
-                  <TabsContent key={side} value={side} className="space-y-4 p-4 bg-muted/20 rounded-xl mt-4 border">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase">Jenis Font</Label>
+                  <TabsContent key={side} value={side} className="space-y-6 pt-6 animate-in fade-in-50">
+                    <div className="space-y-4">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                         <Type className="h-3 w-3" /> Tipografi Utama
+                      </Label>
                       <Select value={localConfig[side].fontFamily} onValueChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], fontFamily: v}})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-12 rounded-xl border-2"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FONT_OPTIONS.map(f => <SelectItem key={f.value} value={f.value} style={{fontFamily: f.value}}>{f.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <ColorField label="Header" value={localConfig[side].headerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: v}})} />
-                      <ColorField label="Body" value={localConfig[side].bodyBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: v}})} />
-                      <ColorField label="Footer" value={localConfig[side].footerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: v}})} />
-                      <ColorField label="Teks" value={localConfig[side].textColor} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: v}})} />
+                    
+                    <div className="space-y-4">
+                       <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Palet Warna Kartu</Label>
+                       <div className="grid grid-cols-2 gap-4">
+                          <ColorField label="Header" value={localConfig[side].headerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: v}})} />
+                          <ColorField label="Body" value={localConfig[side].bodyBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: v}})} />
+                          <ColorField label="Footer" value={localConfig[side].footerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: v}})} />
+                          <ColorField label="Teks" value={localConfig[side].textColor} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: v}})} />
+                       </div>
                     </div>
                   </TabsContent>
                 ))}
               </Tabs>
             </div>
 
-            <div className="bg-slate-100 rounded-2xl flex flex-col items-center justify-center p-8 border-2 border-dashed gap-8">
-              <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Live Preview (Data Riil)</div>
-              <div className="flex flex-col gap-6 scale-[0.85] origin-center">
+            <div className="bg-slate-100 flex flex-col items-center justify-center p-12 border-l gap-10">
+              <div className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em] mb-4">Live Preview (Data Riil)</div>
+              <div className="flex flex-col gap-10 scale-[0.8] origin-center">
                  {editingTemplate?.type === 'STUDENT_CARD' && previewStudent && settings && (
                    <>
-                     <StudentCardVisual student={previewStudent} settings={settings} side="front" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
-                     <StudentCardVisual student={previewStudent} settings={settings} side="back" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
+                     <div className="space-y-2 flex flex-col items-center">
+                        <span className="text-[9px] font-black uppercase text-slate-300">Front Side</span>
+                        <StudentCardVisual student={previewStudent} settings={settings} side="front" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
+                     </div>
+                     <div className="space-y-2 flex flex-col items-center">
+                        <span className="text-[9px] font-black uppercase text-slate-300">Back Side</span>
+                        <StudentCardVisual student={previewStudent} settings={settings} side="back" template={{...editingTemplate, config_json: JSON.stringify(localConfig)}} />
+                     </div>
                    </>
                  )}
                  {editingTemplate?.type === 'EXAM_CARD' && previewStudent && settings && (
@@ -355,7 +380,9 @@ export default function TemplatesPage() {
               </div>
             </div>
           </div>
-          <DialogFooter><Button onClick={handleSaveConfig} className="px-8"><Save className="h-4 w-4 mr-2" /> Simpan</Button></DialogFooter>
+          <div className="p-8 bg-white border-t flex justify-end">
+             <Button onClick={handleSaveConfig} className="h-14 px-12 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20"><Save className="h-5 w-5 mr-3" /> SIMPAN DESAIN</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -364,9 +391,11 @@ export default function TemplatesPage() {
 
 function ColorField({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
   return (
-    <div className="bg-white p-2 rounded-lg border flex items-center justify-between gap-3">
-      <span className="text-[10px] font-bold uppercase">{label}</span>
-      <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
+    <div className="bg-slate-50 p-3 rounded-2xl border-2 border-transparent flex items-center justify-between gap-3 hover:border-slate-200 transition-all">
+      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</span>
+      <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border-2 border-white ring-1 ring-slate-200">
+         <input type="color" value={value} onChange={e => onChange(e.target.value)} className="absolute inset-[-4px] w-[150%] h-[150%] cursor-pointer border-none" />
+      </div>
     </div>
   );
 }

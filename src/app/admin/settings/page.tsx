@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -25,29 +26,27 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!settings) {
-      toast({ variant: "destructive", title: "Gagal", description: "Data pengaturan tidak ditemukan." });
-      return;
-    }
+    if (!settings) return;
     
     setIsSaving(true);
     
-    // Simulate a bit of processing for better UX feedback
+    // Simulate processing for better feedback
     await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
       const db = getDB();
       db.school_settings = { ...settings };
       saveDB(db);
+      
       toast({ 
         title: "Perubahan Tersimpan", 
-        description: "Pengaturan sekolah berhasil diperbarui ke database lokal.",
+        description: "Seluruh konfigurasi sekolah berhasil diperbarui.",
       });
     } catch (error) {
       toast({ 
         variant: "destructive", 
         title: "Gagal Menyimpan", 
-        description: "Terjadi kesalahan saat menyimpan data." 
+        description: "Terjadi kesalahan sistem saat menyimpan data." 
       });
     } finally {
       setIsSaving(false);
@@ -62,7 +61,7 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const result = reader.result as string;
       setSettings(prev => prev ? ({ ...prev, [field]: result }) : null);
-      toast({ title: "Aset Dimuat", description: "Gambar berhasil dimuat, silakan klik Simpan Perubahan untuk mempermanenkan." });
+      toast({ title: "Gambar Dimuat", description: "Klik Simpan Perubahan untuk mengaktifkan." });
     };
     reader.readAsDataURL(file);
   };
@@ -75,109 +74,107 @@ export default function SettingsPage() {
     setSettings(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
 
-  if (!settings) return null;
+  if (!settings) return (
+    <div className="h-full flex items-center justify-center">
+       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Pengaturan Sekolah</h1>
-          <p className="text-muted-foreground">Kelola identitas, ketentuan, dan aset visual tiap kartu.</p>
+          <h1 className="text-3xl font-black font-headline text-primary tracking-tight uppercase">Settings Center</h1>
+          <p className="text-muted-foreground font-medium">Manajemen aset visual, legalitas, dan aturan cetak kartu.</p>
         </div>
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="gap-2 h-11 px-6 shadow-lg shadow-primary/20 min-w-[160px]"
+          className="gap-2 h-14 px-10 shadow-xl shadow-primary/20 min-w-[200px] rounded-2xl text-xs font-black uppercase tracking-widest"
         >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+          {isSaving ? 'MEMPROSES...' : 'SIMPAN PERUBAHAN'}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-primary/10 shadow-sm">
-            <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="text-lg">Identitas & Legalitas</CardTitle>
-              <CardDescription>Informasi utama yang akan tampil pada kop surat dan kartu.</CardDescription>
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Identitas & Legalitas</CardTitle>
+              <CardDescription>Detail utama sekolah dan informasi Kepala Sekolah.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Nama Institusi / Sekolah</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nama Institusi / Sekolah</Label>
                 <Input 
                   value={settings.school_name} 
                   onChange={e => updateSetting('school_name', e.target.value)} 
-                  className="h-11" 
+                  className="h-12 rounded-xl" 
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Alamat Operasional</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Alamat Operasional</Label>
                 <Textarea 
                   value={settings.address} 
                   onChange={e => updateSetting('address', e.target.value)} 
-                  className="min-h-[80px]" 
+                  className="min-h-[100px] rounded-xl" 
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">Nama Kepala Sekolah</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nama Kepala Sekolah</Label>
                   <Input 
                     value={settings.principal_name} 
                     onChange={e => updateSetting('principal_name', e.target.value)} 
-                    className="h-11" 
+                    className="h-12 rounded-xl" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">NIP Kepala Sekolah</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">NIP Kepala Sekolah</Label>
                   <Input 
                     value={settings.principal_nip} 
                     onChange={e => updateSetting('principal_nip', e.target.value)} 
-                    className="h-11" 
+                    className="h-12 rounded-xl" 
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-secondary/20 shadow-sm overflow-hidden">
-            <CardHeader className="bg-secondary/5 border-b">
-              <CardTitle className="text-lg">Aturan & Ketentuan Kartu</CardTitle>
-              <CardDescription>Teks tata tertib di bagian belakang setiap jenis kartu.</CardDescription>
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Aturan & Ketentuan Kartu</CardTitle>
+              <CardDescription>Teks tata tertib yang akan tampil pada sisi belakang kartu.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="student" className="w-full">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-12">
-                  <TabsTrigger value="student" className="data-[state=active]:bg-white gap-2 h-full rounded-none border-r">
-                    <CreditCard className="h-3.5 w-3.5" /> Pelajar
-                  </TabsTrigger>
-                  <TabsTrigger value="exam" className="data-[state=active]:bg-white gap-2 h-full rounded-none border-r">
-                    <Award className="h-3.5 w-3.5" /> Ujian
-                  </TabsTrigger>
-                  <TabsTrigger value="id" className="data-[state=active]:bg-white gap-2 h-full rounded-none">
-                    <Contact className="h-3.5 w-3.5" /> ID Card
-                  </TabsTrigger>
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-14">
+                  <TabsTrigger value="student" className="data-[state=active]:bg-white gap-2 h-full rounded-none border-r font-bold text-xs">PELAJAR</TabsTrigger>
+                  <TabsTrigger value="exam" className="data-[state=active]:bg-white gap-2 h-full rounded-none border-r font-bold text-xs">UJIAN</TabsTrigger>
+                  <TabsTrigger value="id" className="data-[state=active]:bg-white gap-2 h-full rounded-none font-bold text-xs">ID CARD</TabsTrigger>
                 </TabsList>
-                <div className="p-6">
-                  <TabsContent value="student" className="mt-0">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan Kartu Pelajar</Label>
+                <div className="p-8">
+                  <TabsContent value="student" className="mt-0 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Pelajar</Label>
                     <Textarea 
-                      className="min-h-[120px] font-mono text-sm" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl" 
                       value={settings.terms_student} 
                       onChange={e => updateSetting('terms_student', e.target.value)} 
                     />
                   </TabsContent>
-                  <TabsContent value="exam" className="mt-0">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan Kartu Ujian</Label>
+                  <TabsContent value="exam" className="mt-0 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Ujian</Label>
                     <Textarea 
-                      className="min-h-[120px] font-mono text-sm" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl" 
                       value={settings.terms_exam} 
                       onChange={e => updateSetting('terms_exam', e.target.value)} 
                     />
                   </TabsContent>
-                  <TabsContent value="id" className="mt-0">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-2 block">Ketentuan ID Card</Label>
+                  <TabsContent value="id" className="mt-0 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan ID Card Umum</Label>
                     <Textarea 
-                      className="min-h-[120px] font-mono text-sm" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl" 
                       value={settings.terms_id} 
                       onChange={e => updateSetting('terms_id', e.target.value)} 
                     />
@@ -189,23 +186,23 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-orange-200/50 shadow-sm overflow-hidden">
-            <CardHeader className="bg-orange-50 border-b">
-              <CardTitle className="text-lg">Aset & Identitas Visual</CardTitle>
-              <CardDescription>Upload Logo, TTD, dan Stempel serta atur penempatannya.</CardDescription>
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+            <CardHeader className="bg-primary/5 border-b">
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Aset Visual</CardTitle>
+              <CardDescription>Logo, TTD, dan Stempel kartu.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="student" className="w-full">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-12">
-                  <TabsTrigger value="student" className="data-[state=active]:bg-white flex-1 h-full rounded-none border-r text-[10px]">Pelajar</TabsTrigger>
-                  <TabsTrigger value="exam" className="data-[state=active]:bg-white flex-1 h-full rounded-none border-r text-[10px]">Ujian</TabsTrigger>
-                  <TabsTrigger value="id" className="data-[state=active]:bg-white flex-1 h-full rounded-none text-[10px]">ID Card</TabsTrigger>
+                <TabsList className="w-full grid grid-cols-3 rounded-none border-b bg-transparent h-14">
+                  <TabsTrigger value="student" className="font-bold text-[10px]">PELAJAR</TabsTrigger>
+                  <TabsTrigger value="exam" className="font-bold text-[10px]">UJIAN</TabsTrigger>
+                  <TabsTrigger value="id" className="font-bold text-[10px]">ID CARD</TabsTrigger>
                 </TabsList>
                 
                 <div className="p-6 space-y-6">
                   <TabsContent value="student" className="mt-0 space-y-6">
                     <AssetUploader 
-                      label="Logo Kiri (Sekolah)" 
+                      label="Logo Sekolah (Kiri)" 
                       image={settings.logo_left} 
                       onUpload={e => handleFileUpload('logo_left', e)} 
                       onUrlChange={url => handleUrlChange('logo_left', url)}
@@ -249,7 +246,7 @@ export default function SettingsPage() {
 
                   <TabsContent value="exam" className="mt-0 space-y-6">
                     <AssetUploader 
-                      label="Logo Kiri (Sekolah)" 
+                      label="Logo Sekolah (Kiri)" 
                       image={settings.logo_left_exam} 
                       onUpload={e => handleFileUpload('logo_left_exam', e)} 
                       onUrlChange={url => handleUrlChange('logo_left_exam', url)}
@@ -356,53 +353,53 @@ function AssetUploader({
   onShowBackChange: (v: boolean) => void
 }) {
   return (
-    <div className="space-y-4 p-4 border rounded-xl bg-white shadow-sm">
+    <div className="space-y-4 p-5 border-2 border-slate-100 rounded-[2rem] bg-white">
       <div className="flex justify-between items-center">
-        <Label className="text-xs font-bold uppercase text-slate-700">{label}</Label>
+        <Label className="text-[10px] font-black uppercase text-slate-800 tracking-widest">{label}</Label>
       </div>
       
       <div className={cn(
-        "relative bg-muted/20 border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center group transition-all hover:bg-muted/30 hover:border-primary/30",
+        "relative bg-slate-50 border-2 border-dashed rounded-2xl overflow-hidden flex items-center justify-center group transition-all hover:bg-white hover:border-primary/20",
         aspect === 'square' ? "aspect-square" : "aspect-[2.5/1]"
       )}>
         {image ? (
           <>
             <Image src={image} alt={label} fill className="object-contain p-2" unoptimized />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Label className="cursor-pointer bg-white text-black p-2 rounded-full shadow-lg hover:scale-110 transition-transform">
+              <Label className="cursor-pointer bg-white text-black p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
                 <Camera className="h-4 w-4" />
                 <input type="file" className="hidden" accept="image/*" onChange={onUpload} />
               </Label>
             </div>
           </>
         ) : (
-          <Label className="cursor-pointer flex flex-col items-center gap-1 text-muted-foreground p-4">
-            <Upload className="h-5 w-5" />
-            <span className="text-[9px] font-bold">UPLOAD</span>
+          <Label className="cursor-pointer flex flex-col items-center gap-2 text-slate-300 p-4">
+            <Upload className="h-6 w-6" />
+            <span className="text-[9px] font-black tracking-widest uppercase">UNGGAH FILE</span>
             <input type="file" className="hidden" accept="image/*" onChange={onUpload} />
           </Label>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+        <Label className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1 tracking-widest">
           <LinkIcon className="h-3 w-3" /> Link URL Gambar
         </Label>
         <Input 
-          placeholder="https://example.com/logo.png" 
+          placeholder="https://..." 
           value={image && image.startsWith('data:') ? '' : (image || '')}
           onChange={(e) => onUrlChange(e.target.value)}
-          className="text-[10px] h-8"
+          className="text-[10px] h-10 rounded-xl"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-2 border-t mt-2">
-         <div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 rounded-lg">
-           <span className="text-[9px] font-bold uppercase text-slate-500">Depan</span>
+      <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
+           <span className="text-[9px] font-black uppercase text-slate-500">Depan</span>
            <Switch checked={showFront} onCheckedChange={onShowFrontChange} className="scale-75" />
          </div>
-         <div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 rounded-lg">
-           <span className="text-[9px] font-bold uppercase text-slate-500">Belakang</span>
+         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
+           <span className="text-[9px] font-black uppercase text-slate-500">Belakang</span>
            <Switch checked={showBack} onCheckedChange={onShowBackChange} className="scale-75" />
          </div>
       </div>
