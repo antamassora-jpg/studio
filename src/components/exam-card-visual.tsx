@@ -45,13 +45,19 @@ export function ExamCardVisual({
     fontFamily: current.fontFamily
   };
 
+  const showLogo = side === 'front' ? settings.exam_show_logo_front : settings.exam_show_logo_back;
+  const showSig = side === 'front' ? settings.exam_show_sig_front : settings.exam_show_sig_back;
+  const showStamp = side === 'front' ? settings.exam_show_stamp_front : settings.exam_show_stamp_back;
+
   if (side === 'front') {
     return (
       <div style={cardStyle} className="relative rounded-xl shadow-lg border overflow-hidden text-[10px] select-none">
         <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 gap-3 relative z-10 shadow-sm border-b">
-          <div className="w-10 h-10 relative bg-white rounded-md p-1 shadow-inner shrink-0">
-            <Image src={settings.logo_left_exam} alt="Logo" fill className="object-contain" priority />
-          </div>
+          {showLogo && (
+            <div className="w-10 h-10 relative bg-white rounded-md p-1 shadow-inner shrink-0">
+              <Image src={settings.logo_left_exam} alt="Logo" fill className="object-contain" priority />
+            </div>
+          )}
           <div className="flex-1 flex flex-col text-white">
             <span className="font-bold text-[9px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
             <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: current.footerBg }}>KARTU PESERTA UJIAN</span>
@@ -68,7 +74,7 @@ export function ExamCardVisual({
               )}
             </div>
           </div>
-          <div className="flex-1 py-4 px-3 space-y-2 text-slate-900">
+          <div className="flex-1 py-4 px-3 space-y-2 text-slate-900 relative">
             <div className="flex flex-col">
               <span className="text-slate-400 text-[6px] uppercase font-bold">Nama Peserta</span>
               <span className="font-bold text-[11px] uppercase">{student.name}</span>
@@ -81,6 +87,25 @@ export function ExamCardVisual({
               <span className="text-slate-400 text-[6px] uppercase font-bold">Event Ujian</span>
               <span className="font-bold text-[8px] uppercase">{exam?.name || 'UJIAN SEKOLAH'}</span>
             </div>
+
+            {/* Floating Assets on Front if enabled */}
+            {(showSig || showStamp) && (
+              <div className="absolute bottom-2 right-4 flex items-end gap-2 scale-75 origin-bottom-right">
+                {showStamp && (
+                  <div className="w-12 h-12 relative">
+                    <Image src={settings.stamp_exam} alt="Stempel" fill className="object-contain" />
+                  </div>
+                )}
+                {showSig && (
+                  <div className="text-center">
+                    <div className="w-14 h-7 relative">
+                      <Image src={settings.signature_exam} alt="TTD" fill className="object-contain" />
+                    </div>
+                    <p className="text-[6px] font-bold border-t border-slate-300">{settings.principal_name}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <div style={{ backgroundColor: current.footerBg }} className="absolute bottom-0 left-0 right-0 h-1.5"></div>
@@ -90,8 +115,13 @@ export function ExamCardVisual({
 
   return (
     <div style={cardStyle} className="relative rounded-xl shadow-lg border overflow-hidden text-[9px] select-none p-6 flex flex-col">
-      <div className="text-center mb-3">
-        <h4 className="font-black text-[10px] uppercase border-b pb-1 text-slate-800">Tata Tertib Ujian</h4>
+      <div className="text-center mb-3 flex items-center justify-center gap-2 border-b pb-1">
+        {showLogo && (
+          <div className="w-6 h-6 relative shrink-0">
+            <Image src={settings.logo_left_exam} alt="Logo" fill className="object-contain" />
+          </div>
+        )}
+        <h4 className="font-black text-[10px] uppercase text-slate-800">Tata Tertib Ujian</h4>
       </div>
       <div className="flex gap-4 flex-1">
         <div className="flex-1 whitespace-pre-line text-slate-600 leading-tight italic px-2">
@@ -107,14 +137,23 @@ export function ExamCardVisual({
            <div className="text-[5px] font-bold text-slate-400">{student.card_code}</div>
         </div>
       </div>
-      <div className="mt-2 flex justify-end items-end">
-        <div className="text-center scale-90 origin-bottom-right">
-           <div className="w-16 h-8 relative mx-auto">
-              <Image src={settings.stamp_exam} alt="STAMP" fill className="object-contain opacity-70" />
-           </div>
-           <p className="text-[7px] font-bold border-t pt-0.5 text-slate-800">{settings.principal_name}</p>
+      {(showSig || showStamp) && (
+        <div className="mt-2 flex justify-end items-end relative z-10">
+          <div className="text-center scale-90 origin-bottom-right relative">
+             {showStamp && (
+                <div className="absolute -left-8 top-0 w-16 h-8 relative mx-auto">
+                   <Image src={settings.stamp_exam} alt="STAMP" fill className="object-contain opacity-70" />
+                </div>
+             )}
+             {showSig && (
+               <div className="w-16 h-8 relative mx-auto">
+                  <Image src={settings.signature_exam} alt="SIG" fill className="object-contain" />
+               </div>
+             )}
+             <p className="text-[7px] font-bold border-t pt-0.5 text-slate-800">{settings.principal_name}</p>
+          </div>
         </div>
-      </div>
+      )}
       <div style={{ backgroundColor: current.footerBg }} className="absolute bottom-0 left-0 right-0 h-1.5"></div>
     </div>
   );

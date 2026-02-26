@@ -26,6 +26,13 @@ export interface SchoolSettings {
   signature_image: string;
   stamp_image: string;
   terms_student: string;
+  // Student Layout Config
+  student_show_logo_front: boolean;
+  student_show_logo_back: boolean;
+  student_show_sig_front: boolean;
+  student_show_sig_back: boolean;
+  student_show_stamp_front: boolean;
+  student_show_stamp_back: boolean;
 
   // Exam Card Assets
   logo_left_exam: string;
@@ -33,6 +40,13 @@ export interface SchoolSettings {
   signature_exam: string;
   stamp_exam: string;
   terms_exam: string;
+  // Exam Layout Config
+  exam_show_logo_front: boolean;
+  exam_show_logo_back: boolean;
+  exam_show_sig_front: boolean;
+  exam_show_sig_back: boolean;
+  exam_show_stamp_front: boolean;
+  exam_show_stamp_back: boolean;
 
   // ID Card Assets
   logo_left_id: string;
@@ -40,6 +54,13 @@ export interface SchoolSettings {
   signature_id: string;
   stamp_id: string;
   terms_id: string;
+  // ID Layout Config
+  id_show_logo_front: boolean;
+  id_show_logo_back: boolean;
+  id_show_sig_front: boolean;
+  id_show_sig_back: boolean;
+  id_show_stamp_front: boolean;
+  id_show_stamp_back: boolean;
 }
 
 export type TemplateType = 'STUDENT_CARD' | 'EXAM_CARD' | 'ID_CARD';

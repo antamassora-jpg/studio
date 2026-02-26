@@ -43,14 +43,20 @@ export function IdCardVisual({
     fontFamily: current.fontFamily
   };
 
+  const showLogo = side === 'front' ? settings.id_show_logo_front : settings.id_show_logo_back;
+  const showSig = side === 'front' ? settings.id_show_sig_front : settings.id_show_sig_back;
+  const showStamp = side === 'front' ? settings.id_show_stamp_front : settings.id_show_stamp_back;
+
   if (side === 'front') {
     return (
       <div style={cardStyle} className="relative rounded-2xl shadow-2xl border overflow-hidden select-none flex flex-col">
         <div style={{ backgroundColor: current.headerBg }} className="relative z-20 pt-10 pb-6 px-6 flex flex-col items-center shadow-lg">
           <div className="flex items-center gap-4 w-full text-white">
-            <div className="w-12 h-12 relative bg-white rounded-xl p-2 shadow-inner">
-              <Image src={settings.logo_left_id} alt="Logo" fill className="object-contain" priority />
-            </div>
+            {showLogo && (
+              <div className="w-12 h-12 relative bg-white rounded-xl p-2 shadow-inner">
+                <Image src={settings.logo_left_id} alt="Logo" fill className="object-contain" priority />
+              </div>
+            )}
             <div className="flex flex-col">
               <h2 className="font-black text-[11px] uppercase leading-none tracking-tight drop-shadow-sm">{settings.school_name}</h2>
               <h2 className="font-bold text-[8px] uppercase opacity-70 mt-1">Digital Identity</h2>
@@ -88,6 +94,22 @@ export function IdCardVisual({
               <span>{student.valid_until}</span>
             </div>
           </div>
+
+          {(showSig || showStamp) && (
+            <div className="flex justify-between items-end pt-2 border-t border-white/10">
+              <div className="w-12 h-12 relative">
+                {showStamp && <Image src={settings.stamp_id} alt="Stamp" fill className="object-contain" />}
+              </div>
+              <div className="text-right">
+                {showSig && (
+                  <div className="w-16 h-8 relative ml-auto">
+                    <Image src={settings.signature_id} alt="Sig" fill className="object-contain" />
+                  </div>
+                )}
+                <p className="text-[7px] font-bold uppercase opacity-80">{settings.principal_name}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -96,9 +118,11 @@ export function IdCardVisual({
   return (
     <div style={cardStyle} className="relative rounded-2xl shadow-2xl border overflow-hidden select-none flex flex-col p-8">
       <div className="relative z-10 flex flex-col items-center h-full text-center">
-        <div className="w-14 h-14 relative mb-4">
-           <Image src={settings.logo_left_id} alt="Logo" fill className="object-contain" />
-        </div>
+        {showLogo && (
+          <div className="w-14 h-14 relative mb-4">
+             <Image src={settings.logo_left_id} alt="Logo" fill className="object-contain" />
+          </div>
+        )}
         <h3 className="font-black text-[12px] uppercase tracking-tight mb-8 text-slate-800">
           {settings.school_name}
         </h3>
@@ -125,12 +149,21 @@ export function IdCardVisual({
             <div className="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">
               ED-SYNC v2.5
             </div>
-            <div className="text-center">
-               <div className="w-20 h-10 relative mb-1">
-                  <Image src={settings.stamp_id} alt="Stamp" fill className="object-contain" />
-               </div>
-               <p className="text-[8px] font-bold uppercase text-slate-800">{settings.principal_name}</p>
-            </div>
+            {(showSig || showStamp) && (
+              <div className="text-center relative">
+                 {showStamp && (
+                    <div className="absolute -left-12 top-0 w-20 h-10 pointer-events-none">
+                       <Image src={settings.stamp_id} alt="Stamp" fill className="object-contain" />
+                    </div>
+                 )}
+                 {showSig && (
+                   <div className="w-20 h-10 relative mb-1">
+                      <Image src={settings.signature_id} alt="Sig" fill className="object-contain" />
+                   </div>
+                 )}
+                 <p className="text-[8px] font-bold uppercase text-slate-800">{settings.principal_name}</p>
+              </div>
+            )}
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
@@ -156,7 +157,7 @@ export default function SettingsPage() {
           <Card className="border-orange-200/50 shadow-sm overflow-hidden">
             <CardHeader className="bg-orange-50 border-b">
               <CardTitle className="text-lg">Aset & Identitas Visual</CardTitle>
-              <CardDescription>Upload Logo, TTD, dan Stempel untuk tiap jenis kartu.</CardDescription>
+              <CardDescription>Upload Logo, TTD, dan Stempel serta atur penempatannya.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="student" className="w-full">
@@ -167,31 +168,100 @@ export default function SettingsPage() {
                 </TabsList>
                 
                 <div className="p-6 space-y-6">
-                  <TabsContent value="student" className="mt-0 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <AssetUploader label="Logo Kiri" image={settings.logo_left} onUpload={e => handleFileUpload('logo_left', e)} />
-                      <AssetUploader label="Logo Kanan" image={settings.logo_right} onUpload={e => handleFileUpload('logo_right', e)} />
-                    </div>
-                    <AssetUploader label="Tanda Tangan" image={settings.signature_image} onUpload={e => handleFileUpload('signature_image', e)} fullWidth aspect="wide" />
-                    <AssetUploader label="Stempel" image={settings.stamp_image} onUpload={e => handleFileUpload('stamp_image', e)} fullWidth />
+                  {/* Student Config */}
+                  <TabsContent value="student" className="mt-0 space-y-6">
+                    <AssetUploader 
+                      label="Logo Sekolah" 
+                      image={settings.logo_left} 
+                      onUpload={e => handleFileUpload('logo_left', e)} 
+                      showFront={settings.student_show_logo_front}
+                      onShowFrontChange={v => setSettings({...settings, student_show_logo_front: v})}
+                      showBack={settings.student_show_logo_back}
+                      onShowBackChange={v => setSettings({...settings, student_show_logo_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Tanda Tangan" 
+                      image={settings.signature_image} 
+                      onUpload={e => handleFileUpload('signature_image', e)} 
+                      aspect="wide"
+                      showFront={settings.student_show_sig_front}
+                      onShowFrontChange={v => setSettings({...settings, student_show_sig_front: v})}
+                      showBack={settings.student_show_sig_back}
+                      onShowBackChange={v => setSettings({...settings, student_show_sig_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Stempel" 
+                      image={settings.stamp_image} 
+                      onUpload={e => handleFileUpload('stamp_image', e)} 
+                      showFront={settings.student_show_stamp_front}
+                      onShowFrontChange={v => setSettings({...settings, student_show_stamp_front: v})}
+                      showBack={settings.student_show_stamp_back}
+                      onShowBackChange={v => setSettings({...settings, student_show_stamp_back: v})}
+                    />
                   </TabsContent>
 
-                  <TabsContent value="exam" className="mt-0 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <AssetUploader label="Logo Kiri" image={settings.logo_left_exam} onUpload={e => handleFileUpload('logo_left_exam', e)} />
-                      <AssetUploader label="Logo Kanan" image={settings.logo_right_exam} onUpload={e => handleFileUpload('logo_right_exam', e)} />
-                    </div>
-                    <AssetUploader label="Tanda Tangan" image={settings.signature_exam} onUpload={e => handleFileUpload('signature_exam', e)} fullWidth aspect="wide" />
-                    <AssetUploader label="Stempel" image={settings.stamp_exam} onUpload={e => handleFileUpload('stamp_exam', e)} fullWidth />
+                  {/* Exam Config */}
+                  <TabsContent value="exam" className="mt-0 space-y-6">
+                    <AssetUploader 
+                      label="Logo Sekolah" 
+                      image={settings.logo_left_exam} 
+                      onUpload={e => handleFileUpload('logo_left_exam', e)} 
+                      showFront={settings.exam_show_logo_front}
+                      onShowFrontChange={v => setSettings({...settings, exam_show_logo_front: v})}
+                      showBack={settings.exam_show_logo_back}
+                      onShowBackChange={v => setSettings({...settings, exam_show_logo_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Tanda Tangan" 
+                      image={settings.signature_exam} 
+                      onUpload={e => handleFileUpload('signature_exam', e)} 
+                      aspect="wide"
+                      showFront={settings.exam_show_sig_front}
+                      onShowFrontChange={v => setSettings({...settings, exam_show_sig_front: v})}
+                      showBack={settings.exam_show_sig_back}
+                      onShowBackChange={v => setSettings({...settings, exam_show_sig_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Stempel" 
+                      image={settings.stamp_exam} 
+                      onUpload={e => handleFileUpload('stamp_exam', e)} 
+                      showFront={settings.exam_show_stamp_front}
+                      onShowFrontChange={v => setSettings({...settings, exam_show_stamp_front: v})}
+                      showBack={settings.exam_show_stamp_back}
+                      onShowBackChange={v => setSettings({...settings, exam_show_stamp_back: v})}
+                    />
                   </TabsContent>
 
-                  <TabsContent value="id" className="mt-0 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <AssetUploader label="Logo Kiri" image={settings.logo_left_id} onUpload={e => handleFileUpload('logo_left_id', e)} />
-                      <AssetUploader label="Logo Kanan" image={settings.logo_right_id} onUpload={e => handleFileUpload('logo_right_id', e)} />
-                    </div>
-                    <AssetUploader label="Tanda Tangan" image={settings.signature_id} onUpload={e => handleFileUpload('signature_id', e)} fullWidth aspect="wide" />
-                    <AssetUploader label="Stempel" image={settings.stamp_id} onUpload={e => handleFileUpload('stamp_id', e)} fullWidth />
+                  {/* ID Config */}
+                  <TabsContent value="id" className="mt-0 space-y-6">
+                    <AssetUploader 
+                      label="Logo Sekolah" 
+                      image={settings.logo_left_id} 
+                      onUpload={e => handleFileUpload('logo_left_id', e)} 
+                      showFront={settings.id_show_logo_front}
+                      onShowFrontChange={v => setSettings({...settings, id_show_logo_front: v})}
+                      showBack={settings.id_show_logo_back}
+                      onShowBackChange={v => setSettings({...settings, id_show_logo_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Tanda Tangan" 
+                      image={settings.signature_id} 
+                      onUpload={e => handleFileUpload('signature_id', e)} 
+                      aspect="wide"
+                      showFront={settings.id_show_sig_front}
+                      onShowFrontChange={v => setSettings({...settings, id_show_sig_front: v})}
+                      showBack={settings.id_show_sig_back}
+                      onShowBackChange={v => setSettings({...settings, id_show_sig_back: v})}
+                    />
+                    <AssetUploader 
+                      label="Stempel" 
+                      image={settings.stamp_id} 
+                      onUpload={e => handleFileUpload('stamp_id', e)} 
+                      showFront={settings.id_show_stamp_front}
+                      onShowFrontChange={v => setSettings({...settings, id_show_stamp_front: v})}
+                      showBack={settings.id_show_stamp_back}
+                      onShowBackChange={v => setSettings({...settings, id_show_stamp_back: v})}
+                    />
                   </TabsContent>
                 </div>
               </Tabs>
@@ -203,18 +273,33 @@ export default function SettingsPage() {
   );
 }
 
-function AssetUploader({ label, image, onUpload, fullWidth = false, aspect = 'square' }: { 
+function AssetUploader({ 
+  label, 
+  image, 
+  onUpload, 
+  aspect = 'square',
+  showFront,
+  onShowFrontChange,
+  showBack,
+  onShowBackChange
+}: { 
   label: string, 
   image: string, 
   onUpload: (e: any) => void,
-  fullWidth?: boolean,
-  aspect?: 'square' | 'wide'
+  aspect?: 'square' | 'wide',
+  showFront: boolean,
+  onShowFrontChange: (v: boolean) => void,
+  showBack: boolean,
+  onShowBackChange: (v: boolean) => void
 }) {
   return (
-    <div className={cn("space-y-2", fullWidth && "w-full")}>
-      <Label className="text-[10px] uppercase font-bold text-muted-foreground">{label}</Label>
+    <div className="space-y-4 p-4 border rounded-xl bg-white shadow-sm">
+      <div className="flex justify-between items-center">
+        <Label className="text-xs font-bold uppercase text-slate-700">{label}</Label>
+      </div>
+      
       <div className={cn(
-        "relative bg-muted/20 border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center group transition-all hover:bg-muted/30 hover:border-primary/30 shadow-inner",
+        "relative bg-muted/20 border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center group transition-all hover:bg-muted/30 hover:border-primary/30",
         aspect === 'square' ? "aspect-square" : "aspect-[2.5/1]"
       )}>
         {image ? (
@@ -234,6 +319,17 @@ function AssetUploader({ label, image, onUpload, fullWidth = false, aspect = 'sq
             <input type="file" className="hidden" accept="image/*" onChange={onUpload} />
           </Label>
         )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 pt-2 border-t mt-2">
+         <div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 rounded-lg">
+           <span className="text-[9px] font-bold uppercase text-slate-500">Depan</span>
+           <Switch checked={showFront} onCheckedChange={onShowFrontChange} className="scale-75" />
+         </div>
+         <div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 rounded-lg">
+           <span className="text-[9px] font-bold uppercase text-slate-500">Belakang</span>
+           <Switch checked={showBack} onCheckedChange={onShowBackChange} className="scale-75" />
+         </div>
       </div>
     </div>
   );
