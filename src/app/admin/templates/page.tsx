@@ -15,7 +15,8 @@ import {
   Eye, 
   Settings2,
   Save,
-  RefreshCw
+  RefreshCw,
+  Check
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
@@ -31,14 +32,23 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+
+const PRESET_COLORS = [
+  { name: 'Emerald Batik', hex: '#1B3C33', tailwind: 'bg-emerald-900' },
+  { name: 'Navy Corporate', hex: '#0F172A', tailwind: 'bg-slate-900' },
+  { name: 'Royal Blue', hex: '#1E3A8A', tailwind: 'bg-blue-900' },
+  { name: 'Deep Maroon', hex: '#450A0A', tailwind: 'bg-red-950' },
+  { name: 'Charcoal', hex: '#1F2937', tailwind: 'bg-gray-800' },
+  { name: 'Deep Purple', hex: '#3B0764', tailwind: 'bg-purple-950' },
+  { name: 'Forest Green', hex: '#064E3B', tailwind: 'bg-green-950' },
+];
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<CardTemplate[]>([]);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [previewStudent, setPreviewStudent] = useState<Student | null>(null);
   
-  // State for Configuration Dialog
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CardTemplate | null>(null);
 
@@ -71,6 +81,24 @@ export default function TemplatesPage() {
     setIsConfigOpen(true);
   };
 
+  const handleSelectColor = (hex: string, tailwind: string) => {
+    if (!editingTemplate) return;
+    setEditingTemplate({
+      ...editingTemplate,
+      preview_color: tailwind,
+      config_json: JSON.stringify({ primary: hex })
+    });
+  };
+
+  const getCurrentColorHex = () => {
+    try {
+      if (editingTemplate?.config_json) {
+        return JSON.parse(editingTemplate.config_json).primary;
+      }
+    } catch (e) {}
+    return null;
+  };
+
   const handleSaveConfig = () => {
     if (!editingTemplate) return;
 
@@ -91,10 +119,6 @@ export default function TemplatesPage() {
     window.location.reload();
   };
 
-  const handleAddNew = () => {
-    toast({ title: "Segera Hadir", description: "Fitur pembuatan template kustom sedang dikembangkan." });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -106,7 +130,7 @@ export default function TemplatesPage() {
           <Button variant="outline" className="gap-2" onClick={handleResetData}>
             <RefreshCw className="h-4 w-4" /> Reset Database
           </Button>
-          <Button className="gap-2" onClick={handleAddNew}>
+          <Button className="gap-2" onClick={() => toast({ title: "Segera Hadir" })}>
             <Plus className="h-4 w-4" /> Template Baru
           </Button>
         </div>
@@ -114,10 +138,13 @@ export default function TemplatesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
-          <Card key={template.id} className={`overflow-hidden border-2 transition-all flex flex-col ${template.is_active ? 'border-primary shadow-lg bg-primary/5' : 'border-transparent'}`}>
+          <Card key={template.id} className={cn(
+            "overflow-hidden border-2 transition-all flex flex-col",
+            template.is_active ? "border-primary shadow-lg bg-primary/5" : "border-transparent"
+          )}>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
-                <div className={`p-2 rounded-lg border shadow-sm ${template.preview_color || 'bg-slate-400'} text-white`}>
+                <div className={cn("p-2 rounded-lg border shadow-sm text-white", template.preview_color || 'bg-slate-400')}>
                   <Layout className="h-5 w-5" />
                 </div>
                 <div className="flex gap-2">
@@ -140,7 +167,10 @@ export default function TemplatesPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col pt-2 space-y-6">
               <div className="aspect-[4/5] bg-white rounded-xl flex items-center justify-center border-2 border-dashed relative group overflow-hidden shadow-inner">
-                <div className={`${template.type === 'ID_CARD' ? 'scale-[0.4]' : 'scale-[0.5]'} origin-center transform transition-transform group-hover:scale-[0.6] duration-500`}>
+                <div className={cn(
+                  "origin-center transform transition-transform group-hover:scale-[0.55] duration-500",
+                  template.type === 'ID_CARD' ? 'scale-[0.4]' : 'scale-[0.5]'
+                )}>
                   {template.type === 'STUDENT_CARD' && previewStudent && settings ? (
                     <StudentCardVisual student={previewStudent} settings={settings} />
                   ) : template.type === 'EXAM_CARD' && previewStudent && settings ? (
@@ -149,15 +179,10 @@ export default function TemplatesPage() {
                     <IdCardVisual student={previewStudent} settings={settings} side="front" template={template} />
                   ) : (
                     <div className="w-[340px] h-[215px] bg-white border rounded-xl flex flex-col items-center justify-center p-4 text-center">
-                      <div className={`w-full h-10 ${template.preview_color} rounded-t-lg mb-4 opacity-50`}></div>
+                      <div className={cn("w-full h-10 rounded-t-lg mb-4 opacity-50", template.preview_color)}></div>
                       <p className="text-xs font-bold text-muted-foreground uppercase">Desain {template.name}</p>
                     </div>
                   )}
-                </div>
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="sm" variant="secondary" className="gap-2">
-                    <Eye className="h-4 w-4" /> Zoom Preview
-                  </Button>
                 </div>
               </div>
 
@@ -180,29 +205,18 @@ export default function TemplatesPage() {
             </CardContent>
           </Card>
         ))}
-
-        <Card className="border-2 border-dashed flex flex-col items-center justify-center py-12 gap-4 cursor-pointer hover:bg-muted/50 transition-colors group" onClick={handleAddNew}>
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-            <Plus className="h-8 w-8" />
-          </div>
-          <div className="text-center px-4">
-            <h4 className="font-bold">Buat Desain Baru</h4>
-            <p className="text-xs text-muted-foreground">Rancang template kustom untuk sekolah Anda.</p>
-          </div>
-        </Card>
       </div>
 
-      {/* Configuration Dialog */}
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Pengaturan Template</DialogTitle>
+            <DialogTitle>Kustomisasi Visual</DialogTitle>
             <DialogDescription>
-              Kustomisasi properti visual untuk template <strong>{editingTemplate?.name}</strong>.
+              Pilih identitas warna untuk template <strong>{editingTemplate?.name}</strong>.
             </DialogDescription>
           </DialogHeader>
           {editingTemplate && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 py-4">
               <div className="space-y-2">
                 <Label htmlFor="t-name">Nama Template</Label>
                 <Input 
@@ -211,31 +225,35 @@ export default function TemplatesPage() {
                   onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-color">Preview Color (Tailwind Class)</Label>
-                <Input 
-                  id="t-color" 
-                  value={editingTemplate.preview_color} 
-                  onChange={e => setEditingTemplate({...editingTemplate, preview_color: e.target.value})}
-                  placeholder="bg-blue-600"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-config">Konfigurasi JSON (Warna Primer, dsb)</Label>
-                <Textarea 
-                  id="t-config" 
-                  className="font-mono text-xs min-h-[100px]"
-                  value={editingTemplate.config_json} 
-                  onChange={e => setEditingTemplate({...editingTemplate, config_json: e.target.value})}
-                />
-                <p className="text-[10px] text-muted-foreground italic">Gunakan format JSON, contoh: {"{\"primary\": \"#1B3C33\"}"}</p>
+              
+              <div className="space-y-3">
+                <Label>Pilih Warna Tema Utama</Label>
+                <div className="grid grid-cols-4 gap-3">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color.hex}
+                      className={cn(
+                        "group relative aspect-square rounded-full border-2 transition-all flex items-center justify-center",
+                        color.tailwind,
+                        getCurrentColorHex() === color.hex ? "border-primary scale-110 shadow-md" : "border-transparent hover:scale-105"
+                      )}
+                      onClick={() => handleSelectColor(color.hex, color.tailwind)}
+                      title={color.name}
+                    >
+                      {getCurrentColorHex() === color.hex && (
+                        <Check className="h-5 w-5 text-white" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic mt-2">Warna ini akan digunakan sebagai latar belakang dan aksen utama pada kartu.</p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsConfigOpen(false)}>Batal</Button>
             <Button className="gap-2" onClick={handleSaveConfig}>
-              <Save className="h-4 w-4" /> Simpan Konfigurasi
+              <Save className="h-4 w-4" /> Simpan Perubahan
             </Button>
           </DialogFooter>
         </DialogContent>
