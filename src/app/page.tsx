@@ -15,12 +15,12 @@ import {
   UserCheck, 
   Info, 
   Camera, 
-  XCircle, 
   Loader2, 
   Zap, 
   Navigation,
+  QrCode,
   ShieldCheck,
-  QrCode
+  CheckCircle2
 } from 'lucide-react';
 import {
   Dialog,
@@ -61,7 +61,6 @@ export default function LandingPage() {
     setIsSearching(true);
     setHasSearched(false);
     
-    // Simulasi pencarian database lokal
     setTimeout(() => {
       const db = getDB();
       const found = db.students.find(s => 
@@ -79,10 +78,10 @@ export default function LandingPage() {
         toast({
           variant: "destructive",
           title: "Data Tidak Ditemukan",
-          description: "Pastikan NIS/NISN atau Kode Kartu benar."
+          description: "Pastikan nomor induk atau kode kartu sudah benar."
         });
       }
-    }, 800);
+    }, 1000);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -93,26 +92,27 @@ export default function LandingPage() {
     setTimeout(() => {
       if (username === 'admin123' && password === 'password123') {
         localStorage.setItem('isLoggedIn', 'true');
+        toast({ title: "Login Berhasil", description: "Selamat datang kembali." });
         router.push('/mode-selection');
       } else {
         setLoginError('Username atau password salah.');
         setIsLoggingIn(false);
       }
-    }, 1000);
+    }, 1200);
   };
 
   if (!isMounted) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-body selection:bg-primary/20">
-      {/* Navigation */}
+      {/* Navbar Modern */}
       <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12">
+            <div className="relative w-12 h-12 bg-slate-50 rounded-xl p-2 shadow-sm border">
               <Image 
                 src="https://iili.io/KAqSZhb.png" 
-                alt="Logo Sekolah" 
+                alt="Logo" 
                 fill 
                 className="object-contain"
                 priority
@@ -121,7 +121,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col">
               <span className="font-black text-xl text-primary leading-none tracking-tighter uppercase">EduCard Sync</span>
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em] mt-1">SMKN 2 Tana Toraja</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] mt-1">SMKN 2 Tana Toraja</span>
             </div>
           </div>
           
@@ -129,36 +129,34 @@ export default function LandingPage() {
             <Dialog>
               <DialogTrigger asChild>
                 <Button size="lg" className="px-8 rounded-full shadow-xl shadow-primary/20 gap-2 font-black uppercase tracking-widest text-[10px] h-12">
-                  <LogIn className="h-4 w-4" /> Portal Masuk
+                  <LogIn className="h-4 w-4" /> Portal Akses
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-                <div className="bg-primary p-8 text-white text-center space-y-2">
+              <DialogContent className="sm:max-w-md rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+                <div className="bg-primary p-10 text-white text-center space-y-3">
                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 mb-2">
-                      <Image src="https://iili.io/KAqSZhb.png" alt="Logo" width={40} height={40} className="object-contain invert brightness-0" unoptimized />
+                      <ShieldCheck className="h-8 w-8 text-white" />
                    </div>
-                   <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Login Akses</DialogTitle>
+                   <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Login Internal</DialogTitle>
                    <DialogDescription className="text-white/70 font-bold text-xs">
-                     Akses Internal Sistem Kartu & Absensi
+                     Manajemen Kartu & Absensi Digital
                    </DialogDescription>
                 </div>
-                <form onSubmit={handleLogin} className="p-8 space-y-6">
+                <form onSubmit={handleLogin} className="p-10 space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="username" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Username</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Username</Label>
                       <Input 
-                        id="username" 
                         value={username} 
                         onChange={(e) => setUsername(e.target.value)} 
-                        placeholder="admin123"
+                        placeholder="Masukkan username"
                         required 
                         className="h-12 rounded-xl border-slate-200 bg-slate-50 focus-visible:bg-white"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Password</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Password</Label>
                       <Input 
-                        id="password" 
                         type="password" 
                         value={password} 
                         onChange={(e) => setPassword(e.target.value)} 
@@ -189,102 +187,110 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 bg-white overflow-hidden border-b">
-        <div className="container mx-auto px-4 relative z-10 text-center space-y-10">
-           <Badge className="bg-primary/10 text-primary border-none px-6 py-2 text-[10px] font-black tracking-[0.3em] uppercase rounded-full">
-              Identity Management SMKN 2 Tana Toraja
+      {/* Hero Header */}
+      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10 text-center space-y-8">
+           <Badge className="bg-primary/5 text-primary border-primary/20 px-6 py-2 text-[10px] font-black tracking-[0.4em] uppercase rounded-full">
+              Digital Identity & Smart Tracking
            </Badge>
            <h1 className="text-6xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
-             Digital Card <br/><span className="text-primary italic">& Tracer System.</span>
+             EduCard <span className="text-primary">Sync.</span><br/><span className="italic opacity-30 text-5xl md:text-7xl">Smart Verification.</span>
            </h1>
-           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">
-             Verifikasi identitas siswa secara instan melalui sistem pelacakan berbasis database terpadu.
+           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
+             Sistem verifikasi identitas siswa terpadu untuk efisiensi administrasi dan monitoring kehadiran di SMKN 2 Tana Toraja.
            </p>
         </div>
-        <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px]"></div>
       </section>
 
-      {/* Tracer Section */}
-      <section className="py-24 bg-slate-50 relative">
+      {/* Tracer Section - Fitur Utama */}
+      <section className="py-24 bg-slate-50 relative border-y">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
-            <Card className="shadow-2xl border-none rounded-[3rem] overflow-hidden bg-white">
+            <Card className="shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-white ring-1 ring-slate-100">
               <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-5 h-full">
-                  <div className="md:col-span-3 p-10 lg:p-16 space-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-5 min-h-[500px]">
+                  <div className="md:col-span-3 p-10 lg:p-20 space-y-10">
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-primary">
                          <Navigation className="h-5 w-5 fill-primary" />
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Identity Tracer Tool</span>
+                         <span className="text-[10px] font-black uppercase tracking-[0.4em]">Tracer Identity Tool</span>
                       </div>
-                      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none">Lacak Identitas.</h3>
-                      <p className="text-muted-foreground font-medium">Gunakan NIS, NISN, atau Kode Kartu untuk memverifikasi data.</p>
+                      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none uppercase">Lacak Kartu.</h3>
+                      <p className="text-muted-foreground font-medium">Verifikasi data siswa melalui NIS, NISN, atau Kode Kartu unik secara instan.</p>
                     </div>
 
                     <form onSubmit={handleSearch} className="relative group">
-                      <div className="absolute left-5 top-5 h-6 w-6 text-slate-400 group-focus-within:text-primary transition-colors">
+                      <div className="absolute left-6 top-6 h-6 w-6 text-slate-300 group-focus-within:text-primary transition-colors">
                         <Search />
                       </div>
                       <Input 
                         placeholder="Masukkan NIS / NISN / KODE..." 
-                        className="pl-14 h-16 text-xl border-2 border-slate-100 bg-slate-50/50 focus-visible:bg-white rounded-2xl font-bold"
+                        className="pl-16 h-20 text-xl border-2 border-slate-100 bg-slate-50/50 focus-visible:bg-white rounded-3xl font-black uppercase placeholder:normal-case placeholder:font-medium"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       <Button 
                         type="submit" 
-                        className="absolute right-3 top-3 h-10 px-8 font-black rounded-xl text-[10px] tracking-widest"
+                        className="absolute right-4 top-4 h-12 px-10 font-black rounded-2xl text-[10px] tracking-widest shadow-xl shadow-primary/20"
                         disabled={isSearching}
                       >
-                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'LACAK'}
+                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'TELUSURI'}
                       </Button>
                     </form>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-                         <UserCheck className="h-6 w-6 text-primary" />
-                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">NIS/NISN</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-                         <QrCode className="h-6 w-6 text-primary" />
-                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">QR-Code</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-                         <Camera className="h-6 w-6 text-primary" />
-                         <span className="text-[8px] font-black uppercase tracking-widest opacity-50">ID Card</span>
-                      </div>
+                    <div className="flex flex-wrap gap-8 pt-6">
+                       <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Real-time Data</span>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Valid Identification</span>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secure Access</span>
+                       </div>
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 bg-slate-900 p-10 lg:p-16 text-white flex flex-col justify-center relative">
+                  <div className="md:col-span-2 bg-slate-900 p-10 lg:p-16 text-white flex flex-col justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-primary opacity-10 blur-3xl rounded-full translate-x-1/2"></div>
                     <div className="relative z-10 space-y-8">
                       {hasSearched && searchResult ? (
                         <div className="animate-in fade-in zoom-in-95 duration-500 space-y-8 text-center">
-                          <div className="w-32 h-44 bg-white/10 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 mx-auto">
+                          <div className="w-40 h-52 bg-white/10 backdrop-blur-2xl rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/20 mx-auto group">
                             <Image 
                               src={searchResult.photo_url || 'https://picsum.photos/seed/user/300/400'} 
-                              alt="Foto" fill className="object-cover" unoptimized 
+                              alt="Profile" fill className="object-cover transition-transform group-hover:scale-110 duration-700" unoptimized 
                             />
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="text-2xl font-black uppercase tracking-tight">{searchResult.name}</h4>
-                            <p className="text-[10px] text-primary font-black tracking-widest uppercase">{searchResult.class} • {searchResult.major}</p>
-                          </div>
                           <div className="space-y-2">
-                             <div className="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5">
-                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Status</span>
-                                <Badge className="bg-emerald-500 text-emerald-950 border-none text-[9px] font-black uppercase">{searchResult.status}</Badge>
+                            <h4 className="text-3xl font-black uppercase tracking-tighter leading-none">{searchResult.name}</h4>
+                            <p className="text-[11px] text-primary font-black tracking-[0.2em] uppercase">{searchResult.class} • {searchResult.major}</p>
+                          </div>
+                          <div className="bg-white/5 p-5 rounded-2xl flex justify-between items-center border border-white/5 backdrop-blur-sm">
+                             <div className="text-left">
+                                <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Status Kartu</p>
+                                <p className="text-xs font-black uppercase text-emerald-400 mt-1">{searchResult.status}</p>
+                             </div>
+                             <div className="w-12 h-12 bg-white p-1 rounded-lg">
+                                <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=VERIFY-${searchResult.card_code}`} alt="QR" width={100} height={100} unoptimized />
                              </div>
                           </div>
-                          <Button variant="secondary" className="w-full font-black h-12 rounded-xl text-[10px] tracking-widest uppercase" asChild>
-                            <Link href={`/verify/${searchResult.card_code}`}>VERIFIKASI PENUH</Link>
+                          <Button variant="secondary" className="w-full font-black h-14 rounded-2xl text-[10px] tracking-widest uppercase shadow-2xl" asChild>
+                            <Link href={`/verify/${searchResult.card_code}`}>LIHAT VERIFIKASI PENUH</Link>
                           </Button>
                         </div>
                       ) : (
-                        <div className="text-center space-y-8 opacity-40 flex flex-col items-center py-10">
-                          <Zap className="h-20 w-20 text-white" fill="white" />
-                          <p className="text-[10px] font-black uppercase tracking-widest">Siap Melacak Database</p>
+                        <div className="text-center space-y-8 opacity-20 flex flex-col items-center py-10">
+                          <div className="relative">
+                            <Zap className="h-24 w-24 text-white" fill="white" />
+                            <div className="absolute inset-0 bg-white blur-2xl opacity-50 animate-pulse"></div>
+                          </div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.5em]">System Ready for Tracking</p>
                         </div>
                       )}
                     </div>
@@ -296,12 +302,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t py-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-             &copy; {new Date().getFullYear()} EDU-SYNC SYSTEM. SMKN 2 TANA TORAJA.
-          </p>
+      {/* Footer Korporat */}
+      <footer className="bg-white py-16">
+        <div className="container mx-auto px-4">
+           <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-t pt-10">
+              <div className="flex items-center gap-4">
+                 <Image src="https://iili.io/KAqSZhb.png" alt="Logo" width={32} height={32} unoptimized />
+                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">EduCard Sync v2.5</span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+                 &copy; {new Date().getFullYear()} SMK NEGERI 2 TANA TORAJA. ALL RIGHTS RESERVED.
+              </p>
+              <div className="flex gap-6">
+                 <span className="text-[10px] font-black uppercase text-primary tracking-widest cursor-pointer hover:underline">Privacy Policy</span>
+                 <span className="text-[10px] font-black uppercase text-primary tracking-widest cursor-pointer hover:underline">Documentation</span>
+              </div>
+           </div>
         </div>
       </footer>
     </div>

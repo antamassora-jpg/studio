@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Camera, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Save, Upload, Camera, Loader2, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,8 +29,8 @@ export default function SettingsPage() {
     if (!settings) return;
     
     setIsSaving(true);
-    // Simulasi jeda agar user tahu ada proses
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Simulasi jeda agar user melihat proses penyimpanan
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
       const db = getDB();
@@ -38,14 +38,14 @@ export default function SettingsPage() {
       saveDB(db);
       
       toast({ 
-        title: "Perubahan Tersimpan", 
-        description: "Seluruh konfigurasi sekolah berhasil diperbarui.",
+        title: "Perubahan Berhasil Disimpan", 
+        description: "Konfigurasi sekolah dan aset visual telah diperbarui di database lokal.",
       });
     } catch (error) {
       toast({ 
         variant: "destructive", 
         title: "Gagal Menyimpan", 
-        description: "Terjadi kesalahan sistem saat menyimpan data." 
+        description: "Terjadi kesalahan sistem saat mencoba menyimpan data." 
       });
     } finally {
       setIsSaving(false);
@@ -60,7 +60,7 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const result = reader.result as string;
       setSettings(prev => prev ? ({ ...prev, [field]: result }) : null);
-      toast({ title: "Gambar Dimuat", description: "Klik Simpan Perubahan untuk mengaktifkan." });
+      toast({ title: "Gambar Berhasil Dimuat", description: "Klik 'Simpan Perubahan' untuk memperbarui database." });
     };
     reader.readAsDataURL(file);
   };
@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
   if (!settings) return (
     <div className="h-full flex items-center justify-center">
-       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+       <Loader2 className="h-10 w-10 animate-spin text-primary" />
     </div>
   );
 
@@ -84,24 +84,24 @@ export default function SettingsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black font-headline text-primary tracking-tight uppercase">Settings Center</h1>
-          <p className="text-muted-foreground font-medium">Manajemen aset visual, legalitas, dan aturan kartu.</p>
+          <p className="text-muted-foreground font-medium">Manajemen aset visual, legalitas, dan aturan kartu secara global.</p>
         </div>
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="gap-2 h-14 px-10 shadow-xl shadow-primary/20 min-w-[200px] rounded-2xl text-xs font-black uppercase tracking-widest"
+          className="gap-2 h-14 px-10 shadow-2xl shadow-primary/20 min-w-[220px] rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105"
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-          {isSaving ? 'MEMPROSES...' : 'SIMPAN PERUBAHAN'}
+          {isSaving ? 'SEDANG MENYIMPAN...' : 'SIMPAN PERUBAHAN'}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Identitas & Legalitas</CardTitle>
-              <CardDescription>Detail utama sekolah dan informasi Kepala Sekolah.</CardDescription>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Identitas & Legalitas Sekolah</CardTitle>
+              <CardDescription>Informasi utama institusi dan data Kepala Sekolah untuk tanda tangan.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-2">
@@ -109,15 +109,15 @@ export default function SettingsPage() {
                 <Input 
                   value={settings.school_name} 
                   onChange={e => updateSetting('school_name', e.target.value)} 
-                  className="h-12 rounded-xl" 
+                  className="h-12 rounded-xl border-slate-200" 
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Alamat Operasional</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Alamat Operasional Lengkap</Label>
                 <Textarea 
                   value={settings.address} 
                   onChange={e => updateSetting('address', e.target.value)} 
-                  className="min-h-[100px] rounded-xl" 
+                  className="min-h-[100px] rounded-xl border-slate-200" 
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                   <Input 
                     value={settings.principal_name} 
                     onChange={e => updateSetting('principal_name', e.target.value)} 
-                    className="h-12 rounded-xl" 
+                    className="h-12 rounded-xl border-slate-200" 
                   />
                 </div>
                 <div className="space-y-2">
@@ -134,29 +134,29 @@ export default function SettingsPage() {
                   <Input 
                     value={settings.principal_nip} 
                     onChange={e => updateSetting('principal_nip', e.target.value)} 
-                    className="h-12 rounded-xl" 
+                    className="h-12 rounded-xl border-slate-200" 
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Aturan & Ketentuan Kartu</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Aturan & Tata Tertib Kartu</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="student" className="w-full">
                 <TabsList className="w-full grid grid-cols-3 h-14 bg-transparent border-b rounded-none">
-                  <TabsTrigger value="student" className="font-bold text-xs uppercase">Pelajar</TabsTrigger>
-                  <TabsTrigger value="exam" className="font-bold text-xs uppercase">Ujian</TabsTrigger>
-                  <TabsTrigger value="id" className="font-bold text-xs uppercase">ID Card</TabsTrigger>
+                  <TabsTrigger value="student" className="font-bold text-xs uppercase data-[state=active]:text-primary">Pelajar</TabsTrigger>
+                  <TabsTrigger value="exam" className="font-bold text-xs uppercase data-[state=active]:text-primary">Ujian</TabsTrigger>
+                  <TabsTrigger value="id" className="font-bold text-xs uppercase data-[state=active]:text-primary">ID Card</TabsTrigger>
                 </TabsList>
-                <div className="p-6">
+                <div className="p-8">
                   <TabsContent value="student" className="mt-0 space-y-2">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Pelajar</Label>
                     <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
                       value={settings.terms_student} 
                       onChange={e => updateSetting('terms_student', e.target.value)} 
                     />
@@ -164,7 +164,7 @@ export default function SettingsPage() {
                   <TabsContent value="exam" className="mt-0 space-y-2">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Ujian</Label>
                     <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
                       value={settings.terms_exam} 
                       onChange={e => updateSetting('terms_exam', e.target.value)} 
                     />
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                   <TabsContent value="id" className="mt-0 space-y-2">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan ID Card Umum</Label>
                     <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl" 
+                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
                       value={settings.terms_id} 
                       onChange={e => updateSetting('terms_id', e.target.value)} 
                     />
@@ -184,9 +184,9 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Aset Visual</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Aset & Identitas Visual</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
                <AssetUploader 
@@ -210,7 +210,7 @@ export default function SettingsPage() {
                   onShowBackChange={v => updateSetting('student_show_logo_right_back', v)}
                 />
                 <AssetUploader 
-                  label="Tanda Tangan" 
+                  label="Tanda Tangan (Kepsek)" 
                   image={settings.signature_image} 
                   onUpload={e => handleFileUpload('signature_image', e)} 
                   onUrlChange={url => handleUrlChange('signature_image', url)}
@@ -221,7 +221,7 @@ export default function SettingsPage() {
                   onShowBackChange={v => updateSetting('student_show_sig_back', v)}
                 />
                 <AssetUploader 
-                  label="Stempel" 
+                  label="Stempel Sekolah" 
                   image={settings.stamp_image} 
                   onUpload={e => handleFileUpload('stamp_image', e)} 
                   onUrlChange={url => handleUrlChange('stamp_image', url)}
@@ -260,53 +260,56 @@ function AssetUploader({
   onShowBackChange: (v: boolean) => void
 }) {
   return (
-    <div className="space-y-4 p-5 border-2 border-slate-100 rounded-[2rem] bg-white">
+    <div className="space-y-4 p-5 border-2 border-slate-100 rounded-[2.5rem] bg-white transition-all hover:border-primary/20">
       <div className="flex justify-between items-center">
         <Label className="text-[10px] font-black uppercase text-slate-800 tracking-widest">{label}</Label>
       </div>
       
       <div className={cn(
-        "relative bg-slate-50 border-2 border-dashed rounded-2xl overflow-hidden flex items-center justify-center group transition-all",
+        "relative bg-slate-50 border-2 border-dashed rounded-3xl overflow-hidden flex items-center justify-center group transition-all",
         aspect === 'square' ? "aspect-square" : "aspect-[2.5/1]"
       )}>
         {image ? (
           <>
             <Image src={image} alt={label} fill className="object-contain p-2" unoptimized />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Label className="cursor-pointer bg-white text-black p-3 rounded-full shadow-lg">
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+              <Label className="cursor-pointer bg-white text-black p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
                 <Camera className="h-4 w-4" />
                 <input type="file" className="hidden" accept="image/*" onChange={onUpload} />
               </Label>
+              <Button variant="secondary" size="sm" className="rounded-full h-10 w-10 p-0" onClick={() => onUrlChange('')}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
           </>
         ) : (
           <Label className="cursor-pointer flex flex-col items-center gap-2 text-slate-300 p-4">
             <Upload className="h-6 w-6" />
-            <span className="text-[9px] font-black uppercase">UNGGAH FILE</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">UNGGAH FILE</span>
             <input type="file" className="hidden" accept="image/*" onChange={onUpload} />
           </Label>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1">
-          <LinkIcon className="h-3 w-3" /> Link URL Gambar
+        <Label className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1.5 px-1">
+          <LinkIcon className="h-3 w-3" /> Link URL Foto/Logo
         </Label>
         <Input 
-          placeholder="https://..." 
+          placeholder="https://link-gambar.com/logo.png" 
           value={image && image.startsWith('data:') ? '' : (image || '')}
           onChange={(e) => onUrlChange(e.target.value)}
-          className="text-[10px] h-10 rounded-xl"
+          className="text-[10px] h-11 rounded-xl bg-slate-50/50 border-slate-100 focus:bg-white"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3 pt-3 border-t">
-         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
-           <span className="text-[9px] font-black uppercase text-slate-500">Depan</span>
+         <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50 rounded-2xl">
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-tighter">Depan</span>
            <Switch checked={showFront} onCheckedChange={onShowFrontChange} className="scale-75" />
          </div>
-         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
-           <span className="text-[9px] font-black uppercase text-slate-500">Belakang</span>
+         <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50 rounded-2xl">
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-tighter">Belakang</span>
            <Switch checked={showBack} onCheckedChange={onShowBackChange} className="scale-75" />
          </div>
       </div>
