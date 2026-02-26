@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "school-logo",
+      "description": "Logo SMKN 2 Tana Toraja",
+      "imageUrl": "https://iili.io/KAqSZhb.png",
+      "imageHint": "school logo"
+    },
+    {
+      "id": "student-avatar",
+      "description": "Student placeholder photo",
+      "imageUrl": "https://picsum.photos/seed/student-placeholder/300/400",
+      "imageHint": "student portrait"
+    }
+  ]
+}
