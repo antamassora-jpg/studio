@@ -136,35 +136,37 @@ export default function CardsPage() {
     }
   };
 
-  const handleConfirmPrint = () => {
-    // Berikan sedikit waktu agar render DOM selesai jika ada perubahan
+  const handlePrint = () => {
+    // Memberi jeda sebentar agar DOM benar-benar terupdate jika ada pergantian state
     setTimeout(() => {
       window.print();
       setIsPrintModalOpen(false);
-    }, 100);
+    }, 250);
   };
 
   return (
     <div className="space-y-6">
-      {/* Area tersembunyi untuk proses cetak browser */}
+      {/* Area tersembunyi untuk proses cetak browser - Selalu sinkron dengan seleksi atau pratinjau */}
       <div id="print-area">
-        <div className="p-10 flex flex-col items-center gap-10">
+        <div className="flex flex-col items-center gap-10 p-10">
           {selectedIds.size > 0 ? (
+            // Jika ada seleksi massal, cetak semua yang dipilih
             Array.from(selectedIds).map(id => {
               const s = students.find(x => x.id === id);
               return s && settings ? (
-                <div key={id} className="flex flex-col gap-6 items-center break-inside-avoid page-break-after-always pb-10 border-b border-dashed border-slate-300 w-full">
+                <div key={id} className="page-break flex flex-col gap-6 items-center mb-10 pb-10 border-b border-dashed">
                   <StudentCardVisual student={s} settings={settings} side="front" />
                   <StudentCardVisual student={s} settings={settings} side="back" />
                 </div>
               ) : null;
             })
-          ) : previewStudent && settings && (
-            <div className="flex flex-col gap-6 items-center break-inside-avoid">
+          ) : previewId && previewStudent && settings ? (
+            // Jika tidak ada seleksi, cetak kartu yang sedang di-preview (Cetak Sekarang)
+            <div className="flex flex-col gap-6 items-center">
               <StudentCardVisual student={previewStudent} settings={settings} side="front" />
               <StudentCardVisual student={previewStudent} settings={settings} side="back" />
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -301,7 +303,7 @@ export default function CardsPage() {
                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                      Download PDF
                    </Button>
-                   <Button className="flex-1 gap-2 h-11" onClick={handleConfirmPrint}>
+                   <Button className="flex-1 gap-2 h-11" onClick={handlePrint}>
                      <Printer className="h-4 w-4" /> Cetak Sekarang
                    </Button>
                 </div>
@@ -319,11 +321,11 @@ export default function CardsPage() {
       </div>
 
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto no-print">
           <DialogHeader>
             <DialogTitle>Siap untuk Mencetak</DialogTitle>
             <DialogDescription>
-              Menyiapkan {selectedIds.size || 1} kartu untuk proses pencetakan.
+              Menyiapkan {selectedIds.size} kartu untuk proses pencetakan massal.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-y my-4 bg-muted/10 p-4 rounded-lg">
@@ -337,17 +339,17 @@ export default function CardsPage() {
              })}
              {selectedIds.size > 4 && (
                <div className="col-span-full text-center py-4 text-xs font-bold text-muted-foreground">
-                 + {selectedIds.size - 4} Kartu lainnya...
+                 + {selectedIds.size - 4} Kartu lainnya dalam antrian cetak...
                </div>
              )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <div className="flex-1 text-xs text-muted-foreground mb-4 sm:mb-0">
-               <p>Tips: Pastikan printer menggunakan kertas ID Card PVC atau Art Paper 260gsm.</p>
+               <p>Tips: Gunakan kertas PVC ID Card atau Art Paper 260gsm untuk hasil terbaik.</p>
             </div>
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
-            <Button className="gap-2" onClick={handleConfirmPrint}>
-              <Printer className="h-4 w-4" /> Konfirmasi Cetak
+            <Button className="gap-2" onClick={handlePrint}>
+              <Printer className="h-4 w-4" /> Konfirmasi Cetak Massal
             </Button>
           </DialogFooter>
         </DialogContent>

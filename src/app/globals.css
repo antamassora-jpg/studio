@@ -65,34 +65,58 @@
 }
 
 @media print {
-  /* Sembunyikan semua elemen secara default saat cetak */
-  body * {
-    visibility: hidden;
+  /* Aturan Dasar Print */
+  html, body {
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
   }
-  /* Tampilkan hanya area print dan turunannya */
-  #print-area, #print-area * {
-    visibility: visible;
+
+  /* Sembunyikan elemen non-cetak */
+  .no-print, 
+  header, 
+  nav, 
+  aside, 
+  footer, 
+  button,
+  .sidebar-provider,
+  [role="dialog"] {
+    display: none !important;
   }
+
+  /* Paksa Tampilkan Area Cetak */
   #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
     display: block !important;
-    background: white;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 9999 !important;
+    background: white !important;
+    visibility: visible !important;
   }
-  /* Paksa background muncul saat print (terutama untuk elemen berwarna) */
+
+  #print-area * {
+    visibility: visible !important;
+  }
+
+  /* Paksa Warna & Background muncul */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
-  /* Sembunyikan elemen dengan class no-print */
-  .no-print {
-    display: none !important;
-  }
-  /* Hilangkan margin default browser */
+
+  /* Pengaturan Halaman */
   @page {
-    margin: 0;
+    margin: 10mm;
+    size: auto;
+  }
+
+  .page-break {
+    page-break-after: always;
+    break-after: page;
   }
 }
 
