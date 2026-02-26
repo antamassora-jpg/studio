@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getDB } from '@/app/lib/db';
 import { Student, SchoolSettings, CardTemplate } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select, 
   SelectContent, 
