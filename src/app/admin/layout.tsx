@@ -1,3 +1,4 @@
+
 "use client";
 
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -12,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setIsMounted(true);
     if (localStorage.getItem('isLoggedIn') !== 'true') {
-      router.push('/'); // Redirect ke HomePage jika mencoba akses admin tanpa login
+      router.push('/'); // Redirect ke portal beranda jika tidak login
     }
     if (localStorage.getItem('userRole') !== 'admin') {
       router.push('/mode-selection');

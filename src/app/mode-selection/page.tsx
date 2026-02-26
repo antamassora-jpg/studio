@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -11,7 +12,7 @@ export default function ModeSelection() {
 
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
-      router.push('/'); // Redirect ke HomePage jika belum login
+      router.push('/'); // Redirect ke beranda portal jika belum login
     }
   }, [router]);
 
@@ -23,7 +24,7 @@ export default function ModeSelection() {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
-    router.push('/'); // Logout kembali ke Beranda Utama
+    router.push('/'); // Kembali ke Portal Beranda Profesional
   };
 
   return (
@@ -72,7 +73,7 @@ export default function ModeSelection() {
 
         <div className="mt-12 text-center">
           <Button variant="ghost" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-destructive">
-            <LogOut className="h-4 w-4" /> Keluar ke Beranda
+            <LogOut className="h-4 w-4" /> Keluar ke Portal Utama
           </Button>
         </div>
       </div>

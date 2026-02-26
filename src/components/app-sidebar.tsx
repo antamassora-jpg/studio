@@ -1,3 +1,4 @@
+
 "use client";
 
 import { 
@@ -49,7 +50,7 @@ export function AppSidebar() {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
-    router.push('/'); // Diarahkan ke HomePage profesional
+    router.push('/'); // Redirect ke Beranda Profesional
   };
 
   const handleSwitchMode = () => {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -16,7 +17,10 @@ import {
   Loader2, 
   Zap, 
   Navigation,
-  CheckCircle2
+  CheckCircle2,
+  Users,
+  CreditCard,
+  CalendarCheck
 } from 'lucide-react';
 import {
   Dialog,
@@ -31,6 +35,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getDB } from '@/app/lib/db';
 import { Student } from '@/app/lib/types';
 import { toast } from '@/hooks/use-toast';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -59,7 +72,6 @@ export default function LandingPage() {
     
     setTimeout(() => {
       const db = getDB();
-      // Mencari berdasarkan NIS, NISN, atau Kode Kartu
       const found = db.students.find(s => 
         s.nis === searchQuery || 
         s.nisn === searchQuery || 
@@ -75,10 +87,10 @@ export default function LandingPage() {
         toast({
           variant: "destructive",
           title: "Data Tidak Ditemukan",
-          description: "Pastikan nomor induk atau kode kartu sudah benar sesuai data di sekolah."
+          description: "Nomor induk atau kode kartu tidak terdaftar di database kami."
         });
       }
-    }, 1000);
+    }, 1200);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -89,20 +101,28 @@ export default function LandingPage() {
     setTimeout(() => {
       if (username === 'admin123' && password === 'password123') {
         localStorage.setItem('isLoggedIn', 'true');
-        toast({ title: "Login Berhasil", description: "Selamat datang kembali di panel EduCard Sync." });
+        toast({ title: "Akses Diberikan", description: "Selamat datang di panel kontrol EduCard Sync." });
         router.push('/mode-selection');
       } else {
-        setLoginError('Username atau password salah.');
+        setLoginError('Kredensial tidak valid. Silahkan hubungi IT sekolah.');
         setIsLoggingIn(false);
       }
-    }, 1200);
+    }, 1500);
   };
+
+  const chartData = [
+    { name: 'Sen', rate: 95 },
+    { name: 'Sel', rate: 98 },
+    { name: 'Rab', rate: 92 },
+    { name: 'Kam', rate: 96 },
+    { name: 'Jum', rate: 94 },
+  ];
 
   if (!isMounted) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-body selection:bg-primary/20">
-      {/* Navbar Modern */}
+      {/* Header Portal */}
       <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -117,207 +137,200 @@ export default function LandingPage() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl text-primary leading-none tracking-tighter uppercase">EduCard Sync</span>
+              <span className="font-black text-xl text-primary leading-none tracking-tighter uppercase">EduCard Portal</span>
               <span className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] mt-1">SMKN 2 Tana Toraja</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="lg" className="px-8 rounded-full shadow-xl shadow-primary/20 gap-2 font-black uppercase tracking-widest text-[10px] h-12">
-                  <LogIn className="h-4 w-4" /> Portal Masuk
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
-                <div className="bg-primary p-10 text-white text-center space-y-3 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                   <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 mb-2">
-                      <ShieldCheck className="h-8 w-8 text-white" />
-                   </div>
-                   <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Akses Internal</DialogTitle>
-                   <DialogDescription className="text-white/70 font-bold text-xs uppercase tracking-widest">
-                     Management & Scanning System
-                   </DialogDescription>
-                </div>
-                <form onSubmit={handleLogin} className="p-10 space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Username</Label>
-                      <Input 
-                        value={username} 
-                        onChange={(e) => setUsername(e.target.value)} 
-                        placeholder="admin123"
-                        required 
-                        className="h-12 rounded-xl border-slate-200 bg-slate-50 focus-visible:bg-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
-                      <Input 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        placeholder="••••••••"
-                        required 
-                        className="h-12 rounded-xl border-slate-200 bg-slate-50 focus-visible:bg-white"
-                      />
-                    </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="lg" className="px-8 rounded-full shadow-xl shadow-primary/20 gap-2 font-black uppercase tracking-widest text-[10px] h-12">
+                <LogIn className="h-4 w-4" /> Akses Internal
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+              <div className="bg-primary p-10 text-white text-center space-y-3 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                 <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 mb-2">
+                    <ShieldCheck className="h-8 w-8 text-white" />
+                 </div>
+                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Login Sistem</DialogTitle>
+                 <DialogDescription className="text-white/70 font-bold text-xs uppercase tracking-widest">
+                   Admin & Scanner Management
+                 </DialogDescription>
+              </div>
+              <form onSubmit={handleLogin} className="p-10 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Username</Label>
+                    <Input 
+                      value={username} 
+                      onChange={(e) => setUsername(e.target.value)} 
+                      placeholder="Masukkan ID Anda"
+                      required 
+                      className="h-12 rounded-xl border-slate-200 bg-slate-50"
+                    />
                   </div>
-                  {loginError && (
-                    <Alert variant="destructive" className="py-3 rounded-xl border-destructive/20 bg-destructive/5">
-                      <AlertDescription className="text-xs font-bold">{loginError}</AlertDescription>
-                    </Alert>
-                  )}
-                  <Alert className="bg-primary/5 border-none rounded-xl">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-[10px] uppercase font-bold text-muted-foreground">
-                      Demo: admin123 / password123
-                    </AlertDescription>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                    <Input 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="••••••••"
+                      required 
+                      className="h-12 rounded-xl border-slate-200 bg-slate-50"
+                    />
+                  </div>
+                </div>
+                {loginError && (
+                  <Alert variant="destructive" className="py-3 rounded-xl">
+                    <AlertDescription className="text-xs font-bold">{loginError}</AlertDescription>
                   </Alert>
-                  <Button type="submit" className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-2xl" disabled={isLoggingIn}>
-                    {isLoggingIn ? <Loader2 className="h-6 w-6 animate-spin" /> : 'MASUK SEKARANG'}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+                )}
+                <Button type="submit" className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-lg rounded-2xl" disabled={isLoggingIn}>
+                  {isLoggingIn ? <Loader2 className="h-6 w-6 animate-spin" /> : 'VERIFIKASI & MASUK'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </nav>
 
-      {/* Hero Header Section */}
-      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 bg-white overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10 text-center space-y-8">
-           <Badge className="bg-primary/5 text-primary border-primary/20 px-6 py-2 text-[10px] font-black tracking-[0.4em] uppercase rounded-full">
-              Sistem Sinkronisasi Kartu & Absensi Digital
-           </Badge>
-           <h1 className="text-6xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter uppercase">
-             Identity <span className="text-primary">Sync.</span><br/><span className="italic opacity-30 text-5xl md:text-7xl">Smart Control.</span>
-           </h1>
-           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-             Platform verifikasi kartu pelajar terpadu untuk monitoring kehadiran dan administrasi digital SMKN 2 Tana Toraja.
-           </p>
+      {/* Hero & Stats */}
+      <section className="pt-20 pb-16 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+          <div className="space-y-8">
+            <Badge className="bg-primary/5 text-primary border-primary/20 px-6 py-2 text-[10px] font-black tracking-[0.4em] uppercase rounded-full">
+              Integrated School Smart System
+            </Badge>
+            <h1 className="text-6xl md:text-7xl font-black text-slate-900 leading-[0.9] tracking-tighter uppercase">
+              Smart Control.<br/><span className="text-primary italic">Digital Identity.</span>
+            </h1>
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-lg">
+              Solusi manajemen identitas digital terpadu untuk monitoring kehadiran, kartu ujian, dan akses layanan sekolah di SMKN 2 Tana Toraja.
+            </p>
+            <div className="grid grid-cols-3 gap-6 pt-4">
+              <div className="space-y-1">
+                <div className="text-3xl font-black text-primary">1.2K+</div>
+                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Siswa Aktif</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-3xl font-black text-secondary">100%</div>
+                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Digitalized</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-3xl font-black text-emerald-500">Realtime</div>
+                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Sync Database</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100 shadow-xl">
+             <div className="flex items-center justify-between mb-8">
+                <h4 className="font-black uppercase tracking-tighter">Grafik Kehadiran Pekan Ini</h4>
+                <CalendarCheck className="h-5 w-5 text-primary opacity-30" />
+             </div>
+             <div className="h-[250px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                    <RechartsTooltip />
+                    <Bar dataKey="rate" fill="#2E50B8" radius={[6, 6, 0, 0]} barSize={40} />
+                 </BarChart>
+               </ResponsiveContainer>
+             </div>
+          </div>
         </div>
-        {/* Decorative elements */}
-        <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px]"></div>
       </section>
 
-      {/* Tracer Center - Fitur Pencarian */}
-      <section className="py-24 bg-slate-50 relative border-y">
+      {/* Identity Tracer - Main Feature */}
+      <section className="py-24 bg-slate-900 relative">
         <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <Card className="shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-white ring-1 ring-slate-100">
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-5 min-h-[500px]">
-                  <div className="md:col-span-3 p-10 lg:p-20 space-y-10">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-primary">
-                         <Navigation className="h-5 w-5 fill-primary" />
-                         <span className="text-[10px] font-black uppercase tracking-[0.4em]">Identity Tracer Tool</span>
-                      </div>
-                      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none uppercase">Lacak Validitas.</h3>
-                      <p className="text-muted-foreground font-medium">Verifikasi data siswa melalui NIS, NISN, atau Kode Kartu untuk memastikan keaslian kartu pelajar.</p>
+          <div className="max-w-4xl mx-auto text-center space-y-12">
+            <div className="space-y-4">
+               <h2 className="text-4xl font-black text-white tracking-tight uppercase">Identity Tracer System</h2>
+               <p className="text-white/50 font-medium">Lacak dan verifikasi identitas siswa secara instan melalui sistem sinkronisasi database log admin.</p>
+            </div>
+
+            <Card className="bg-white/5 border-white/10 rounded-[3rem] overflow-hidden backdrop-blur-md">
+              <CardContent className="p-12 space-y-10">
+                <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto">
+                  <Search className="absolute left-6 top-6 h-8 w-8 text-white/20 group-focus-within:text-primary transition-colors" />
+                  <Input 
+                    placeholder="Masukkan NIS / NISN / Kode Kartu..." 
+                    className="pl-20 h-20 text-xl border-2 border-white/10 bg-white/5 text-white focus-visible:ring-primary rounded-3xl font-black uppercase placeholder:normal-case placeholder:font-medium placeholder:text-white/20"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="absolute right-4 top-4 h-12 px-8 font-black rounded-2xl text-[10px] tracking-widest shadow-2xl"
+                    disabled={isSearching}
+                  >
+                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'TELUSURI DATA'}
+                  </Button>
+                </form>
+
+                {hasSearched && searchResult ? (
+                  <div className="animate-in fade-in zoom-in-95 duration-700 bg-white rounded-[2.5rem] p-10 flex flex-col md:flex-row gap-10 items-center text-left">
+                    <div className="w-44 h-56 bg-slate-100 rounded-3xl overflow-hidden relative shadow-2xl shrink-0 border-4 border-slate-50">
+                       <Image 
+                         src={searchResult.photo_url || 'https://picsum.photos/seed/placeholder/300/400'} 
+                         alt="Siswa" fill className="object-cover" unoptimized 
+                       />
                     </div>
-
-                    <form onSubmit={handleSearch} className="relative group">
-                      <div className="absolute left-6 top-6 h-6 w-6 text-slate-300 group-focus-within:text-primary transition-colors">
-                        <Search />
-                      </div>
-                      <Input 
-                        placeholder="Masukkan NIS / NISN / KODE KARTU..." 
-                        className="pl-16 h-20 text-xl border-2 border-slate-100 bg-slate-50/50 focus-visible:bg-white rounded-3xl font-black uppercase placeholder:normal-case placeholder:font-medium"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="absolute right-4 top-4 h-12 px-10 font-black rounded-2xl text-[10px] tracking-widest shadow-xl shadow-primary/20"
-                        disabled={isSearching}
-                      >
-                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'TELUSURI DATA'}
-                      </Button>
-                    </form>
-
-                    <div className="flex flex-wrap gap-8 pt-6">
-                       <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Real-time DB Sync</span>
+                    <div className="flex-1 space-y-4">
+                       <div className="flex items-center gap-2">
+                          <Badge className="bg-emerald-500 text-white font-black uppercase text-[8px] tracking-[0.2em]">Verified Aktif</Badge>
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{searchResult.card_code}</span>
                        </div>
-                       <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Official Status</span>
+                       <h3 className="text-4xl font-black text-slate-900 leading-none uppercase tracking-tighter">{searchResult.name}</h3>
+                       <p className="text-primary font-black uppercase tracking-[0.3em] text-xs">{searchResult.class} - {searchResult.major}</p>
+                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                          <div>
+                             <p className="text-[8px] font-black uppercase text-slate-400">NIS / NISN</p>
+                             <p className="text-sm font-bold text-slate-800">{searchResult.nis} / {searchResult.nisn || '-'}</p>
+                          </div>
+                          <div>
+                             <p className="text-[8px] font-black uppercase text-slate-400">Tahun Ajaran</p>
+                             <p className="text-sm font-bold text-slate-800">{searchResult.school_year}</p>
+                          </div>
                        </div>
                     </div>
                   </div>
-
-                  <div className="md:col-span-2 bg-slate-900 p-10 lg:p-16 text-white flex flex-col justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-primary opacity-10 blur-3xl rounded-full translate-x-1/2"></div>
-                    <div className="relative z-10 space-y-8">
-                      {hasSearched && searchResult ? (
-                        <div className="animate-in fade-in zoom-in-95 duration-500 space-y-8 text-center">
-                          <div className="w-40 h-52 bg-white/10 backdrop-blur-2xl rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/20 mx-auto group relative">
-                            <Image 
-                              src={searchResult.photo_url || 'https://picsum.photos/seed/user/300/400'} 
-                              alt="Profil Siswa" fill className="object-cover transition-transform group-hover:scale-110 duration-700" unoptimized 
-                            />
-                            {searchResult.status === 'Aktif' && (
-                              <div className="absolute top-2 right-2 bg-emerald-500 p-1.5 rounded-full">
-                                <CheckCircle2 className="h-4 w-4 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <h4 className="text-3xl font-black uppercase tracking-tighter leading-none">{searchResult.name}</h4>
-                            <p className="text-[11px] text-primary font-black tracking-[0.2em] uppercase">{searchResult.class} • {searchResult.major}</p>
-                          </div>
-                          <div className="bg-white/5 p-5 rounded-2xl flex justify-between items-center border border-white/5 backdrop-blur-sm">
-                             <div className="text-left">
-                                <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Status Keanggotaan</p>
-                                <p className="text-xs font-black uppercase text-emerald-400 mt-1">{searchResult.status}</p>
-                             </div>
-                             <div className="w-12 h-12 bg-white p-1 rounded-lg">
-                                <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=VERIFY-${searchResult.card_code}`} alt="QR" width={100} height={100} unoptimized />
-                             </div>
-                          </div>
-                          <Button variant="secondary" className="w-full font-black h-14 rounded-2xl text-[10px] tracking-widest uppercase shadow-2xl" asChild>
-                            <Link href={`/verify/${searchResult.card_code}`}>KONFIRMASI IDENTITAS</Link>
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-center space-y-8 opacity-20 flex flex-col items-center py-10">
-                          <div className="relative">
-                            <Zap className="h-24 w-24 text-white" fill="white" />
-                            <div className="absolute inset-0 bg-white blur-2xl opacity-50 animate-pulse"></div>
-                          </div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.5em]">Siap Untuk Pemindaian Data</p>
-                        </div>
-                      )}
-                    </div>
+                ) : hasSearched && !searchResult ? (
+                   <div className="py-20 text-white/30 font-black uppercase tracking-[0.5em] animate-pulse">
+                      Data Tidak Ditemukan Dalam Log Database
+                   </div>
+                ) : (
+                  <div className="flex justify-center gap-12 opacity-20">
+                     <Users className="h-12 w-12 text-white" />
+                     <CreditCard className="h-12 w-12 text-white" />
+                     <ShieldCheck className="h-12 w-12 text-white" />
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Footer Section */}
-      <footer className="bg-white py-16">
-        <div className="container mx-auto px-4">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-t border-slate-100 pt-10">
-              <div className="flex items-center gap-4">
-                 <Image src="https://iili.io/KAqSZhb.png" alt="Logo Sekolah" width={32} height={32} unoptimized />
-                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">EduCard Sync Tana Toraja</span>
-              </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-                 &copy; {new Date().getFullYear()} SMK NEGERI 2 TANA TORAJA. POWERED BY EDUCARD.
-              </p>
-              <div className="flex gap-6">
-                 <Link href="#" className="text-[10px] font-black uppercase text-primary tracking-widest hover:underline">Privasi</Link>
-                 <Link href="#" className="text-[10px] font-black uppercase text-primary tracking-widest hover:underline">Ketentuan</Link>
-              </div>
-           </div>
+      {/* Footer Info */}
+      <footer className="bg-white py-16 border-t">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-4">
+             <Image src="https://iili.io/KAqSZhb.png" alt="Logo" width={40} height={40} unoptimized />
+             <div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-900">SMKN 2 Tana Toraja</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Official Card Sync Platform</p>
+             </div>
+          </div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+            &copy; {new Date().getFullYear()} EDUCARD SYNC. ALL RIGHTS RESERVED.
+          </p>
         </div>
       </footer>
     </div>
