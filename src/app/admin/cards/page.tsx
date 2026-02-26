@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -36,7 +35,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 export default function CardsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -144,7 +143,6 @@ export default function CardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hidden Print Area */}
       <div id="print-area">
         <div className="p-8 grid grid-cols-2 gap-4">
           {Array.from(selectedIds).length > 0 ? (
@@ -269,6 +267,9 @@ export default function CardsPage() {
             <CardTitle className="text-lg flex justify-between items-center">
               Pratinjau Kartu Pelajar
               <Button variant="outline" size="sm" className="gap-1 h-8 text-xs" onClick={() => {
+                const db = getDB();
+                setStudents(db.students);
+                setSettings(db.school_settings);
                 toast({ title: "Berhasil", description: "Data pratinjau diperbarui." });
               }}>
                 <RefreshCw className="h-3 w-3" /> Refresh
@@ -313,7 +314,6 @@ export default function CardsPage() {
         </Card>
       </div>
 
-      {/* Modal Cetak Massal */}
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
