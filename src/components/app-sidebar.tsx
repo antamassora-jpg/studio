@@ -11,7 +11,8 @@ import {
   ChevronsLeftRight,
   LayoutDashboard,
   Award,
-  Contact
+  Contact,
+  Database
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -37,6 +38,7 @@ const adminItems = [
   { title: 'Absensi', icon: CalendarCheck, url: '/admin/attendance' },
   { title: 'Event Ujian', icon: FileText, url: '/admin/exams' },
   { title: 'Template Desain', icon: Layout, url: '/admin/templates' },
+  { title: 'Log Database', icon: Database, url: '/admin/log-database' },
   { title: 'Settings', icon: Settings, url: '/admin/settings' },
 ];
 
