@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,8 @@ import {
   Type, 
   Plus, 
   Trash2, 
-  AlertCircle 
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
@@ -139,7 +141,9 @@ export default function TemplatesPage() {
 
   const handleDeleteTemplate = (id: string) => {
     const template = templates.find(t => t.id === id);
-    if (template?.is_active) {
+    if (!template) return;
+
+    if (template.is_active) {
       toast({ 
         title: "Gagal", 
         description: "Template yang sedang aktif tidak dapat dihapus. Aktifkan template lain terlebih dahulu.", 
@@ -148,7 +152,7 @@ export default function TemplatesPage() {
       return;
     }
 
-    if (confirm(`Hapus template "${template?.name}"?`)) {
+    if (window.confirm(`Hapus template "${template.name}"? Tindakan ini tidak dapat dibatalkan.`)) {
       const db = getDB();
       const updated = db.templates.filter(t => t.id !== id);
       db.templates = updated;
@@ -175,6 +179,13 @@ export default function TemplatesPage() {
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleResetConfig = () => {
+    if (window.confirm("Kembalikan desain ke pengaturan awal? Semua kustomisasi warna dan gambar akan hilang.")) {
+      setLocalConfig(DEFAULT_CONFIG);
+      toast({ title: "Reset", description: "Konfigurasi dikembalikan ke pengaturan awal." });
+    }
   };
 
   const handleSaveConfig = () => {
@@ -265,17 +276,19 @@ export default function TemplatesPage() {
                       <CheckCircle2 className="h-3 w-3" /> Aktif
                     </Badge>
                   )}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTemplate(template.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!template.is_active && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTemplate(template.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="mt-4">
@@ -327,10 +340,17 @@ export default function TemplatesPage() {
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Kustomisasi Desain</DialogTitle>
-            <DialogDescription>
-              Atur komposisi warna, font, dan gambar latar untuk template <strong>{editingTemplate?.name}</strong>.
-            </DialogDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <DialogTitle className="text-2xl font-bold">Kustomisasi Desain</DialogTitle>
+                <DialogDescription>
+                  Atur komposisi warna, font, dan gambar latar untuk template <strong>{editingTemplate?.name}</strong>.
+                </DialogDescription>
+              </div>
+              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground" onClick={handleResetConfig}>
+                <RotateCcw className="h-3 w-3" /> Reset
+              </Button>
+            </div>
           </DialogHeader>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
