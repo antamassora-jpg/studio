@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getDB } from '@/app/lib/db';
 import { Student, SchoolSettings } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function CardsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -46,6 +48,9 @@ export default function CardsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  
+  const cardRefFront = useRef<HTMLDivElement>(null);
+  const cardRefBack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const db = getDB();
@@ -86,31 +91,81 @@ export default function CardsPage() {
   };
 
   const handleDownloadSingle = async () => {
-    if (!previewStudent) return;
+    if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
-    // Simulate generation delay
-    await new Promise(r => setTimeout(r, 1500));
-    setIsProcessing(false);
-    toast({
-      title: "Berhasil",
-      description: `Kartu ${previewStudent.name} sedang diunduh sebagai PDF.`
-    });
+    
+    try {
+      const canvasFront = await html2canvas(cardRefFront.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+      });
+      const canvasBack = await html2canvas(cardRefBack.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+      });
+
+      const imgDataFront = canvasFront.toDataURL('image/png');
+      const imgDataBack = canvasBack.toDataURL('image/png');
+
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: [85.6, 54]
+      });
+
+      pdf.addImage(imgDataFront, 'PNG', 0, 0, 85.6, 54);
+      pdf.addPage([85.6, 54], 'landscape');
+      pdf.addImage(imgDataBack, 'PNG', 0, 0, 85.6, 54);
+
+      pdf.save(`Kartu_Pelajar_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
+      
+      toast({
+        title: "Berhasil",
+        description: `Kartu ${previewStudent.name} telah diunduh.`
+      });
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Gagal",
+        description: "Terjadi kesalahan saat membuat PDF."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleBulkPrint = () => {
-    if (selectedIds.size === 0) {
-      toast({
-        title: "Peringatan",
-        description: "Pilih setidaknya satu siswa untuk dicetak.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setIsPrintModalOpen(true);
+  const handleConfirmPrint = () => {
+    window.print();
+    setIsPrintModalOpen(false);
   };
 
   return (
     <div className="space-y-6">
+      {/* Hidden Print Area */}
+      <div id="print-area">
+        <div className="p-8 grid grid-cols-2 gap-4">
+          {Array.from(selectedIds).length > 0 ? (
+            Array.from(selectedIds).map(id => {
+              const s = students.find(x => x.id === id);
+              return s && settings ? (
+                <div key={id} className="mb-8 flex flex-col gap-4 items-center break-inside-avoid">
+                  <StudentCardVisual student={s} settings={settings} side="front" />
+                  <StudentCardVisual student={s} settings={settings} side="back" />
+                </div>
+              ) : null;
+            })
+          ) : previewStudent && settings && (
+            <div className="flex flex-col gap-4 items-center break-inside-avoid">
+              <StudentCardVisual student={previewStudent} settings={settings} side="front" />
+              <StudentCardVisual student={previewStudent} settings={settings} side="back" />
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary">Kartu Pelajar</h1>
@@ -122,7 +177,7 @@ export default function CardsPage() {
           }}>
             <FileDown className="h-4 w-4" /> Export CSV
           </Button>
-          <Button className="gap-2 shrink-0" onClick={handleBulkPrint}>
+          <Button className="gap-2 shrink-0" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
             <Printer className="h-4 w-4" /> Cetak Massal ({selectedIds.size})
           </Button>
         </div>
@@ -226,13 +281,13 @@ export default function CardsPage() {
               <>
                 <div className="space-y-4 flex flex-col items-center">
                   <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground bg-white px-4 py-1 rounded-full border shadow-sm">Tampak Depan</span>
-                  <div className="shadow-2xl hover:scale-[1.02] transition-transform duration-300">
+                  <div ref={cardRefFront} className="shadow-2xl">
                     <StudentCardVisual student={previewStudent} settings={settings} side="front" />
                   </div>
                 </div>
                 <div className="space-y-4 flex flex-col items-center">
                   <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground bg-white px-4 py-1 rounded-full border shadow-sm">Tampak Belakang</span>
-                  <div className="shadow-2xl hover:scale-[1.02] transition-transform duration-300">
+                  <div ref={cardRefBack} className="shadow-2xl">
                     <StudentCardVisual student={previewStudent} settings={settings} side="back" />
                   </div>
                 </div>
@@ -241,7 +296,7 @@ export default function CardsPage() {
                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                      Download PDF
                    </Button>
-                   <Button className="flex-1 gap-2 h-11" onClick={() => setIsPrintModalOpen(true)}>
+                   <Button className="flex-1 gap-2 h-11" onClick={handleConfirmPrint}>
                      <Printer className="h-4 w-4" /> Cetak Sekarang
                    </Button>
                 </div>
@@ -268,7 +323,6 @@ export default function CardsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-y my-4 bg-muted/10 p-4 rounded-lg">
-             {/* Mocking the print layout */}
              {Array.from(selectedIds).slice(0, 4).map(id => {
                const s = students.find(x => x.id === id);
                return s && settings ? (
@@ -288,10 +342,7 @@ export default function CardsPage() {
                <p>Tips: Pastikan printer menggunakan kertas ID Card PVC atau Art Paper 260gsm.</p>
             </div>
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
-            <Button className="gap-2" onClick={() => {
-              setIsPrintModalOpen(false);
-              toast({ title: "Berhasil", description: "Mengirim data ke printer..." });
-            }}>
+            <Button className="gap-2" onClick={handleConfirmPrint}>
               <Printer className="h-4 w-4" /> Konfirmasi Cetak
             </Button>
           </DialogFooter>
