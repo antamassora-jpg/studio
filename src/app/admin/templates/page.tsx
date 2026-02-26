@@ -12,15 +12,14 @@ import {
   Palette, 
   CheckCircle2, 
   Save, 
-  RefreshCw, 
+  RotateCcw, 
   Upload, 
   Image as ImageIcon, 
   ChevronRight, 
   Type, 
   Plus, 
   Trash2, 
-  AlertCircle,
-  RotateCcw
+  AlertCircle
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { StudentCardVisual } from '@/components/student-card-visual';
@@ -35,6 +34,16 @@ import {
   DialogDescription,
   DialogTrigger
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -72,6 +81,8 @@ export default function TemplatesPage() {
 
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateType, setNewTemplateType] = useState<TemplateType>('STUDENT_CARD');
+  
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const db = getDB();
@@ -139,27 +150,16 @@ export default function TemplatesPage() {
     toast({ title: "Template Diperbarui", description: `Template "${template.name}" sekarang aktif.` });
   };
 
-  const handleDeleteTemplate = (id: string) => {
-    const template = templates.find(t => t.id === id);
-    if (!template) return;
-
-    if (template.is_active) {
-      toast({ 
-        title: "Gagal", 
-        description: "Template yang sedang aktif tidak dapat dihapus. Aktifkan template lain terlebih dahulu.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    if (window.confirm(`Hapus template "${template.name}"? Tindakan ini tidak dapat dibatalkan.`)) {
-      const db = getDB();
-      const updated = db.templates.filter(t => t.id !== id);
-      db.templates = updated;
-      saveDB(db);
-      setTemplates(updated);
-      toast({ title: "Dihapus", description: "Template telah dihapus dari sistem." });
-    }
+  const handleDeleteConfirm = () => {
+    if (!templateToDelete) return;
+    
+    const db = getDB();
+    const updated = db.templates.filter(t => t.id !== templateToDelete);
+    db.templates = updated;
+    saveDB(db);
+    setTemplates(updated);
+    setTemplateToDelete(null);
+    toast({ title: "Dihapus", description: "Template telah dihapus dari sistem." });
   };
 
   const openConfig = (template: CardTemplate) => {
@@ -182,10 +182,8 @@ export default function TemplatesPage() {
   };
 
   const handleResetConfig = () => {
-    if (window.confirm("Kembalikan desain ke pengaturan awal? Semua kustomisasi warna dan gambar akan hilang.")) {
-      setLocalConfig(DEFAULT_CONFIG);
-      toast({ title: "Reset", description: "Konfigurasi dikembalikan ke pengaturan awal." });
-    }
+    setLocalConfig(DEFAULT_CONFIG);
+    toast({ title: "Reset", description: "Konfigurasi dikembalikan ke pengaturan awal." });
   };
 
   const handleSaveConfig = () => {
@@ -271,19 +269,18 @@ export default function TemplatesPage() {
                   <Layout className="h-5 w-5" />
                 </div>
                 <div className="flex gap-2">
-                  {template.is_active && (
+                  {template.is_active ? (
                     <Badge className="gap-1 bg-primary px-3 py-1">
                       <CheckCircle2 className="h-3 w-3" /> Aktif
                     </Badge>
-                  )}
-                  {!template.is_active && (
+                  ) : (
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 text-destructive opacity-40 hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTemplate(template.id);
+                        setTemplateToDelete(template.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -337,6 +334,24 @@ export default function TemplatesPage() {
         ))}
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Template yang dihapus akan hilang dari sistem secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus Selamanya
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -347,8 +362,8 @@ export default function TemplatesPage() {
                   Atur komposisi warna, font, dan gambar latar untuk template <strong>{editingTemplate?.name}</strong>.
                 </DialogDescription>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground" onClick={handleResetConfig}>
-                <RotateCcw className="h-3 w-3" /> Reset
+              <Button variant="outline" size="sm" className="gap-2 text-muted-foreground hover:text-destructive hover:border-destructive" onClick={handleResetConfig}>
+                <RotateCcw className="h-3 w-3" /> Reset ke Default
               </Button>
             </div>
           </DialogHeader>
