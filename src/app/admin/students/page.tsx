@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -61,7 +62,8 @@ export default function StudentsPage() {
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
     status: 'Aktif',
     valid_until: '2025-06-30',
-    photo_url: ''
+    photo_url: '',
+    nisn: ''
   });
 
   useEffect(() => {
@@ -72,7 +74,9 @@ export default function StudentsPage() {
   const majors = Array.from(new Set(students.map(s => s.major))).sort();
 
   const filteredStudents = students.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.nis.includes(search);
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
+                       s.nis.includes(search) || 
+                       (s.nisn && s.nisn.includes(search));
     const matchClass = selectedClass === 'all' || s.class === selectedClass;
     const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
     return matchSearch && matchClass && matchMajor;
@@ -95,7 +99,7 @@ export default function StudentsPage() {
     saveDB(db);
     setStudents(updated);
     setIsAddOpen(false);
-    setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '' });
+    setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '', nisn: '' });
     toast({ title: "Berhasil", description: `Siswa ${student.name} berhasil ditambahkan.` });
   };
 
@@ -271,7 +275,7 @@ export default function StudentsPage() {
                     <Input 
                       value={newStudent.nis || ''} 
                       onChange={e => setNewStudent({...newStudent, nis: e.target.value})}
-                      placeholder="NIS"
+                      placeholder="Nomor Induk Siswa"
                     />
                   </div>
                   <div className="space-y-2">
@@ -279,7 +283,7 @@ export default function StudentsPage() {
                     <Input 
                       value={newStudent.nisn || ''} 
                       onChange={e => setNewStudent({...newStudent, nisn: e.target.value})}
-                      placeholder="NISN"
+                      placeholder="Nomor Induk Siswa Nasional"
                     />
                   </div>
                   <div className="space-y-2">
@@ -328,7 +332,7 @@ export default function StudentsPage() {
         <div className="flex-1 relative flex items-center">
           <Search className="h-4 w-4 text-muted-foreground absolute left-3" />
           <Input 
-            placeholder="Cari nama atau NIS..." 
+            placeholder="Cari nama, NIS, atau NISN..." 
             className="pl-9 bg-muted/20 border-none shadow-none focus-visible:ring-1"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -366,7 +370,7 @@ export default function StudentsPage() {
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>Identitas</TableHead>
-              <TableHead>NIS</TableHead>
+              <TableHead>NIS / NISN</TableHead>
               <TableHead>Kelas/Jurusan</TableHead>
               <TableHead>Masa Berlaku</TableHead>
               <TableHead>Status</TableHead>
@@ -396,7 +400,10 @@ export default function StudentsPage() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-xs">{student.nis}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  <div className="font-bold">{student.nis}</div>
+                  <div className="text-[10px] text-muted-foreground">{student.nisn || '-'}</div>
+                </TableCell>
                 <TableCell>
                   <div className="font-medium">Kelas {student.class}</div>
                   <div className="text-[10px] text-muted-foreground uppercase">{student.major}</div>
