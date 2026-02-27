@@ -1,7 +1,15 @@
+
 "use client";
 
 import { Student, SchoolSettings, CardTemplate } from '@/app/lib/types';
 import Image from 'next/image';
+
+const DEFAULT_ELEMENTS = {
+  photo: { x: 15, y: 70, w: 60, h: 80 },
+  qr: { x: 15, y: 155, w: 48, h: 48 },
+  info: { x: 90, y: 70, align: 'left', fontSize: 10 },
+  sigBlock: { x: 240, y: 160, scale: 0.75 }
+};
 
 export function StudentCardVisual({ 
   student, 
@@ -15,8 +23,8 @@ export function StudentCardVisual({
   template?: CardTemplate | null
 }) {
   const DEFAULT_CONFIG = {
-    front: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif' },
-    back: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif' }
+    front: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif', elements: { ...DEFAULT_ELEMENTS } },
+    back: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif', elements: { ...DEFAULT_ELEMENTS, photo: { ...DEFAULT_ELEMENTS.photo, x: 15 }, info: { ...DEFAULT_ELEMENTS.info, x: 90 }, qr: { ...DEFAULT_ELEMENTS.qr, x: 275 } } }
   };
 
   let config = DEFAULT_CONFIG;
@@ -31,6 +39,7 @@ export function StudentCardVisual({
   } catch (e) {}
 
   const current = side === 'front' ? config.front : config.back;
+  const els = current.elements || DEFAULT_ELEMENTS;
 
   const cardStyle = {
     width: '340px',
@@ -55,163 +64,124 @@ export function StudentCardVisual({
   const showQr = side === 'front' ? settings.student_show_qr_front : settings.student_show_qr_back;
   const showValid = side === 'front' ? settings.student_show_valid_front : settings.student_show_valid_back;
 
-  if (side === 'front') {
-    return (
-      <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none">
-        <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
-          {showLogoLeft && settings.logo_left && (
-            <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
-              <Image src={settings.logo_left} alt="Logo" fill className="object-contain" priority unoptimized />
-            </div>
-          )}
-          <div className="flex-1 flex flex-col text-white text-center">
-            <span className="font-bold text-[10px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
-            <span className="text-[6.5px] opacity-90 leading-tight block mt-0.5">{settings.address}</span>
-          </div>
-          {showLogoRight && settings.logo_right && (
-            <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 ml-3">
-              <Image src={settings.logo_right} alt="Logo R" fill className="object-contain" priority unoptimized />
-            </div>
-          )}
-        </div>
-
-        <div className="flex h-[calc(100%-56px)] relative z-10">
-          {(showPhoto || showQr) && (
-            <div className="w-[90px] flex flex-col items-center pt-4 pb-2 border-r border-dashed border-muted/50 gap-2 ml-1">
-              {showPhoto && (
-                <div className="w-[60px] h-[80px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md shrink-0">
-                  {student.photo_url ? (
-                    <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO</div>
-                  )}
-                </div>
-              )}
-              {showQr && (
-                <div className="w-[48px] h-[48px] bg-white p-1 rounded border shadow-sm relative shrink-0">
-                  <Image 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
-                    alt="QR" fill className="object-contain" unoptimized
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className={`flex-1 pt-4 pb-3 px-4 flex flex-col justify-start relative ${(!showPhoto && !showQr) ? 'items-center text-center' : ''}`}>
-            <div style={{ color: current.textColor }} className="space-y-2">
-              {showInfo && (
-                <>
-                  <div>
-                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Nama Lengkap</span>
-                    <span className="font-extrabold text-[11px] uppercase leading-tight block">{student.name}</span>
-                  </div>
-                  <div>
-                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">NIS / NISN</span>
-                    <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Kelas & Jurusan</span>
-                    <span className="font-bold text-[8px] uppercase block leading-tight">{student.class} - {student.major}</span>
-                  </div>
-                </>
-              )}
-              {showValid && (
-                <div>
-                  <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Berlaku Sampai</span>
-                  <span className="font-bold text-[8px] block leading-none" style={{ color: current.headerBg }}>{student.valid_until}</span>
-                </div>
-              )}
-            </div>
-
-            {(showSig || showStamp) && (
-              <div className="absolute bottom-2 right-4 flex items-end scale-75 origin-bottom-right">
-                {showStamp && settings.stamp_image && (
-                  <div className="w-12 h-12 relative mr-2">
-                    <Image src={settings.stamp_image} alt="Stempel" fill className="object-contain" unoptimized />
-                  </div>
-                )}
-                {(showSig && settings.signature_image) && (
-                  <div className="text-center">
-                    <div className="w-14 h-7 relative mb-1">
-                      <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
-                    </div>
-                    <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
-                    <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings.principal_nip}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: current.footerBg }} className="absolute bottom-0 left-0 right-0 h-1.5"></div>
-      </div>
-    );
-  }
-
   return (
-    <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none p-0 flex flex-col">
-      <div className="h-14 w-full flex items-center justify-center px-6 relative">
-        <div className="absolute inset-x-6 h-[1px] bg-slate-200 top-1/2 -translate-y-1/2"></div>
-        <div className="relative bg-white px-4">
-          <h4 className="font-black text-[10px] uppercase tracking-[0.2em] whitespace-nowrap" style={{ color: current.headerBg }}>
-            Ketentuan Pengguna
-          </h4>
-        </div>
-      </div>
-      
-      <div className="flex-1 px-6 pt-2 flex items-start gap-4">
-        {showPhoto && (
-          <div className="w-[60px] h-[80px] relative rounded border overflow-hidden shadow-sm shrink-0 bg-slate-50 mt-1">
-             <Image src={student.photo_url || ''} alt="Foto" fill className="object-cover" unoptimized />
+    <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none">
+      {/* Header Statis */}
+      <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
+        {showLogoLeft && settings.logo_left && (
+          <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
+            <Image src={settings.logo_left} alt="Logo" fill className="object-contain" priority unoptimized />
           </div>
         )}
+        <div className="flex-1 flex flex-col text-white text-center">
+          <span className="font-bold text-[10px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
+          <span className="text-[6.5px] opacity-90 leading-tight block mt-0.5">{settings.address}</span>
+        </div>
+        {showLogoRight && settings.logo_right && (
+          <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 ml-3">
+            <Image src={settings.logo_right} alt="Logo R" fill className="object-contain" priority unoptimized />
+          </div>
+        )}
+      </div>
 
-        <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed pt-1">
-          {settings.terms_student}
-          {showInfo && (
-            <div className="mt-2 pt-2 border-t border-slate-200">
-               <p className="not-italic font-bold text-[8px] text-slate-800 uppercase">{student.name}</p>
-               <p className="not-italic text-[7px] text-slate-500 uppercase">{student.nis} • {student.class}</p>
-            </div>
+      {/* Konten dengan Absolute Positioning dari Config */}
+      {showPhoto && (
+        <div 
+          className="absolute bg-muted rounded-md overflow-hidden border-2 border-white shadow-md"
+          style={{ left: els.photo.x, top: els.photo.y, width: els.photo.w, height: els.photo.h }}
+        >
+          {student.photo_url ? (
+            <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO</div>
           )}
-        </div>
-
-        {showQr && (
-          <div className="w-[60px] flex flex-col items-center gap-1 shrink-0 mt-1">
-             <div className="w-[48px] h-[48px] bg-white p-1 rounded border shadow-sm relative">
-               <Image 
-                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
-                 alt="QR" fill className="object-contain" unoptimized
-               />
-             </div>
-             <div className="text-[6px] font-black text-center text-slate-400 uppercase tracking-widest">{student.card_code}</div>
-          </div>
-        )}
-      </div>
-
-      {(showSig || showStamp) && (
-        <div className="p-8 pt-0 mt-auto flex justify-end items-end relative z-10">
-           <div className="text-center relative">
-              <p className="text-[6px] font-bold text-slate-400 uppercase mb-1">Kepala Sekolah,</p>
-              <div className="relative h-12 flex items-center justify-center">
-                {showStamp && settings.stamp_image && (
-                  <div className="absolute left-[-15px] top-0 w-12 h-12 pointer-events-none opacity-80">
-                    <Image src={settings.stamp_image} alt="STAMP" fill className="object-contain" unoptimized />
-                  </div>
-                )}
-                {showSig && settings.signature_image && (
-                  <div className="w-16 h-8 relative z-10">
-                    <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
-                  </div>
-                )}
-              </div>
-              <p className="text-[7px] font-black border-t pt-1 leading-none mt-1" style={{ color: current.headerBg, borderColor: '#e2e8f0' }}>{settings.principal_name}</p>
-              <p className="text-[5px] opacity-60 mt-0.5">NIP: {settings.principal_nip}</p>
-           </div>
         </div>
       )}
+
+      {showQr && (
+        <div 
+          className="absolute bg-white p-1 rounded border shadow-sm"
+          style={{ left: els.qr.x, top: els.qr.y, width: els.qr.w, height: els.qr.h }}
+        >
+          <Image 
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+            alt="QR" fill className="object-contain" unoptimized
+          />
+        </div>
+      )}
+
+      {showInfo && (
+        <div 
+          className="absolute px-2 flex flex-col gap-1.5"
+          style={{ 
+            left: els.info.x, 
+            top: els.info.y, 
+            width: 'auto',
+            textAlign: els.info.align || 'left',
+            alignItems: els.info.align === 'center' ? 'center' : (els.info.align === 'right' ? 'flex-end' : 'flex-start')
+          }}
+        >
+          <div>
+            <span className="opacity-60 text-[6px] uppercase font-black block">Nama Lengkap</span>
+            <span className="font-black uppercase leading-none block" style={{ fontSize: (els.info.fontSize || 10) + 1 }}>{student.name}</span>
+          </div>
+          <div>
+            <span className="opacity-60 text-[6px] uppercase font-black block">NIS / NISN</span>
+            <span className="font-bold block leading-none" style={{ fontSize: els.info.fontSize || 10 }}>{student.nis} / {student.nisn || '-'}</span>
+          </div>
+          <div>
+            <span className="opacity-60 text-[6px] uppercase font-black block">Kelas & Jurusan</span>
+            <span className="font-bold uppercase block leading-tight" style={{ fontSize: (els.info.fontSize || 10) - 1 }}>{student.class} - {student.major}</span>
+          </div>
+          {showValid && (
+            <div className="mt-1">
+              <span className="opacity-60 text-[6px] uppercase font-black block">Masa Berlaku</span>
+              <span className="font-black block leading-none" style={{ fontSize: (els.info.fontSize || 10) - 1, color: current.headerBg }}>{student.valid_until}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {side === 'back' && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[180px] text-center">
+           <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="h-[1px] flex-1 bg-slate-300"></div>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Ketentuan Pengguna</span>
+              <div className="h-[1px] flex-1 bg-slate-300"></div>
+           </div>
+           <p className="text-[7px] italic text-slate-500 leading-tight whitespace-pre-line text-left">
+             {settings.terms_student}
+           </p>
+        </div>
+      )}
+
+      {(showSig || showStamp) && (
+        <div 
+          className="absolute flex items-end"
+          style={{ 
+            left: els.sigBlock.x, 
+            top: els.sigBlock.y, 
+            transform: `scale(${els.sigBlock.scale || 0.75})`,
+            transformOrigin: 'bottom right'
+          }}
+        >
+          {showStamp && settings.stamp_image && (
+            <div className="w-12 h-12 relative mr-2">
+              <Image src={settings.stamp_image} alt="Stamp" fill className="object-contain" unoptimized />
+            </div>
+          )}
+          <div className="text-center">
+            {showSig && settings.signature_image && (
+              <div className="w-14 h-7 relative mb-1">
+                <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
+              </div>
+            )}
+            <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
+            <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings.principal_nip}</p>
+          </div>
+        </div>
+      )}
+
       <div style={{ backgroundColor: current.footerBg }} className="absolute bottom-0 left-0 right-0 h-1.5"></div>
     </div>
   );
