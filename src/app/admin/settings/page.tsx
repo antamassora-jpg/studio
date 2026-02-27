@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Camera, Loader2, Link as LinkIcon, RefreshCw, Layout, User } from 'lucide-react';
+import { Save, Upload, Camera, Loader2, Link as LinkIcon, RefreshCw, Layout, FileText, ClipboardList } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +37,7 @@ export default function SettingsPage() {
       
       toast({ 
         title: "Konfigurasi Disimpan", 
-        description: "Aset institusi dan data legalitas telah diperbarui.",
+        description: "Seluruh data identitas, aturan, dan tata letak telah diperbarui.",
       });
     } catch (error) {
       toast({ 
@@ -82,7 +82,7 @@ export default function SettingsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black font-headline text-primary tracking-tight uppercase">Settings Center</h1>
-          <p className="text-muted-foreground font-medium">Manajemen konten, aset institusi, dan tata letak identitas.</p>
+          <p className="text-muted-foreground font-medium">Manajemen konten, aturan kartu, dan tata letak identitas.</p>
         </div>
         <Button 
           onClick={handleSave} 
@@ -96,9 +96,12 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* Identitas & Legalitas */}
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Identitas & Legalitas Sekolah</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" /> Identitas & Legalitas Sekolah
+              </CardTitle>
               <CardDescription>Informasi utama institusi dan data Kepala Sekolah.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
@@ -115,7 +118,7 @@ export default function SettingsPage() {
                 <Textarea 
                   value={settings.address} 
                   onChange={e => updateSetting('address', e.target.value)} 
-                  className="min-h-[100px] rounded-xl border-slate-200" 
+                  className="min-h-[80px] rounded-xl border-slate-200" 
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -139,9 +142,61 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Aturan & Tata Tertib (NEWLY RESTORED) */}
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Tata Letak Identitas Siswa</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-primary" /> Aturan & Tata Tertib Kartu
+              </CardTitle>
+              <CardDescription>Teks yang akan ditampilkan pada sisi belakang masing-masing kartu.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Tabs defaultValue="pelajar" className="w-full">
+                <TabsList className="w-full grid grid-cols-3 h-14 bg-transparent border-b rounded-none">
+                  <TabsTrigger value="pelajar" className="font-bold text-xs uppercase">Pelajar</TabsTrigger>
+                  <TabsTrigger value="ujian" className="font-bold text-xs uppercase">Ujian</TabsTrigger>
+                  <TabsTrigger value="id" className="font-bold text-xs uppercase">ID Card</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="pelajar" className="p-8 space-y-4 mt-0">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Ketentuan Kartu Pelajar</Label>
+                  <Textarea 
+                    value={settings.terms_student} 
+                    onChange={e => updateSetting('terms_student', e.target.value)} 
+                    className="min-h-[150px] rounded-xl border-slate-200 text-sm leading-relaxed" 
+                    placeholder="Masukkan poin-poin aturan penggunaan kartu pelajar..."
+                  />
+                </TabsContent>
+
+                <TabsContent value="ujian" className="p-8 space-y-4 mt-0">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Tata Tertib Ujian</Label>
+                  <Textarea 
+                    value={settings.terms_exam} 
+                    onChange={e => updateSetting('terms_exam', e.target.value)} 
+                    className="min-h-[150px] rounded-xl border-slate-200 text-sm leading-relaxed" 
+                    placeholder="Masukkan tata tertib pelaksanaan ujian..."
+                  />
+                </TabsContent>
+
+                <TabsContent value="id" className="p-8 space-y-4 mt-0">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Ketentuan ID Card Umum</Label>
+                  <Textarea 
+                    value={settings.terms_id} 
+                    onChange={e => updateSetting('terms_id', e.target.value)} 
+                    className="min-h-[150px] rounded-xl border-slate-200 text-sm leading-relaxed" 
+                    placeholder="Masukkan ketentuan penggunaan kartu identitas..."
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Tata Letak Identitas */}
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                <Layout className="h-5 w-5 text-primary" /> Tata Letak Identitas Siswa
+              </CardTitle>
               <CardDescription>Posisikan foto, data diri, dan barcode di sisi depan atau belakang.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
