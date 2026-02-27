@@ -35,6 +35,15 @@ export interface SchoolSettings {
   student_show_sig_back: boolean;
   student_show_stamp_front: boolean;
   student_show_stamp_back: boolean;
+  // New: Student Data Placement
+  student_show_photo_front: boolean;
+  student_show_photo_back: boolean;
+  student_show_info_front: boolean;
+  student_show_info_back: boolean;
+  student_show_qr_front: boolean;
+  student_show_qr_back: boolean;
+  student_show_valid_front: boolean;
+  student_show_valid_back: boolean;
 
   // Exam Card Assets
   logo_left_exam: string;
@@ -51,6 +60,15 @@ export interface SchoolSettings {
   exam_show_sig_back: boolean;
   exam_show_stamp_front: boolean;
   exam_show_stamp_back: boolean;
+  // New: Exam Data Placement
+  exam_show_photo_front: boolean;
+  exam_show_photo_back: boolean;
+  exam_show_info_front: boolean;
+  exam_show_info_back: boolean;
+  exam_show_qr_front: boolean;
+  exam_show_qr_back: boolean;
+  exam_show_valid_front: boolean;
+  exam_show_valid_back: boolean;
 
   // ID Card Assets
   logo_left_id: string;
@@ -65,6 +83,15 @@ export interface SchoolSettings {
   id_show_sig_back: boolean;
   id_show_stamp_front: boolean;
   id_show_stamp_back: boolean;
+  // New: ID Data Placement
+  id_show_photo_front: boolean;
+  id_show_photo_back: boolean;
+  id_show_info_front: boolean;
+  id_show_info_back: boolean;
+  id_show_qr_front: boolean;
+  id_show_qr_back: boolean;
+  id_show_valid_front: boolean;
+  id_show_valid_back: boolean;
 }
 
 export type TemplateType = 'STUDENT_CARD' | 'EXAM_CARD' | 'ID_CARD';

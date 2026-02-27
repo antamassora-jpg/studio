@@ -51,6 +51,12 @@ export function ExamCardVisual({
   const showLogoRight = side === 'front' ? settings.exam_show_logo_right_front : settings.exam_show_logo_right_back;
   const showSig = side === 'front' ? settings.exam_show_sig_front : settings.exam_show_sig_back;
   const showStamp = side === 'front' ? settings.exam_show_stamp_front : settings.exam_show_stamp_back;
+  
+  // Placement Settings
+  const showPhoto = side === 'front' ? settings.exam_show_photo_front : settings.exam_show_photo_back;
+  const showInfo = side === 'front' ? settings.exam_show_info_front : settings.exam_show_info_back;
+  const showQr = side === 'front' ? settings.exam_show_qr_front : settings.exam_show_qr_back;
+  const showValid = side === 'front' ? settings.exam_show_valid_front : settings.exam_show_valid_back;
 
   if (side === 'front') {
     return (
@@ -73,32 +79,49 @@ export function ExamCardVisual({
         </div>
 
         <div className="flex h-[calc(100%-56px)] relative z-10">
-          <div className="w-[100px] flex flex-col items-center justify-center p-2 border-r border-slate-100">
-            <div className="w-[75px] h-[95px] bg-slate-50 relative rounded-md overflow-hidden border border-slate-200 shadow-sm">
-              {student.photo_url ? (
-                <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-200 text-[8px]">FOTO</div>
-              )}
+          {showPhoto && (
+            <div className="w-[100px] flex flex-col items-center justify-center p-2 border-r border-slate-100">
+              <div className="w-[75px] h-[95px] bg-slate-50 relative rounded-md overflow-hidden border border-slate-200 shadow-sm">
+                {student.photo_url ? (
+                  <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-200 text-[8px]">FOTO</div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex-1 py-4 px-3 relative" style={{ color: current.textColor }}>
-            <div className="mb-1.5">
-              <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Nama Peserta</span>
-              <span className="font-bold text-[11px] uppercase leading-none block">{student.name}</span>
-            </div>
-            <div className="mb-1.5">
-              <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">NIS / NISN</span>
-              <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
-            </div>
-            <div className="mb-1.5">
-              <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Event Ujian</span>
-              <span className="font-bold text-[8px] uppercase block leading-none">{exam?.name || 'UJIAN AKHIR SEKOLAH'}</span>
-            </div>
-            <div className="mb-1">
-              <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Masa Berlaku</span>
-              <span className="font-bold text-[8px] block leading-none" style={{ color: current.footerBg }}>{student.valid_until}</span>
-            </div>
+          )}
+          <div className={`flex-1 py-4 px-3 relative ${!showPhoto ? 'items-center text-center' : ''}`} style={{ color: current.textColor }}>
+            {showInfo && (
+              <>
+                <div className="mb-1.5">
+                  <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Nama Peserta</span>
+                  <span className="font-bold text-[11px] uppercase leading-none block">{student.name}</span>
+                </div>
+                <div className="mb-1.5">
+                  <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">NIS / NISN</span>
+                  <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
+                </div>
+                <div className="mb-1.5">
+                  <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Event Ujian</span>
+                  <span className="font-bold text-[8px] uppercase block leading-none">{exam?.name || 'UJIAN AKHIR SEKOLAH'}</span>
+                </div>
+              </>
+            )}
+            {showValid && (
+              <div className="mb-1">
+                <span className="opacity-60 text-[6px] uppercase font-bold block mb-0.5">Masa Berlaku</span>
+                <span className="font-bold text-[8px] block leading-none" style={{ color: current.footerBg }}>{student.valid_until}</span>
+              </div>
+            )}
+            
+            {showQr && (
+              <div className="mt-2 w-14 h-14 bg-white p-1 rounded border shadow-sm relative">
+                <Image 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+                  alt="QR" fill className="object-contain" unoptimized
+                />
+              </div>
+            )}
 
             {(showSig || showStamp) && (
               <div className="absolute bottom-2 right-4 flex items-end scale-75 origin-bottom-right">
@@ -138,14 +161,27 @@ export function ExamCardVisual({
       <div className="flex-1 px-10 pt-2 flex items-start">
         <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed pr-6">
           {settings.terms_exam}
+          {showInfo && (
+            <div className="mt-3 pt-2 border-t border-slate-200 not-italic">
+               <p className="font-bold text-[9px] text-slate-800">{student.name}</p>
+               <p className="text-[7px] text-slate-500 uppercase">{student.nis} • {exam?.name || 'UJIAN'}</p>
+            </div>
+          )}
         </div>
         <div className="w-20 flex flex-col items-center">
-           <div className="w-16 h-16 bg-white p-1 rounded border shadow-sm relative mb-1.5">
-             <Image 
-               src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
-               alt="QR" fill className="object-contain" unoptimized
-             />
-           </div>
+           {showPhoto && (
+             <div className="w-16 h-20 relative rounded border mb-2 overflow-hidden shadow-sm">
+                <Image src={student.photo_url || ''} alt="Foto" fill className="object-cover" unoptimized />
+             </div>
+           )}
+           {showQr && (
+             <div className="w-16 h-16 bg-white p-1 rounded border shadow-sm relative mb-1.5">
+               <Image 
+                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+                 alt="QR" fill className="object-contain" unoptimized
+               />
+             </div>
+           )}
            <div className="text-[6px] font-black text-center text-slate-400 uppercase tracking-widest">{student.card_code}</div>
         </div>
       </div>

@@ -49,6 +49,12 @@ export function StudentCardVisual({
   const showLogoRight = side === 'front' ? settings.student_show_logo_right_front : settings.student_show_logo_right_back;
   const showSig = side === 'front' ? settings.student_show_sig_front : settings.student_show_sig_back;
   const showStamp = side === 'front' ? settings.student_show_stamp_front : settings.student_show_stamp_back;
+  
+  // Placement Settings
+  const showPhoto = side === 'front' ? settings.student_show_photo_front : settings.student_show_photo_back;
+  const showInfo = side === 'front' ? settings.student_show_info_front : settings.student_show_info_back;
+  const showQr = side === 'front' ? settings.student_show_qr_front : settings.student_show_qr_back;
+  const showValid = side === 'front' ? settings.student_show_valid_front : settings.student_show_valid_back;
 
   if (side === 'front') {
     return (
@@ -71,34 +77,50 @@ export function StudentCardVisual({
         </div>
 
         <div className="flex h-[calc(100%-56px)] relative z-10">
-          <div className="w-[110px] flex flex-col items-center justify-center p-3 border-r border-dashed border-muted/50">
-            <div className="w-[80px] h-[100px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md">
-              {student.photo_url ? (
-                <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO SISWA</div>
-              )}
+          {showPhoto && (
+            <div className="w-[110px] flex flex-col items-center justify-center p-3 border-r border-dashed border-muted/50">
+              <div className="w-[80px] h-[100px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md">
+                {student.photo_url ? (
+                  <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO SISWA</div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex-1 py-3 px-4 flex flex-col justify-center relative">
+          <div className={`flex-1 py-3 px-4 flex flex-col justify-center relative ${!showPhoto ? 'items-center text-center' : ''}`}>
             <div style={{ color: current.textColor }}>
-              <div className="mb-2">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Nama Lengkap</span>
-                <span className="font-extrabold text-[11px] uppercase leading-none block">{student.name}</span>
-              </div>
-              <div className="mb-2">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">NIS / NISN</span>
-                <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
-              </div>
-              <div className="mb-2">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Kelas & Jurusan</span>
-                <span className="font-bold text-[8px] uppercase block leading-none">{student.class} - {student.major}</span>
-              </div>
-              <div className="mb-1">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Berlaku Sampai</span>
-                <span className="font-bold text-[8px] block leading-none" style={{ color: current.headerBg }}>{student.valid_until}</span>
-              </div>
+              {showInfo && (
+                <>
+                  <div className="mb-2">
+                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Nama Lengkap</span>
+                    <span className="font-extrabold text-[11px] uppercase leading-none block">{student.name}</span>
+                  </div>
+                  <div className="mb-2">
+                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">NIS / NISN</span>
+                    <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
+                  </div>
+                  <div className="mb-2">
+                    <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Kelas & Jurusan</span>
+                    <span className="font-bold text-[8px] uppercase block leading-none">{student.class} - {student.major}</span>
+                  </div>
+                </>
+              )}
+              {showValid && (
+                <div className="mb-1">
+                  <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Berlaku Sampai</span>
+                  <span className="font-bold text-[8px] block leading-none" style={{ color: current.headerBg }}>{student.valid_until}</span>
+                </div>
+              )}
+              {showQr && (
+                <div className="mt-2 w-16 h-16 bg-white p-1 rounded border shadow-sm relative">
+                  <Image 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+                    alt="QR" fill className="object-contain" unoptimized
+                  />
+                </div>
+              )}
             </div>
 
             {(showSig || showStamp) && (
@@ -140,14 +162,27 @@ export function StudentCardVisual({
       <div className="flex-1 px-10 pt-2 flex items-start">
         <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed pr-6">
           {settings.terms_student}
+          {showInfo && (
+            <div className="mt-2 pt-2 border-t border-slate-200">
+               <p className="not-italic font-bold text-[8px] text-slate-800 uppercase">{student.name}</p>
+               <p className="not-italic text-[7px] text-slate-500 uppercase">{student.nis} • {student.class}</p>
+            </div>
+          )}
         </div>
         <div className="w-20 flex flex-col items-center">
-           <div className="w-16 h-16 bg-white p-1 rounded border shadow-sm relative mb-1.5">
-             <Image 
-               src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
-               alt="QR" fill className="object-contain" unoptimized
-             />
-           </div>
+           {showPhoto && (
+              <div className="w-16 h-20 relative rounded border mb-2 overflow-hidden shadow-sm">
+                 <Image src={student.photo_url || ''} alt="Foto" fill className="object-cover" unoptimized />
+              </div>
+           )}
+           {showQr && (
+             <div className="w-16 h-16 bg-white p-1 rounded border shadow-sm relative mb-1.5">
+               <Image 
+                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
+                 alt="QR" fill className="object-contain" unoptimized
+               />
+             </div>
+           )}
            <div className="text-[6px] font-black text-center text-slate-400 uppercase tracking-widest">{student.card_code}</div>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Camera, Loader2, Link as LinkIcon, RefreshCw } from 'lucide-react';
+import { Save, Upload, Camera, Loader2, Link as LinkIcon, RefreshCw, Layout, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -83,7 +82,7 @@ export default function SettingsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black font-headline text-primary tracking-tight uppercase">Settings Center</h1>
-          <p className="text-muted-foreground font-medium">Manajemen konten, aset institusi, dan legalitas kartu.</p>
+          <p className="text-muted-foreground font-medium">Manajemen konten, aset institusi, dan tata letak identitas.</p>
         </div>
         <Button 
           onClick={handleSave} 
@@ -142,41 +141,43 @@ export default function SettingsPage() {
 
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Aturan & Tata Tertib Kartu</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Tata Letak Identitas Siswa</CardTitle>
+              <CardDescription>Posisikan foto, data diri, dan barcode di sisi depan atau belakang.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <Tabs defaultValue="student" className="w-full">
+              <Tabs defaultValue="pelajar" className="w-full">
                 <TabsList className="w-full grid grid-cols-3 h-14 bg-transparent border-b rounded-none">
-                  <TabsTrigger value="student" className="font-bold text-xs uppercase data-[state=active]:text-primary">Pelajar</TabsTrigger>
-                  <TabsTrigger value="exam" className="font-bold text-xs uppercase data-[state=active]:text-primary">Ujian</TabsTrigger>
-                  <TabsTrigger value="id" className="font-bold text-xs uppercase data-[state=active]:text-primary">ID Card</TabsTrigger>
+                  <TabsTrigger value="pelajar" className="font-bold text-xs uppercase">Pelajar</TabsTrigger>
+                  <TabsTrigger value="ujian" className="font-bold text-xs uppercase">Ujian</TabsTrigger>
+                  <TabsTrigger value="id" className="font-bold text-xs uppercase">ID Card</TabsTrigger>
                 </TabsList>
-                <div className="p-8">
-                  <TabsContent value="student" className="mt-0 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Pelajar</Label>
-                    <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
-                      value={settings.terms_student} 
-                      onChange={e => updateSetting('terms_student', e.target.value)} 
-                    />
-                  </TabsContent>
-                  <TabsContent value="exam" className="mt-0 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan Kartu Ujian</Label>
-                    <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
-                      value={settings.terms_exam} 
-                      onChange={e => updateSetting('terms_exam', e.target.value)} 
-                    />
-                  </TabsContent>
-                  <TabsContent value="id" className="mt-0 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Ketentuan ID Card Umum</Label>
-                    <Textarea 
-                      className="min-h-[150px] font-mono text-xs rounded-xl border-slate-200" 
-                      value={settings.terms_id} 
-                      onChange={e => updateSetting('terms_id', e.target.value)} 
-                    />
-                  </TabsContent>
-                </div>
+                
+                <TabsContent value="pelajar" className="p-8 space-y-6 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <PlacementControl label="Foto Siswa" front={settings.student_show_photo_front} onFrontChange={v => updateSetting('student_show_photo_front', v)} back={settings.student_show_photo_back} onBackChange={v => updateSetting('student_show_photo_back', v)} />
+                    <PlacementControl label="Data Identitas (Nama/NIS)" front={settings.student_show_info_front} onFrontChange={v => updateSetting('student_show_info_front', v)} back={settings.student_show_info_back} onBackChange={v => updateSetting('student_show_info_back', v)} />
+                    <PlacementControl label="Barcode / QR Code" front={settings.student_show_qr_front} onFrontChange={v => updateSetting('student_show_qr_front', v)} back={settings.student_show_qr_back} onBackChange={v => updateSetting('student_show_qr_back', v)} />
+                    <PlacementControl label="Masa Berlaku" front={settings.student_show_valid_front} onFrontChange={v => updateSetting('student_show_valid_front', v)} back={settings.student_show_valid_back} onBackChange={v => updateSetting('student_show_valid_back', v)} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="ujian" className="p-8 space-y-6 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <PlacementControl label="Foto Peserta" front={settings.exam_show_photo_front} onFrontChange={v => updateSetting('exam_show_photo_front', v)} back={settings.exam_show_photo_back} onBackChange={v => updateSetting('exam_show_photo_back', v)} />
+                    <PlacementControl label="Data Peserta" front={settings.exam_show_info_front} onFrontChange={v => updateSetting('exam_show_info_front', v)} back={settings.exam_show_info_back} onBackChange={v => updateSetting('exam_show_info_back', v)} />
+                    <PlacementControl label="QR Code Ujian" front={settings.exam_show_qr_front} onFrontChange={v => updateSetting('exam_show_qr_front', v)} back={settings.exam_show_qr_back} onBackChange={v => updateSetting('exam_show_qr_back', v)} />
+                    <PlacementControl label="Status Berlaku" front={settings.exam_show_valid_front} onFrontChange={v => updateSetting('exam_show_valid_front', v)} back={settings.exam_show_valid_back} onBackChange={v => updateSetting('exam_show_valid_back', v)} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="id" className="p-8 space-y-6 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <PlacementControl label="Foto Personil" front={settings.id_show_photo_front} onFrontChange={v => updateSetting('id_show_photo_front', v)} back={settings.id_show_photo_back} onBackChange={v => updateSetting('id_show_photo_back', v)} />
+                    <PlacementControl label="Data Personil" front={settings.id_show_info_front} onFrontChange={v => updateSetting('id_show_info_front', v)} back={settings.id_show_info_back} onBackChange={v => updateSetting('id_show_info_back', v)} />
+                    <PlacementControl label="QR Code Corporate" front={settings.id_show_qr_front} onFrontChange={v => updateSetting('id_show_qr_front', v)} back={settings.id_show_qr_back} onBackChange={v => updateSetting('id_show_qr_back', v)} />
+                    <PlacementControl label="Masa Aktif" front={settings.id_show_valid_front} onFrontChange={v => updateSetting('id_show_valid_front', v)} back={settings.id_show_valid_back} onBackChange={v => updateSetting('id_show_valid_back', v)} />
+                  </div>
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
@@ -309,6 +310,36 @@ export default function SettingsPage() {
               </Tabs>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlacementControl({ 
+  label, 
+  front, 
+  onFrontChange, 
+  back, 
+  onBackChange 
+}: { 
+  label: string, 
+  front: boolean, 
+  onFrontChange: (v: boolean) => void, 
+  back: boolean, 
+  onBackChange: (v: boolean) => void 
+}) {
+  return (
+    <div className="p-4 border-2 border-slate-100 rounded-2xl bg-white space-y-3">
+      <Label className="text-[10px] font-black uppercase text-slate-800 tracking-widest">{label}</Label>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
+          <span className="text-[9px] font-bold uppercase text-slate-500">Depan</span>
+          <Switch checked={front} onCheckedChange={onFrontChange} className="scale-75" />
+        </div>
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl">
+          <span className="text-[9px] font-bold uppercase text-slate-500">Belakang</span>
+          <Switch checked={back} onCheckedChange={onBackChange} className="scale-75" />
         </div>
       </div>
     </div>

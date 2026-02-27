@@ -36,6 +36,14 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   student_show_sig_back: true,
   student_show_stamp_front: false,
   student_show_stamp_back: true,
+  student_show_photo_front: true,
+  student_show_photo_back: false,
+  student_show_info_front: true,
+  student_show_info_back: false,
+  student_show_qr_front: false,
+  student_show_qr_back: true,
+  student_show_valid_front: true,
+  student_show_valid_back: false,
 
   // Exam
   logo_left_exam: DEFAULT_ASSET_L,
@@ -51,6 +59,14 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   exam_show_sig_back: true,
   exam_show_stamp_front: false,
   exam_show_stamp_back: true,
+  exam_show_photo_front: true,
+  exam_show_photo_back: false,
+  exam_show_info_front: true,
+  exam_show_info_back: false,
+  exam_show_qr_front: false,
+  exam_show_qr_back: true,
+  exam_show_valid_front: true,
+  exam_show_valid_back: false,
 
   // ID Card
   logo_left_id: DEFAULT_ASSET_L,
@@ -64,6 +80,14 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   id_show_sig_back: true,
   id_show_stamp_front: false,
   id_show_stamp_back: true,
+  id_show_photo_front: true,
+  id_show_photo_back: false,
+  id_show_info_front: true,
+  id_show_info_back: false,
+  id_show_qr_front: false,
+  id_show_qr_back: true,
+  id_show_valid_front: true,
+  id_show_valid_back: false,
 };
 
 const INITIAL_DB: DB = {
