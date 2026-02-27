@@ -79,7 +79,7 @@ export function IdCardVisual({
 
         <div className="flex-1 relative z-10 flex flex-col items-center justify-center p-8">
           {showPhoto && (
-            <div className="w-full aspect-[3/4] rounded-2xl border-4 border-white shadow-2xl relative overflow-hidden bg-slate-100 mb-4">
+            <div className="w-[140px] h-[180px] rounded-2xl border-4 border-white shadow-2xl relative overflow-hidden bg-slate-100 mb-4">
               {student.photo_url ? (
                 <Image src={student.photo_url} alt={student.name} fill className="object-cover object-top" priority unoptimized />
               ) : (
@@ -90,7 +90,7 @@ export function IdCardVisual({
           
           <div className="w-full text-center">
             {showQr && (
-              <div className="mb-4 w-16 h-16 bg-white p-1 rounded border shadow-sm relative mx-auto">
+              <div className="mb-4 w-14 h-14 bg-white p-1 rounded border shadow-sm relative mx-auto">
                 <Image 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
                   alt="QR" fill className="object-contain" unoptimized
@@ -185,7 +185,7 @@ export function IdCardVisual({
 
          <div className="flex items-center justify-between gap-4 mt-auto">
             {showPhoto && (
-              <div className="w-[70px] h-[90px] relative rounded border overflow-hidden shadow-sm bg-slate-50 shrink-0">
+              <div className="w-[60px] h-[80px] relative rounded border overflow-hidden shadow-sm bg-slate-50 shrink-0">
                  <Image src={student.photo_url || ''} alt="Foto" fill className="object-cover" unoptimized />
               </div>
             )}
@@ -201,7 +201,7 @@ export function IdCardVisual({
 
             {showQr && (
               <div className="w-[65px] flex flex-col items-center gap-1 shrink-0">
-                 <div className="w-[60px] h-[60px] bg-white p-1 rounded border shadow-sm relative">
+                 <div className="w-[48px] h-[48px] bg-white p-1 rounded border shadow-sm relative">
                    <Image 
                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VERIFY-${student.card_code}`}
                      alt="QR" fill className="object-contain" unoptimized

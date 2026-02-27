@@ -78,9 +78,9 @@ export function StudentCardVisual({
         <div className="flex h-[calc(100%-56px)] relative z-10">
           {/* SISI KIRI: Foto & Barcode (Stack Vertikal) */}
           {(showPhoto || showQr) && (
-            <div className="w-[100px] flex flex-col items-center justify-center p-2 border-r border-dashed border-muted/50 gap-2">
+            <div className="w-[100px] flex flex-col items-center justify-center p-2 border-r border-dashed border-muted/50 gap-1.5">
               {showPhoto && (
-                <div className="w-[75px] h-[95px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md shrink-0">
+                <div className="w-[60px] h-[80px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md shrink-0">
                   {student.photo_url ? (
                     <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
                   ) : (
@@ -89,7 +89,7 @@ export function StudentCardVisual({
                 </div>
               )}
               {showQr && (
-                <div className="w-[55px] h-[55px] bg-white p-1 rounded border shadow-sm relative shrink-0">
+                <div className="w-[48px] h-[48px] bg-white p-1 rounded border shadow-sm relative shrink-0">
                   <Image 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
                     alt="QR" fill className="object-contain" unoptimized
@@ -164,7 +164,7 @@ export function StudentCardVisual({
       <div className="flex-1 px-6 pt-2 flex items-start gap-4">
         {/* Foto di Kiri (Jika diaktifkan di belakang) */}
         {showPhoto && (
-          <div className="w-[70px] h-[90px] relative rounded border overflow-hidden shadow-sm shrink-0 bg-slate-50">
+          <div className="w-[60px] h-[80px] relative rounded border overflow-hidden shadow-sm shrink-0 bg-slate-50">
              <Image src={student.photo_url || ''} alt="Foto" fill className="object-cover" unoptimized />
           </div>
         )}
@@ -182,7 +182,7 @@ export function StudentCardVisual({
         {/* Barcode di Kanan (Jika diaktifkan di belakang) */}
         {showQr && (
           <div className="w-[60px] flex flex-col items-center gap-1 shrink-0">
-             <div className="w-[55px] h-[55px] bg-white p-1 rounded border shadow-sm relative">
+             <div className="w-[48px] h-[48px] bg-white p-1 rounded border shadow-sm relative">
                <Image 
                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VERIFY-${student.card_code}`}
                  alt="QR" fill className="object-contain" unoptimized
