@@ -133,19 +133,21 @@
   }
 }
 
-/* 
- * Area cetak disembunyikan dari layar namun tetap berada di (0,0) 
- * agar html2canvas tetap bisa menemukannya di dalam cloned iframe.
- */
 #print-area {
   position: fixed;
   top: 0;
   left: 0;
-  width: 1000px;
+  width: auto;
   height: auto;
   opacity: 0;
   pointer-events: none;
   z-index: -9999;
   overflow: visible;
   background: white;
+}
+
+.visual-front, .visual-back {
+  width: fit-content;
+  display: block;
+  line-height: 0;
 }
