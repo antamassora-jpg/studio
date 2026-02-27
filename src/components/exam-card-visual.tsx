@@ -50,8 +50,8 @@ export function ExamCardVisual({
     if (template?.config_json) {
       const parsed = JSON.parse(template.config_json);
       config = {
-        front: { ...DEFAULT_CONFIG.front, ...parsed.front },
-        back: { ...DEFAULT_CONFIG.back, ...parsed.back }
+        front: { ...DEFAULT_CONFIG.front, ...parsed.front, elements: { ...DEFAULT_CONFIG.front.elements, ...parsed.front?.elements }, watermark: { ...DEFAULT_CONFIG.front.watermark, ...parsed.front?.watermark } },
+        back: { ...DEFAULT_CONFIG.back, ...parsed.back, elements: { ...DEFAULT_CONFIG.back.elements, ...parsed.back?.elements }, watermark: { ...DEFAULT_CONFIG.back.watermark, ...parsed.back?.watermark } }
       };
     }
   } catch (e) {}
@@ -73,7 +73,6 @@ export function ExamCardVisual({
     overflow: 'hidden'
   };
 
-  // Ultra-dense repeating pattern for watermark (Extreme Density)
   const watermarkSvg = wm.enabled ? `
     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="12">
       <text 

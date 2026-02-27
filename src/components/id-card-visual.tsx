@@ -32,12 +32,12 @@ export function IdCardVisual({
 }) {
   const DEFAULT_CONFIG = {
     front: { 
-      headerBg: '#1B3C33', bodyBg: '#ffffff', footerBg: '#10B981', textColor: '#ffffff', bgImage: '', fontFamily: 'Inter, sans-serif', 
+      headerBg: '#1B3C33', bodyBg: '#ffffff', footerBg: '#10B981', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif', 
       elements: { ...DEFAULT_ELEMENTS },
       watermark: { ...DEFAULT_WATERMARK }
     },
     back: { 
-      headerBg: '#1B3C33', bodyBg: '#ffffff', footerBg: '#f8fafc', textColor: '#ffffff', bgImage: '', fontFamily: 'Inter, sans-serif', 
+      headerBg: '#1B3C33', bodyBg: '#ffffff', footerBg: '#f8fafc', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif', 
       elements: { ...DEFAULT_ELEMENTS },
       watermark: { ...DEFAULT_WATERMARK }
     }
@@ -48,8 +48,8 @@ export function IdCardVisual({
     if (template?.config_json) {
       const parsed = JSON.parse(template.config_json);
       config = {
-        front: { ...DEFAULT_CONFIG.front, ...parsed.front },
-        back: { ...DEFAULT_CONFIG.back, ...parsed.back }
+        front: { ...DEFAULT_CONFIG.front, ...parsed.front, elements: { ...DEFAULT_CONFIG.front.elements, ...parsed.front?.elements }, watermark: { ...DEFAULT_CONFIG.front.watermark, ...parsed.front?.watermark } },
+        back: { ...DEFAULT_CONFIG.back, ...parsed.back, elements: { ...DEFAULT_CONFIG.back.elements, ...parsed.back?.elements }, watermark: { ...DEFAULT_CONFIG.back.watermark, ...parsed.back?.watermark } }
       };
     }
   } catch (e) {}
@@ -65,13 +65,12 @@ export function IdCardVisual({
     backgroundImage: current.bgImage ? `url(${current.bgImage})` : 'none',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    color: side === 'front' ? '#ffffff' : '#334155',
+    color: current.textColor,
     fontFamily: current.fontFamily,
     position: 'relative' as const,
     overflow: 'hidden'
   };
 
-  // Ultra-dense repeating pattern for watermark (Extreme Density)
   const watermarkSvg = wm.enabled ? `
     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="12">
       <text 
@@ -167,8 +166,7 @@ export function IdCardVisual({
             top: els.info.y, 
             width: `${els.info.width || 236}px`,
             textAlign: els.info.align || 'center',
-            alignItems: els.info.align === 'center' ? 'center' : (els.info.align === 'right' ? 'flex-end' : 'flex-start'),
-            color: side === 'front' ? '#1e293b' : current.textColor
+            alignItems: els.info.align === 'center' ? 'center' : (els.info.align === 'right' ? 'flex-end' : 'flex-start')
           }}
         >
           <h1 className="font-black uppercase tracking-tight leading-none mb-1" style={{ fontSize: (els.info.fontSize || 12) + 2 }}>{student.name}</h1>

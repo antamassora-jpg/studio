@@ -74,11 +74,18 @@ const FONT_OPTIONS = [
   { name: 'Roboto Mono (Technical)', value: 'Roboto Mono, monospace' },
 ];
 
-const DEFAULT_ELEMENTS = {
+const DEFAULT_ELEMENTS_LANSKAP = {
   photo: { x: 15, y: 70, w: 60, h: 80 },
   qr: { x: 15, y: 155, w: 48, h: 48 },
   info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 },
   sigBlock: { x: 240, y: 160, scale: 0.75 }
+};
+
+const DEFAULT_ELEMENTS_POTRET = {
+  photo: { x: 68, y: 100, w: 140, h: 180 },
+  qr: { x: 110, y: 290, w: 56, h: 56 },
+  info: { x: 20, y: 355, align: 'center', fontSize: 12, width: 236 },
+  sigBlock: { x: 150, y: 380, scale: 0.8 }
 };
 
 const DEFAULT_WATERMARK = {
@@ -87,19 +94,6 @@ const DEFAULT_WATERMARK = {
   opacity: 0.1,
   size: 10,
   angle: -30
-};
-
-const DEFAULT_CONFIG = {
-  front: { 
-    headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
-    elements: { ...DEFAULT_ELEMENTS },
-    watermark: { ...DEFAULT_WATERMARK }
-  },
-  back: { 
-    headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
-    elements: { ...DEFAULT_ELEMENTS, photo: { ...DEFAULT_ELEMENTS.photo, x: 15 }, info: { ...DEFAULT_ELEMENTS.info, x: 90 }, qr: { ...DEFAULT_ELEMENTS.qr, x: 275 } },
-    watermark: { ...DEFAULT_WATERMARK }
-  }
 };
 
 export default function TemplatesPage() {
@@ -111,7 +105,7 @@ export default function TemplatesPage() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CardTemplate | null>(null);
-  const [localConfig, setLocalConfig] = useState<any>(DEFAULT_CONFIG);
+  const [localConfig, setLocalConfig] = useState<any>(null);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
 
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -151,11 +145,28 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     if (editingTemplate) {
+      const isPortrait = editingTemplate.type === 'ID_CARD';
+      const defEls = isPortrait ? DEFAULT_ELEMENTS_POTRET : DEFAULT_ELEMENTS_LANSKAP;
+      const defElsBack = isPortrait ? DEFAULT_ELEMENTS_POTRET : { ...DEFAULT_ELEMENTS_LANSKAP, photo: { ...DEFAULT_ELEMENTS_LANSKAP.photo, x: 15 }, info: { ...DEFAULT_ELEMENTS_LANSKAP.info, x: 90 }, qr: { ...DEFAULT_ELEMENTS_LANSKAP.qr, x: 275 } };
+
+      const DEFAULT_CONFIG = {
+        front: { 
+          headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#10B981' : '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
+          elements: { ...defEls },
+          watermark: { ...DEFAULT_WATERMARK }
+        },
+        back: { 
+          headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#f8fafc' : '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
+          elements: { ...defElsBack },
+          watermark: { ...DEFAULT_WATERMARK }
+        }
+      };
+
       try {
         const parsed = JSON.parse(editingTemplate.config_json);
         setLocalConfig({
-          front: { ...DEFAULT_CONFIG.front, ...parsed.front },
-          back: { ...DEFAULT_CONFIG.back, ...parsed.back }
+          front: { ...DEFAULT_CONFIG.front, ...parsed.front, elements: { ...DEFAULT_CONFIG.front.elements, ...parsed.front?.elements }, watermark: { ...DEFAULT_CONFIG.front.watermark, ...parsed.front?.watermark } },
+          back: { ...DEFAULT_CONFIG.back, ...parsed.back, elements: { ...DEFAULT_CONFIG.back.elements, ...parsed.back?.elements }, watermark: { ...DEFAULT_CONFIG.back.watermark, ...parsed.back?.watermark } }
         });
       } catch (e) {
         setLocalConfig(DEFAULT_CONFIG);
@@ -169,11 +180,28 @@ export default function TemplatesPage() {
       return;
     }
     const db = getDB();
+    const isPortrait = newTemplateType === 'ID_CARD';
+    const defEls = isPortrait ? DEFAULT_ELEMENTS_POTRET : DEFAULT_ELEMENTS_LANSKAP;
+    const defElsBack = isPortrait ? DEFAULT_ELEMENTS_POTRET : { ...DEFAULT_ELEMENTS_LANSKAP, photo: { ...DEFAULT_ELEMENTS_LANSKAP.photo, x: 15 }, info: { ...DEFAULT_ELEMENTS_LANSKAP.info, x: 90 }, qr: { ...DEFAULT_ELEMENTS_LANSKAP.qr, x: 275 } };
+
+    const initialConfig = {
+      front: { 
+        headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#10B981' : '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
+        elements: { ...defEls },
+        watermark: { ...DEFAULT_WATERMARK }
+      },
+      back: { 
+        headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#f8fafc' : '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter, sans-serif',
+        elements: { ...defElsBack },
+        watermark: { ...DEFAULT_WATERMARK }
+      }
+    };
+
     const newTemplate: CardTemplate = {
       id: Math.random().toString(36).substr(2, 9),
       name: newTemplateName,
       type: newTemplateType,
-      config_json: JSON.stringify(DEFAULT_CONFIG),
+      config_json: JSON.stringify(initialConfig),
       is_active: false,
       preview_color: newTemplateType === 'STUDENT_CARD' ? 'bg-blue-600' : (newTemplateType === 'EXAM_CARD' ? 'bg-orange-500' : 'bg-emerald-800')
     };
@@ -214,7 +242,7 @@ export default function TemplatesPage() {
   };
 
   const handleSaveConfig = () => {
-    if (!editingTemplate) return;
+    if (!editingTemplate || !localConfig) return;
     const db = getDB();
     db.templates = db.templates.map(t => 
       t.id === editingTemplate.id ? { ...t, config_json: JSON.stringify(localConfig) } : t
@@ -273,7 +301,7 @@ export default function TemplatesPage() {
     </div>
   );
 
-  const currentTemplateWithLocalConfig = editingTemplate ? { ...editingTemplate, config_json: JSON.stringify(localConfig) } : null;
+  const currentTemplateWithLocalConfig = editingTemplate && localConfig ? { ...editingTemplate, config_json: JSON.stringify(localConfig) } : null;
 
   return (
     <div className="space-y-6 pb-20">
@@ -379,7 +407,7 @@ export default function TemplatesPage() {
                   <p className="text-[10px] text-white/50 font-black uppercase tracking-[0.4em] mt-1">Sesuaikan Warna, Font, dan Posisi Elemen Secara Presisi</p>
                </div>
                <div className="flex gap-3">
-                  <Button variant="ghost" onClick={() => setLocalConfig(DEFAULT_CONFIG)} className="text-white/40 hover:text-white h-10 px-6 rounded-full font-black text-[10px] uppercase border border-white/10">
+                  <Button variant="ghost" onClick={() => setLocalConfig(null)} className="text-white/40 hover:text-white h-10 px-6 rounded-full font-black text-[10px] uppercase border border-white/10">
                     <RotateCcw className="h-3.5 w-3.5 mr-2" /> RESET LAYOUT
                   </Button>
                   <Button onClick={() => setIsConfigOpen(false)} variant="ghost" size="icon" className="text-white/40 hover:text-white"><X className="h-5 w-5" /></Button>
@@ -396,151 +424,155 @@ export default function TemplatesPage() {
 
                 {['front', 'back'].map(side => (
                   <TabsContent key={side} value={side} className="space-y-10 pt-8">
-                    <div className="space-y-6">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                         <Palette className="h-3 w-3" /> Estetika & Visual
-                      </Label>
-                      <div className="space-y-4">
-                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Tipografi Utama</Label>
-                        <Select value={localConfig[side].fontFamily} onValueChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], fontFamily: v}})}>
-                          <SelectTrigger className="h-12 rounded-xl border-2"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {FONT_OPTIONS.map(f => <SelectItem key={f.value} value={f.value} style={{fontFamily: f.value}}>{f.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <ColorField label="Header" value={localConfig[side].headerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: v}})} />
-                        <ColorField label="Body" value={localConfig[side].bodyBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: v}})} />
-                        <ColorField label="Footer" value={localConfig[side].footerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: v}})} />
-                        <ColorField label="Teks" value={localConfig[side].textColor} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: v}})} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                         <ShieldCheck className="h-3 w-3" /> Watermark Bayangan
-                      </Label>
-                      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-6">
-                        <div className="flex items-center justify-between">
-                           <Label className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Aktifkan Efek</Label>
-                           <Switch checked={localConfig[side].watermark?.enabled || false} onCheckedChange={v => updateWatermark({ enabled: v })} />
+                    {localConfig && (
+                      <>
+                        <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                             <Palette className="h-3 w-3" /> Estetika & Visual
+                          </Label>
+                          <div className="space-y-4">
+                            <Label className="text-[9px] font-bold uppercase text-muted-foreground">Tipografi Utama</Label>
+                            <Select value={localConfig[side].fontFamily} onValueChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], fontFamily: v}})}>
+                              <SelectTrigger className="h-12 rounded-xl border-2"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {FONT_OPTIONS.map(f => <SelectItem key={f.value} value={f.value} style={{fontFamily: f.value}}>{f.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <ColorField label="Header" value={localConfig[side].headerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], headerBg: v}})} />
+                            <ColorField label="Body" value={localConfig[side].bodyBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], bodyBg: v}})} />
+                            <ColorField label="Footer" value={localConfig[side].footerBg} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], footerBg: v}})} />
+                            <ColorField label="Teks" value={localConfig[side].textColor} onChange={v => setLocalConfig({...localConfig, [side]: {...localConfig[side], textColor: v}})} />
+                          </div>
                         </div>
-                        {localConfig[side].watermark?.enabled && (
-                          <>
+
+                        <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                             <ShieldCheck className="h-3 w-3" /> Watermark Bayangan
+                          </Label>
+                          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-6">
+                            <div className="flex items-center justify-between">
+                               <Label className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Aktifkan Efek</Label>
+                               <Switch checked={localConfig[side].watermark?.enabled || false} onCheckedChange={v => updateWatermark({ enabled: v })} />
+                            </div>
+                            {localConfig[side].watermark?.enabled && (
+                              <>
+                                <div className="space-y-3">
+                                  <Label className="text-[9px] font-bold uppercase text-muted-foreground">Teks Watermark</Label>
+                                  <Input 
+                                    placeholder="MISAL: ASLI" 
+                                    value={localConfig[side].watermark?.text || ''} 
+                                    onChange={e => updateWatermark({ text: e.target.value.toUpperCase() })} 
+                                    className="h-10 rounded-xl"
+                                  />
+                                </div>
+                                <div className="space-y-3">
+                                  <div className="flex justify-between text-[9px] font-black uppercase">
+                                    <span>Transparansi</span>
+                                    <span className="text-primary">{Math.round((localConfig[side].watermark?.opacity || 0.1) * 100)}%</span>
+                                  </div>
+                                  <Slider value={[(localConfig[side].watermark?.opacity || 0.1) * 100]} min={5} max={40} step={1} onValueChange={([v]) => updateWatermark({ opacity: v / 100 })} />
+                                </div>
+                                <div className="space-y-3">
+                                  <div className="flex justify-between text-[9px] font-black uppercase">
+                                    <span>Ukuran Teks</span>
+                                    <span className="text-primary">{localConfig[side].watermark?.size || 10}px</span>
+                                  </div>
+                                  <Slider value={[localConfig[side].watermark?.size || 10]} min={6} max={24} step={1} onValueChange={([v]) => updateWatermark({ size: v })} />
+                                </div>
+                                <div className="space-y-3">
+                                  <div className="flex justify-between text-[9px] font-black uppercase">
+                                    <span>Sudut Rotasi</span>
+                                    <span className="text-primary">{localConfig[side].watermark?.angle || -30}°</span>
+                                  </div>
+                                  <Slider value={[localConfig[side].watermark?.angle || -30]} min={-90} max={90} step={5} onValueChange={([v]) => updateWatermark({ angle: v })} />
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                             <Maximize2 className="h-3 w-3" /> Dimensi & Ukuran
+                          </Label>
+                          <div className="space-y-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                             <div className="space-y-3">
-                              <Label className="text-[9px] font-bold uppercase text-muted-foreground">Teks Watermark</Label>
-                              <Input 
-                                placeholder="MISAL: ASLI" 
-                                value={localConfig[side].watermark?.text || ''} 
-                                onChange={e => updateWatermark({ text: e.target.value.toUpperCase() })} 
-                                className="h-10 rounded-xl"
-                              />
+                              <div className="flex justify-between text-[9px] font-black uppercase">
+                                <span>Lebar Foto</span>
+                                <span className="text-primary font-bold">{localConfig[side].elements.photo.w}px</span>
+                              </div>
+                              <Slider value={[localConfig[side].elements.photo.w]} min={40} max={120} step={1} onValueChange={([v]) => updateElement('photo', { w: v, h: v * 1.33 })} />
                             </div>
                             <div className="space-y-3">
                               <div className="flex justify-between text-[9px] font-black uppercase">
-                                <span>Transparansi</span>
-                                <span className="text-primary">{Math.round((localConfig[side].watermark?.opacity || 0.1) * 100)}%</span>
+                                <span>Ukuran QR Code</span>
+                                <span className="text-primary font-bold">{localConfig[side].elements.qr.w}px</span>
                               </div>
-                              <Slider value={[(localConfig[side].watermark?.opacity || 0.1) * 100]} min={5} max={40} step={1} onValueChange={([v]) => updateWatermark({ opacity: v / 100 })} />
+                              <Slider value={[localConfig[side].elements.qr.w]} min={30} max={100} step={1} onValueChange={([v]) => updateElement('qr', { w: v, h: v })} />
                             </div>
                             <div className="space-y-3">
                               <div className="flex justify-between text-[9px] font-black uppercase">
-                                <span>Ukuran Teks</span>
-                                <span className="text-primary">{localConfig[side].watermark?.size || 10}px</span>
+                                <span>Lebar Blok Identitas</span>
+                                <span className="text-primary font-bold">{localConfig[side].elements.info.width}px</span>
                               </div>
-                              <Slider value={[localConfig[side].watermark?.size || 10]} min={6} max={24} step={1} onValueChange={([v]) => updateWatermark({ size: v })} />
+                              <Slider value={[localConfig[side].elements.info.width]} min={100} max={250} step={1} onValueChange={([v]) => updateElement('info', { width: v })} />
                             </div>
                             <div className="space-y-3">
                               <div className="flex justify-between text-[9px] font-black uppercase">
-                                <span>Sudut Rotasi</span>
-                                <span className="text-primary">{localConfig[side].watermark?.angle || -30}°</span>
+                                <span>Ukuran Font Teks</span>
+                                <span className="text-primary font-bold">{localConfig[side].elements.info.fontSize}px</span>
                               </div>
-                              <Slider value={[localConfig[side].watermark?.angle || -30]} min={-90} max={90} step={5} onValueChange={([v]) => updateWatermark({ angle: v })} />
+                              <Slider value={[localConfig[side].elements.info.fontSize]} min={6} max={16} step={0.5} onValueChange={([v]) => updateElement('info', { fontSize: v })} />
                             </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                            <div className="space-y-3">
+                              <div className="flex justify-between text-[9px] font-black uppercase">
+                                <span>Skala Tanda Tangan & Stempel</span>
+                                <span className="text-primary font-bold">{Math.round((localConfig[side].elements.sigBlock.scale || 0.75) * 100)}%</span>
+                              </div>
+                              <Slider value={[(localConfig[side].elements.sigBlock.scale || 0.75) * 100]} min={40} max={120} step={1} onValueChange={([v]) => updateElement('sigBlock', { scale: v / 100 })} />
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="space-y-6">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                         <Maximize2 className="h-3 w-3" /> Dimensi & Ukuran
-                      </Label>
-                      <div className="space-y-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-[9px] font-black uppercase">
-                            <span>Lebar Foto Siswa</span>
-                            <span className="text-primary font-bold">{localConfig[side].elements.photo.w}px</span>
+                        <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                             <AlignCenter className="h-3 w-3" /> Perataan Identitas
+                          </Label>
+                          <div className="flex gap-2">
+                            <Button variant={localConfig[side].elements.info.align === 'left' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'left' })}>
+                              <AlignLeft className="h-4 w-4 mr-2" /> KIRI
+                            </Button>
+                            <Button variant={localConfig[side].elements.info.align === 'center' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'center' })}>
+                              <AlignCenter className="h-4 w-4 mr-2" /> TENGAH
+                            </Button>
+                            <Button variant={localConfig[side].elements.info.align === 'right' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'right' })}>
+                              <AlignRight className="h-4 w-4 mr-2" /> KANAN
+                            </Button>
                           </div>
-                          <Slider value={[localConfig[side].elements.photo.w]} min={40} max={120} step={1} onValueChange={([v]) => updateElement('photo', { w: v, h: v * 1.33 })} />
                         </div>
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-[9px] font-black uppercase">
-                            <span>Ukuran QR Code</span>
-                            <span className="text-primary font-bold">{localConfig[side].elements.qr.w}px</span>
-                          </div>
-                          <Slider value={[localConfig[side].elements.qr.w]} min={30} max={100} step={1} onValueChange={([v]) => updateElement('qr', { w: v, h: v })} />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-[9px] font-black uppercase">
-                            <span>Lebar Blok Identitas</span>
-                            <span className="text-primary font-bold">{localConfig[side].elements.info.width}px</span>
-                          </div>
-                          <Slider value={[localConfig[side].elements.info.width]} min={100} max={250} step={1} onValueChange={([v]) => updateElement('info', { width: v })} />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-[9px] font-black uppercase">
-                            <span>Ukuran Font Teks</span>
-                            <span className="text-primary font-bold">{localConfig[side].elements.info.fontSize}px</span>
-                          </div>
-                          <Slider value={[localConfig[side].elements.info.fontSize]} min={6} max={16} step={0.5} onValueChange={([v]) => updateElement('info', { fontSize: v })} />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-[9px] font-black uppercase">
-                            <span>Skala Tanda Tangan & Stempel</span>
-                            <span className="text-primary font-bold">{Math.round((localConfig[side].elements.sigBlock.scale || 0.75) * 100)}%</span>
-                          </div>
-                          <Slider value={[(localConfig[side].elements.sigBlock.scale || 0.75) * 100]} min={40} max={120} step={1} onValueChange={([v]) => updateElement('sigBlock', { scale: v / 100 })} />
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="space-y-6">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                         <AlignCenter className="h-3 w-3" /> Perataan Identitas
-                      </Label>
-                      <div className="flex gap-2">
-                        <Button variant={localConfig[side].elements.info.align === 'left' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'left' })}>
-                          <AlignLeft className="h-4 w-4 mr-2" /> KIRI
-                        </Button>
-                        <Button variant={localConfig[side].elements.info.align === 'center' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'center' })}>
-                          <AlignCenter className="h-4 w-4 mr-2" /> TENGAH
-                        </Button>
-                        <Button variant={localConfig[side].elements.info.align === 'right' ? 'default' : 'outline'} className="flex-1 rounded-xl h-12" onClick={() => updateElement('info', { align: 'right' })}>
-                          <AlignRight className="h-4 w-4 mr-2" /> KANAN
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                         <ImageIcon className="h-3 w-3" /> Background Sisi Ini
-                      </Label>
-                      <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center gap-4">
-                         {localConfig[side].bgImage ? (
-                           <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-md">
-                              <Image src={localConfig[side].bgImage} alt="Bg" fill className="object-cover" unoptimized />
-                              <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setLocalConfig({...localConfig, [side]: {...localConfig[side], bgImage: ''}})}><X className="h-4 w-4" /></Button>
-                           </div>
-                         ) : (
-                           <Button variant="outline" className="h-12 w-full rounded-xl gap-3 border-2" onClick={() => fileInputRef.current?.click()}>
-                             <Upload className="h-4 w-4" /> UNGGAH LATAR
-                           </Button>
-                         )}
-                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
-                      </div>
-                    </div>
+                        <div className="space-y-4">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                             <ImageIcon className="h-3 w-3" /> Background Sisi Ini
+                          </Label>
+                          <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center gap-4">
+                             {localConfig[side].bgImage ? (
+                               <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-md">
+                                  <Image src={localConfig[side].bgImage} alt="Bg" fill className="object-cover" unoptimized />
+                                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setLocalConfig({...localConfig, [side]: {...localConfig[side], bgImage: ''}})}><X className="h-4 w-4" /></Button>
+                               </div>
+                             ) : (
+                               <Button variant="outline" className="h-12 w-full rounded-xl gap-3 border-2" onClick={() => fileInputRef.current?.click()}>
+                                 <Upload className="h-4 w-4" /> UNGGAH LATAR
+                               </Button>
+                             )}
+                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>
@@ -554,23 +586,25 @@ export default function TemplatesPage() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Klik dan geser elemen di dalam kartu</span>
               </div>
 
-              <div className="relative scale-150 origin-top transition-all duration-500 hover:scale-[1.55]">
-                <InteractiveLayoutWrapper 
-                  config={localConfig[activeSide]} 
-                  updateConfig={(elements: any) => setLocalConfig({ ...localConfig, [activeSide]: { ...localConfig[activeSide], elements } })}
-                  scale={1.5}
-                >
-                  {editingTemplate?.type === 'STUDENT_CARD' && previewStudent && (
-                    <StudentCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
-                  )}
-                  {editingTemplate?.type === 'EXAM_CARD' && previewStudent && (
-                    <ExamCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
-                  )}
-                  {editingTemplate?.type === 'ID_CARD' && previewStudent && (
-                    <IdCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
-                  )}
-                </InteractiveLayoutWrapper>
-              </div>
+              {localConfig && (
+                <div className="relative scale-150 origin-top transition-all duration-500 hover:scale-[1.55]">
+                  <InteractiveLayoutWrapper 
+                    config={localConfig[activeSide]} 
+                    updateConfig={(elements: any) => setLocalConfig({ ...localConfig, [activeSide]: { ...localConfig[activeSide], elements } })}
+                    scale={1.5}
+                  >
+                    {editingTemplate?.type === 'STUDENT_CARD' && previewStudent && (
+                      <StudentCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
+                    )}
+                    {editingTemplate?.type === 'EXAM_CARD' && previewStudent && (
+                      <ExamCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
+                    )}
+                    {editingTemplate?.type === 'ID_CARD' && previewStudent && (
+                      <IdCardVisual student={previewStudent} settings={settings!} side={activeSide} template={currentTemplateWithLocalConfig} />
+                    )}
+                  </InteractiveLayoutWrapper>
+                </div>
+              )}
 
               <div className="mt-40 max-w-md bg-white p-6 rounded-[2rem] shadow-2xl border border-slate-100 mb-20">
                  <div className="flex gap-4 items-start">
@@ -689,7 +723,7 @@ function InteractiveLayoutWrapper({ children, config, updateConfig, scale = 1 }:
           style={{ left: els.photo.x, top: els.photo.y, width: els.photo.w, height: els.photo.h }}
           onMouseDown={(e) => handleMouseDown('photo', e)}
         >
-           <div className="hidden group-hover:block absolute -top-6 left-0 bg-primary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">Foto Siswa</div>
+           <div className="hidden group-hover:block absolute -top-6 left-0 bg-primary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">Foto</div>
         </div>
 
         <div 
@@ -697,7 +731,7 @@ function InteractiveLayoutWrapper({ children, config, updateConfig, scale = 1 }:
           style={{ left: els.qr.x, top: els.qr.y, width: els.qr.w, height: els.qr.h }}
           onMouseDown={(e) => handleMouseDown('qr', e)}
         >
-           <div className="hidden group-hover:block absolute -top-6 left-0 bg-primary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">QR Code</div>
+           <div className="hidden group-hover:block absolute -top-6 left-0 bg-primary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">Barcode</div>
         </div>
 
         <div 
@@ -705,7 +739,7 @@ function InteractiveLayoutWrapper({ children, config, updateConfig, scale = 1 }:
           style={{ left: els.info.x, top: els.info.y, width: els.info.width || 180, height: 80 }}
           onMouseDown={(e) => handleMouseDown('info', e)}
         >
-           <div className="hidden group-hover:block absolute -top-6 left-0 bg-secondary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">Blok Identitas</div>
+           <div className="hidden group-hover:block absolute -top-6 left-0 bg-secondary text-white text-[8px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">Identitas</div>
         </div>
 
         <div 

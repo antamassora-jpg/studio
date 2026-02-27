@@ -1,3 +1,4 @@
+
 import { Student, SchoolSettings, AttendanceSession, AttendanceLog, ExamEvent, CardTemplate } from './types';
 
 const STORAGE_KEY = 'educard_sync_db';
@@ -17,7 +18,7 @@ const DEFAULT_SIG = 'https://images.unsplash.com/photo-1574169208507-84376144848
 const DEFAULT_STAMP = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=200&h=200&auto=format&fit=crop';
 
 const DEFAULT_SETTINGS: SchoolSettings = {
-  school_name: 'SMKN 2 Tana Toraja',
+  school_name: 'SMKN 2 TANA TORAJA',
   address: 'Jl. Poros Makale-Rantepao, Tana Toraja',
   principal_name: 'Drs. Nama Kepala Sekolah, M.Pd.',
   principal_nip: '19700101 199501 1 001',
@@ -92,6 +93,8 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   id_show_valid_back: false,
 };
 
+const DEFAULT_WATERMARK = {"enabled":false,"text":"SMKN 2 TANA TORAJA","opacity":0.1,"size":10,"angle":-30};
+
 const INITIAL_DB: DB = {
   students: [
     {
@@ -118,9 +121,18 @@ const INITIAL_DB: DB = {
     { id: 'e1', name: 'PAS Ganjil', school_year: '2024/2025', semester: 'Ganjil', start_date: '2024-12-01', end_date: '2024-12-15' }
   ],
   templates: [
-    { id: 't1', type: 'STUDENT_CARD', name: 'Modern Blue Style', config_json: '{"front":{"headerBg":"#2E50B8","bodyBg":"#ffffff","footerBg":"#4FBFDD","textColor":"#334155","bgImage":"","fontFamily":"Inter, sans-serif"},"back":{"headerBg":"#2E50B8","bodyBg":"#ffffff","footerBg":"#4FBFDD","textColor":"#334155","bgImage":"","fontFamily":"Inter, sans-serif"}}', is_active: true, preview_color: 'bg-blue-600' },
-    { id: 't2', type: 'EXAM_CARD', name: 'Professional Exam Card', config_json: '{"front":{"headerBg":"#1e293b","bodyBg":"#ffffff","footerBg":"#f97316","textColor":"#ffffff","bgImage":"","fontFamily":"Inter, sans-serif"},"back":{"headerBg":"#1e293b","bodyBg":"#ffffff","footerBg":"#f97316","textColor":"#ffffff","bgImage":"","fontFamily":"Inter, sans-serif"}}', is_active: true, preview_color: 'bg-orange-500' },
-    { id: 't3', type: 'ID_CARD', name: 'Modern Green Batik', config_json: '{"front":{"headerBg":"#1B3C33","bodyBg":"#ffffff","footerBg":"#10B981","textColor":"#ffffff","bgImage":"","fontFamily":"Inter, sans-serif"},"back":{"headerBg":"#1B3C33","bodyBg":"#f8fafc","footerBg":"#10B981","textColor":"#ffffff","bgImage":"","fontFamily":"Inter, sans-serif"}}', is_active: true, preview_color: 'bg-emerald-800' }
+    { id: 't1', type: 'STUDENT_CARD', name: 'Modern Blue Style', config_json: JSON.stringify({
+      front: { headerBg: "#2E50B8", bodyBg: "#ffffff", footerBg: "#4FBFDD", textColor: "#334155", watermark: DEFAULT_WATERMARK },
+      back: { headerBg: "#2E50B8", bodyBg: "#ffffff", footerBg: "#4FBFDD", textColor: "#334155", watermark: DEFAULT_WATERMARK }
+    }), is_active: true, preview_color: 'bg-blue-600' },
+    { id: 't2', type: 'EXAM_CARD', name: 'Professional Exam Card', config_json: JSON.stringify({
+      front: { headerBg: "#1e293b", bodyBg: "#ffffff", footerBg: "#f97316", textColor: "#334155", watermark: DEFAULT_WATERMARK },
+      back: { headerBg: "#1e293b", bodyBg: "#ffffff", footerBg: "#f97316", textColor: "#334155", watermark: DEFAULT_WATERMARK }
+    }), is_active: true, preview_color: 'bg-orange-500' },
+    { id: 't3', type: 'ID_CARD', name: 'Modern Green Batik', config_json: JSON.stringify({
+      front: { headerBg: "#1B3C33", bodyBg: "#ffffff", footerBg: "#10B981", textColor: "#334155", watermark: DEFAULT_WATERMARK },
+      back: { headerBg: "#1B3C33", bodyBg: "#f8fafc", footerBg: "#10B981", textColor: "#334155", watermark: DEFAULT_WATERMARK }
+    }), is_active: true, preview_color: 'bg-emerald-800' }
   ]
 };
 

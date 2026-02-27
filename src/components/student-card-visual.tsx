@@ -48,8 +48,8 @@ export function StudentCardVisual({
     if (template?.config_json) {
       const parsed = JSON.parse(template.config_json);
       config = {
-        front: { ...DEFAULT_CONFIG.front, ...parsed.front },
-        back: { ...DEFAULT_CONFIG.back, ...parsed.back }
+        front: { ...DEFAULT_CONFIG.front, ...parsed.front, elements: { ...DEFAULT_CONFIG.front.elements, ...parsed.front?.elements }, watermark: { ...DEFAULT_CONFIG.front.watermark, ...parsed.front?.watermark } },
+        back: { ...DEFAULT_CONFIG.back, ...parsed.back, elements: { ...DEFAULT_CONFIG.back.elements, ...parsed.back?.elements }, watermark: { ...DEFAULT_CONFIG.back.watermark, ...parsed.back?.watermark } }
       };
     }
   } catch (e) {}
@@ -71,7 +71,6 @@ export function StudentCardVisual({
     overflow: 'hidden'
   };
 
-  // Ultra-dense repeating pattern for watermark (Extreme Density)
   const watermarkSvg = wm.enabled ? `
     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="12">
       <text 
@@ -104,7 +103,6 @@ export function StudentCardVisual({
 
   return (
     <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none">
-      {/* Watermark Layer */}
       {wm.enabled && (
         <div 
           className="absolute inset-0 pointer-events-none z-0" 
