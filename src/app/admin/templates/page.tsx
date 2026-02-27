@@ -328,6 +328,10 @@ export default function TemplatesPage() {
 
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className="max-w-7xl rounded-[4rem] p-0 overflow-hidden border-none shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Editor Visual: {editingTemplate?.name}</DialogTitle>
+          </DialogHeader>
+          
           <div className="bg-slate-900 p-10 text-white flex justify-between items-center relative overflow-hidden">
                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full"></div>
                <div className="relative z-10">
