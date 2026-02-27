@@ -71,8 +71,9 @@ export function IdCardVisual({
     overflow: 'hidden'
   };
 
+  // Denser staggered pattern for watermark
   const watermarkSvg = wm.enabled ? `
-    <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="60">
       <text 
         x="50%" 
         y="50%" 
@@ -82,7 +83,7 @@ export function IdCardVisual({
         fill="black" 
         fill-opacity="${wm.opacity}" 
         text-anchor="middle" 
-        transform="rotate(${wm.angle}, 75, 75)"
+        transform="rotate(${wm.angle}, 50, 30)"
       >
         ${wm.text}
       </text>

@@ -71,8 +71,9 @@ export function StudentCardVisual({
     overflow: 'hidden'
   };
 
+  // Denser staggered pattern for watermark
   const watermarkSvg = wm.enabled ? `
-    <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="60">
       <text 
         x="50%" 
         y="50%" 
@@ -82,7 +83,7 @@ export function StudentCardVisual({
         fill="black" 
         fill-opacity="${wm.opacity}" 
         text-anchor="middle" 
-        transform="rotate(${wm.angle}, 75, 75)"
+        transform="rotate(${wm.angle}, 50, 30)"
       >
         ${wm.text}
       </text>
@@ -182,7 +183,7 @@ export function StudentCardVisual({
           {showValid && (
             <div className="mt-1 w-full">
               <span className="opacity-60 text-[6px] uppercase font-black block">Masa Berlaku</span>
-              <span className="font-black block leading-none" style={{ fontSize: (els.info.fontSize || 10) - 1, color: current.headerBg }}>{student.valid_until}</span>
+              <span className="font-black block leading-none" style={{ fontSize: (els.info.fontSize || 10) - 1, color: current.footerBg }}>{student.valid_until}</span>
             </div>
           )}
         </div>
