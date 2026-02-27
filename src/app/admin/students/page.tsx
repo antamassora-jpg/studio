@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { getDB, saveDB } from '@/app/lib/db';
+import { getStudents, addStudent, updateStudent, deleteStudent } from '@/app/lib/db';
 import { Student } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,7 +67,16 @@ export default function StudentsPage() {
   });
 
   useEffect(() => {
-    setStudents(getDB().students);
+    const loadStudents = async () => {
+      try {
+        const data = await getStudents();
+        setStudents(data);
+      } catch (error) {
+        console.error('Error loading students:', error);
+        toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data siswa dari Supabase." });
+      }
+    };
+    loadStudents();
   }, []);
 
   const classes = Array.from(new Set(students.map(s => s.class))).sort();
@@ -82,34 +91,39 @@ export default function StudentsPage() {
     return matchSearch && matchClass && matchMajor;
   });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newStudent.name || !newStudent.nis) {
       toast({ title: "Gagal", description: "Nama dan NIS wajib diisi.", variant: "destructive" });
       return;
     }
 
-    const db = getDB();
-    const student: Student = {
-      ...newStudent as Student,
-      id: Math.random().toString(36).substr(2, 9),
-      card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-    };
-    const updated = [...db.students, student];
-    db.students = updated;
-    saveDB(db);
-    setStudents(updated);
-    setIsAddOpen(false);
-    setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '', nisn: '' });
-    toast({ title: "Berhasil", description: `Siswa ${student.name} berhasil ditambahkan.` });
+    try {
+      const student = await addStudent({
+        ...newStudent as Omit<Student, 'id' | 'created_at' | 'updated_at'>,
+        card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+      });
+      
+      const updated = [...students, student];
+      setStudents(updated);
+      setIsAddOpen(false);
+      setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '', nisn: '' });
+      toast({ title: "Berhasil", description: `Siswa ${student.name} berhasil ditambahkan ke Supabase.` });
+    } catch (error) {
+      console.error('Error adding student:', error);
+      toast({ title: "Gagal", description: "Gagal menambahkan siswa. Silahkan coba lagi.", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    const db = getDB();
-    const updated = db.students.filter(s => s.id !== id);
-    db.students = updated;
-    saveDB(db);
-    setStudents(updated);
-    toast({ title: "Dihapus", description: "Data siswa berhasil dihapus." });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteStudent(id);
+      const updated = students.filter(s => s.id !== id);
+      setStudents(updated);
+      toast({ title: "Dihapus", description: "Data siswa berhasil dihapus dari Supabase." });
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({ title: "Gagal", description: "Gagal menghapus siswa. Silahkan coba lagi.", variant: "destructive" });
+    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,13 +164,12 @@ export default function StudentsPage() {
 
     setIsImporting(true);
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const lines = text.split('\n');
         const headers = lines[0].split(';').map(h => h.trim());
         
-        const db = getDB();
         const newStudentsList: Student[] = [];
 
         for (let i = 1; i < lines.length; i++) {
@@ -169,27 +182,29 @@ export default function StudentsPage() {
           });
 
           if (entry.name && entry.nis) {
-            newStudentsList.push({
-              id: Math.random().toString(36).substr(2, 9),
-              name: entry.name,
-              nis: entry.nis,
-              nisn: entry.nisn || '',
-              class: entry.class || '-',
-              major: entry.major || '-',
-              school_year: entry.school_year || '2024/2025',
-              status: (entry.status as any) || 'Aktif',
-              valid_until: entry.valid_until || '2025-06-30',
-              card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-              photo_url: entry.photo_url || `https://picsum.photos/seed/${entry.nis}/300/400`
-            });
+            try {
+              const student = await addStudent({
+                name: entry.name,
+                nis: entry.nis,
+                nisn: entry.nisn || '',
+                class: entry.class || '-',
+                major: entry.major || '-',
+                school_year: entry.school_year || '2024/2025',
+                status: (entry.status as any) || 'Aktif',
+                valid_until: entry.valid_until || '2025-06-30',
+                card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                photo_url: entry.photo_url || `https://picsum.photos/seed/${entry.nis}/300/400`
+              });
+              newStudentsList.push(student);
+            } catch (err) {
+              console.error('Error adding student:', err);
+            }
           }
         }
 
-        const updated = [...db.students, ...newStudentsList];
-        db.students = updated;
-        saveDB(db);
+        const updated = [...students, ...newStudentsList];
         setStudents(updated);
-        toast({ title: "Import Berhasil", description: `${newStudentsList.length} data siswa telah ditambahkan.` });
+        toast({ title: "Import Berhasil", description: `${newStudentsList.length} data siswa telah ditambahkan ke Supabase.` });
       } catch (error) {
         toast({ variant: "destructive", title: "Import Gagal", description: "Pastikan format CSV benar." });
       } finally {

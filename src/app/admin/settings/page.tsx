@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getDB, saveDB } from '@/app/lib/db';
+import { getSettings, updateSettings } from '@/app/lib/db';
 import { SchoolSettings } from '@/app/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,30 +20,36 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const db = getDB();
-    setSettings(db.school_settings);
+    const loadSettings = async () => {
+      try {
+        const data = await getSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat pengaturan dari Supabase." });
+      }
+    };
+    loadSettings();
   }, []);
 
   const handleSave = async () => {
     if (!settings) return;
     
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
-      const db = getDB();
-      db.school_settings = { ...settings };
-      saveDB(db);
+      await updateSettings(settings);
       
       toast({ 
         title: "Konfigurasi Disimpan", 
-        description: "Seluruh data identitas, aturan, dan tata letak telah diperbarui.",
+        description: "Seluruh data identitas, aturan, dan tata letak telah disimpan ke Supabase.",
       });
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast({ 
         variant: "destructive", 
         title: "Gagal Menyimpan", 
-        description: "Terjadi kesalahan sistem saat mencoba memperbarui database." 
+        description: "Terjadi kesalahan saat menyimpan pengaturan ke Supabase." 
       });
     } finally {
       setIsSaving(false);
