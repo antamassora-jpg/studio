@@ -127,26 +127,26 @@ export default function ExamCardsPage() {
       toast({ variant: "destructive", title: "Pilih Ujian", description: "Silahkan pilih event ujian terlebih dahulu." });
       return;
     }
+    setIsPrintModalOpen(false);
     setTimeout(() => {
       window.print();
-      setIsPrintModalOpen(false);
-    }, 250);
+    }, 500);
   };
 
   return (
     <div className="space-y-6">
+      {/* Print Area */}
       <div id="print-area">
-        <div className="flex flex-col items-center gap-10 p-10">
-          {(selectedIds.size > 0 ? Array.from(selectedIds) : [previewId]).map(id => {
-            const s = students.find(x => x.id === id);
-            return s && settings ? (
-              <div key={id} className="page-break flex flex-col gap-6 items-center mb-10 pb-10 border-b border-dashed">
-                <ExamCardVisual student={s} settings={settings} exam={selectedExam} side="front" template={activeTemplate} />
-                <ExamCardVisual student={s} settings={settings} exam={selectedExam} side="back" template={activeTemplate} />
-              </div>
-            ) : null;
-          })}
-        </div>
+        {(selectedIds.size > 0 ? Array.from(selectedIds) : [previewId]).map(id => {
+          const s = students.find(x => x.id === id);
+          return s && settings ? (
+            <div key={id} className="page-break">
+              <ExamCardVisual student={s} settings={settings} exam={selectedExam} side="front" template={activeTemplate} />
+              <div className="h-10"></div>
+              <ExamCardVisual student={s} settings={settings} exam={selectedExam} side="back" template={activeTemplate} />
+            </div>
+          ) : null;
+        })}
       </div>
 
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -277,7 +277,10 @@ export default function ExamCardsPage() {
                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     UNDUH PDF
                   </Button>
-                  <Button className="flex-1 gap-2 h-12 font-bold bg-orange-600 hover:bg-orange-700" onClick={handlePrint}>
+                  <Button className="flex-1 gap-2 h-12 font-bold bg-orange-600 hover:bg-orange-700" onClick={() => {
+                    setSelectedIds(new Set([previewStudent.id]));
+                    setIsPrintModalOpen(true);
+                  }}>
                     <Printer className="h-4 w-4" /> CETAK
                   </Button>
                 </div>

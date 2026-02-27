@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -22,6 +21,14 @@ import { toast } from '@/hooks/use-toast';
 import { IdCardVisual } from '@/components/id-card-visual';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function IDCardsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -31,6 +38,7 @@ export default function IDCardsPage() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   
   const cardRefFront = useRef<HTMLDivElement>(null);
   const cardRefBack = useRef<HTMLDivElement>(null);
@@ -40,7 +48,6 @@ export default function IDCardsPage() {
     setStudents(db.students);
     setSettings(db.school_settings);
     
-    // Cari template ID_CARD yang aktif
     const template = db.templates.find(t => t.type === 'ID_CARD' && t.is_active);
     setActiveTemplate(template || null);
     
@@ -73,14 +80,13 @@ export default function IDCardsPage() {
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownloadSingle = async () => {
     if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     try {
       const canvasFront = await html2canvas(cardRefFront.current, { scale: 3, useCORS: true });
       const canvasBack = await html2canvas(cardRefBack.current, { scale: 3, useCORS: true });
 
-      // Ukuran 73mm x 111mm
       const pdf = new jsPDF({ 
         orientation: 'portrait', 
         unit: 'mm', 
@@ -101,23 +107,26 @@ export default function IDCardsPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    setIsPrintModalOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   return (
     <div className="space-y-6">
+      {/* Print Area */}
       <div id="print-area">
-        <div className="flex flex-col items-center gap-10 p-10">
-          {(selectedIds.size > 0 ? Array.from(selectedIds) : (previewId ? [previewId] : [])).map(id => {
-            const s = students.find(x => x.id === id);
-            return s && settings ? (
-              <div key={id} className="page-break flex flex-col gap-6 items-center mb-10 pb-10 border-b border-dashed">
-                <IdCardVisual student={s} settings={settings} side="front" template={activeTemplate} />
-                <IdCardVisual student={s} settings={settings} side="back" template={activeTemplate} />
-              </div>
-            ) : null;
-          })}
-        </div>
+        {(selectedIds.size > 0 ? Array.from(selectedIds) : (previewId ? [previewId] : [])).map(id => {
+          const s = students.find(x => x.id === id);
+          return s && settings ? (
+            <div key={id} className="page-break">
+              <IdCardVisual student={s} settings={settings} side="front" template={activeTemplate} />
+              <div className="h-10"></div>
+              <IdCardVisual student={s} settings={settings} side="back" template={activeTemplate} />
+            </div>
+          ) : null;
+        })}
       </div>
 
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -126,7 +135,7 @@ export default function IDCardsPage() {
           <p className="text-muted-foreground">Cetak kartu identitas eksklusif dengan ukuran 7.3 x 11.1 cm.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={handlePrint} disabled={selectedIds.size === 0}>
+          <Button variant="outline" className="gap-2 shadow-sm" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
             <Printer className="h-4 w-4" /> Cetak Massal ({selectedIds.size})
           </Button>
           <Button className="gap-2" onClick={() => toast({title: "Segera Hadir", description: "Fitur upload staff baru dalam pengembangan."})}>
@@ -214,11 +223,14 @@ export default function IDCardsPage() {
                   </div>
                 </div>
                 <div className="flex gap-3 w-full max-w-md pt-8 border-t">
-                  <Button variant="outline" className="flex-1 gap-2 h-12" onClick={handleDownload} disabled={isProcessing}>
+                  <Button variant="outline" className="flex-1 gap-2 h-12" onClick={handleDownloadSingle} disabled={isProcessing}>
                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     Download PDF
                   </Button>
-                  <Button className="flex-1 gap-2 h-12" onClick={handlePrint}>
+                  <Button className="flex-1 gap-2 h-12" onClick={() => {
+                    setSelectedIds(new Set([previewStudent.id]));
+                    setIsPrintModalOpen(true);
+                  }}>
                     <Printer className="h-4 w-4" /> Cetak Sekarang
                   </Button>
                 </div>
@@ -229,6 +241,23 @@ export default function IDCardsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
+        <DialogContent className="max-w-md no-print rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Cetak</DialogTitle>
+            <DialogDescription>
+              Anda akan mencetak <strong>{selectedIds.size}</strong> ID Card.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
+            <Button className="gap-2 px-8 shadow-lg shadow-primary/20" onClick={handlePrint}>
+              <Printer className="h-4 w-4" /> Mulai Cetak
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
