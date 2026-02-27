@@ -301,15 +301,15 @@ export default function TemplatesPage() {
               <CardContent className="flex-1 flex flex-col gap-8 p-8 pt-0">
                 {/* Dual Preview Container (Front & Back) */}
                 <div className={cn(
-                  "bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-start border-2 border-dashed border-slate-200 overflow-hidden relative p-6 gap-8",
-                  isID ? "min-h-[500px]" : "aspect-[1/1.3]"
+                  "bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center border-2 border-dashed border-slate-200 overflow-hidden relative p-6",
+                  isID ? "min-h-[520px] gap-10" : "min-h-[320px] gap-6"
                 )}>
                   {/* Front Preview */}
                   <div className="flex flex-col items-center w-full">
                     <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-3">Tampak Depan</span>
                     <div className={cn(
-                      "transition-transform origin-top",
-                      isID ? "scale-[0.45]" : "scale-[0.35]"
+                      "transition-transform origin-center",
+                      isID ? "scale-[0.42]" : "scale-[0.55]"
                     )}>
                        {template.type === 'STUDENT_CARD' && previewStudent && <StudentCardVisual student={previewStudent} settings={settings} side="front" template={template} />}
                        {template.type === 'EXAM_CARD' && previewStudent && <ExamCardVisual student={previewStudent} settings={settings} side="front" template={template} />}
@@ -317,12 +317,15 @@ export default function TemplatesPage() {
                     </div>
                   </div>
                   
+                  {/* Divider line for visual clarity in grid */}
+                  <div className="w-full border-t border-slate-200/50 my-1"></div>
+
                   {/* Back Preview */}
-                  <div className="flex flex-col items-center w-full pt-6 border-t border-slate-200/50">
+                  <div className="flex flex-col items-center w-full">
                     <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-3">Tampak Belakang</span>
                     <div className={cn(
-                      "transition-transform origin-top",
-                      isID ? "scale-[0.45]" : "scale-[0.35]"
+                      "transition-transform origin-center",
+                      isID ? "scale-[0.42]" : "scale-[0.55]"
                     )}>
                        {template.type === 'STUDENT_CARD' && previewStudent && <StudentCardVisual student={previewStudent} settings={settings} side="back" template={template} />}
                        {template.type === 'EXAM_CARD' && previewStudent && <ExamCardVisual student={previewStudent} settings={settings} side="back" template={template} />}
