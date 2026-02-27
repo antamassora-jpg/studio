@@ -108,8 +108,8 @@ export default function ExamCardsPage() {
     setIsProcessing(true);
     
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 3, useCORS: true });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 3, useCORS: true });
+      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false });
+      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false });
 
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
@@ -132,10 +132,10 @@ export default function ExamCardsPage() {
 
     try {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
-      const cardElements = bulkContainerRef.current.querySelectorAll('.page-break');
+      const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
       for (let i = 0; i < cardElements.length; i++) {
-        const set = cardElements[i];
+        const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
         const back = set.querySelector('.visual-back') as HTMLElement;
 
@@ -143,22 +143,26 @@ export default function ExamCardsPage() {
 
         if (i > 0) pdf.addPage([85.6, 54], 'landscape');
         
-        await new Promise(r => setTimeout(r, 100));
-        
+        // Render Depan
         const canvasFront = await html2canvas(front, { 
           scale: 2, 
           useCORS: true,
-          logging: false 
+          logging: false,
+          backgroundColor: null
         });
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
         
+        // Render Belakang
         pdf.addPage([85.6, 54], 'landscape');
         const canvasBack = await html2canvas(back, { 
           scale: 2, 
           useCORS: true,
-          logging: false 
+          logging: false,
+          backgroundColor: null
         });
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
+
+        await new Promise(r => setTimeout(r, 50));
       }
 
       pdf.save(`Bulk_Kartu_Ujian_${new Date().getTime()}.pdf`);

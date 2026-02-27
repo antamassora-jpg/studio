@@ -87,8 +87,8 @@ export default function IDCardsPage() {
     if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 3, useCORS: true });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 3, useCORS: true });
+      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false });
+      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false });
 
       const pdf = new jsPDF({ 
         orientation: 'portrait', 
@@ -112,14 +112,14 @@ export default function IDCardsPage() {
   const handleDownloadBulk = async () => {
     if (selectedIds.size === 0 || !bulkContainerRef.current) return;
     setIsBulkDownloading(true);
-    toast({ title: "Memulai Proses", description: `Menyiapkan ${selectedIds.size} ID Card dalam satu PDF...` });
+    toast({ title: "Memulai Proses", description: `Menyiapkan ${selectedIds.size} ID Card...` });
 
     try {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [73, 111] });
-      const cardElements = bulkContainerRef.current.querySelectorAll('.page-break');
+      const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
       for (let i = 0; i < cardElements.length; i++) {
-        const set = cardElements[i];
+        const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
         const back = set.querySelector('.visual-back') as HTMLElement;
 
@@ -127,22 +127,26 @@ export default function IDCardsPage() {
 
         if (i > 0) pdf.addPage([73, 111], 'portrait');
         
-        await new Promise(r => setTimeout(r, 100));
-        
+        // Render Depan
         const canvasFront = await html2canvas(front, { 
           scale: 2, 
           useCORS: true,
-          logging: false 
+          logging: false,
+          backgroundColor: null
         });
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
         
+        // Render Belakang
         pdf.addPage([73, 111], 'portrait');
         const canvasBack = await html2canvas(back, { 
           scale: 2, 
           useCORS: true,
-          logging: false 
+          logging: false,
+          backgroundColor: null
         });
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
+
+        await new Promise(r => setTimeout(r, 50));
       }
 
       pdf.save(`Bulk_ID_Cards_${new Date().getTime()}.pdf`);

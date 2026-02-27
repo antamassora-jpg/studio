@@ -65,7 +65,6 @@
 }
 
 @media print {
-  /* Sembunyikan semua elemen UI kecuali area cetak */
   .no-print, 
   header, 
   nav, 
@@ -81,7 +80,6 @@
     display: none !important;
   }
 
-  /* Reset halaman untuk cetak */
   html, body {
     background: white !important;
     margin: 0 !important;
@@ -90,24 +88,22 @@
     height: auto !important;
   }
 
-  /* Tampilkan area cetak */
   #print-area {
     display: block !important;
     visibility: visible !important;
     width: 100% !important;
     background: white !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 9999 !important;
+    position: static !important;
     opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: auto !important;
+    transform: none !important;
   }
 
   #print-area * {
     visibility: visible !important;
   }
 
-  /* Pengaturan Page Break: Satu set kartu per halaman */
   .page-break {
     page-break-after: always;
     break-after: page;
@@ -121,12 +117,10 @@
     box-sizing: border-box !important;
   }
 
-  /* Berikan jarak antara kartu depan dan belakang di satu halaman jika perlu */
   .print-card-gap {
     margin-bottom: 10mm !important;
   }
 
-  /* Memaksa warna dan latar belakang tetap tercetak */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -140,19 +134,14 @@
 }
 
 /* 
- * Sembunyikan area cetak di layar biasa tanpa display: none 
- * agar html2canvas tetap dapat menangkap elemen di dalamnya.
- * Menggunakan opacity: 0 dan pointer-events: none adalah cara paling aman.
+ * Area cetak disembunyikan dari layar dengan cara dipindahkan jauh ke kiri 
+ * agar html2canvas tetap bisa menghitung layout secara normal.
  */
 #print-area {
-  position: fixed;
+  position: absolute;
+  left: -9999px;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -9999;
+  width: 1000px; /* Lebar tetap untuk konsistensi render */
   background: white;
-  overflow: hidden;
+  z-index: -1;
 }

@@ -102,8 +102,16 @@ export default function CardsPage() {
     setIsProcessing(true);
     
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 3, useCORS: true });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 3, useCORS: true });
+      const canvasFront = await html2canvas(cardRefFront.current, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false
+      });
+      const canvasBack = await html2canvas(cardRefBack.current, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false
+      });
 
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
@@ -122,47 +130,50 @@ export default function CardsPage() {
     if (selectedIds.size === 0 || !bulkContainerRef.current) return;
     setIsBulkDownloading(true);
     
-    toast({ title: "Memulai Proses", description: `Menyiapkan ${selectedIds.size} kartu dalam satu PDF...` });
+    toast({ title: "Memulai Proses", description: `Menyiapkan ${selectedIds.size} kartu...` });
 
     try {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
-      const cardElements = bulkContainerRef.current.querySelectorAll('.page-break');
+      const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
       for (let i = 0; i < cardElements.length; i++) {
-        const set = cardElements[i];
+        const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
         const back = set.querySelector('.visual-back') as HTMLElement;
 
         if (!front || !back) continue;
 
+        // Tambah halaman baru kecuali kartu pertama
         if (i > 0) pdf.addPage([85.6, 54], 'landscape');
         
-        // Gunakan jeda singkat agar renderer browser stabil
-        await new Promise(r => setTimeout(r, 100));
-        
+        // Render Depan
         const canvasFront = await html2canvas(front, { 
           scale: 2, 
           useCORS: true,
           logging: false,
-          allowTaint: true
+          backgroundColor: null
         });
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
         
+        // Render Belakang
         pdf.addPage([85.6, 54], 'landscape');
         const canvasBack = await html2canvas(back, { 
           scale: 2, 
           useCORS: true,
           logging: false,
-          allowTaint: true
+          backgroundColor: null
         });
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
+        
+        // Beri nafas sedikit untuk browser
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
       pdf.save(`Bulk_Kartu_Pelajar_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
       console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF massal. Pastikan semua gambar telah dimuat." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF massal. Coba kurangi jumlah kartu yang dipilih." });
     } finally {
       setIsBulkDownloading(false);
     }
