@@ -94,7 +94,8 @@ export function StudentCardVisual({
     </svg>
   ` : '';
 
-  const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;base64,${btoa(watermarkSvg)}")` : 'none';
+  // Use encodeURIComponent instead of btoa for SSR compatibility
+  const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(watermarkSvg)}")` : 'none';
 
   const showLogoLeft = side === 'front' ? settings.student_show_logo_front : settings.student_show_logo_back;
   const showLogoRight = side === 'front' ? settings.student_show_logo_right_front : settings.student_show_logo_right_back;

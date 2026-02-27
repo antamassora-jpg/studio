@@ -96,7 +96,7 @@ export function ExamCardVisual({
     </svg>
   ` : '';
 
-  const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;base64,${btoa(watermarkSvg)}")` : 'none';
+  const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(watermarkSvg)}")` : 'none';
 
   const showLogoLeft = side === 'front' ? settings.exam_show_logo_front : settings.exam_show_logo_back;
   const showLogoRight = side === 'front' ? settings.exam_show_logo_right_front : settings.exam_show_logo_right_back;

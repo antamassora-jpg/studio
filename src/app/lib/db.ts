@@ -93,7 +93,17 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   id_show_valid_back: false,
 };
 
-const DEFAULT_WATERMARK = {"enabled":false,"text":"SMKN 2 TANA TORAJA","opacity":0.1,"size":10,"angle":-30};
+const DEFAULT_WATERMARK = {
+  enabled: false, 
+  text: "SMKN 2 TANA TORAJA", 
+  opacity: 0.1, 
+  size: 10, 
+  angle: -30,
+  imageEnabled: false,
+  imageUrl: '',
+  imageOpacity: 0.1,
+  imageSize: 150
+};
 
 const INITIAL_DB: DB = {
   students: [
