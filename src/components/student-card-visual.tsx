@@ -71,19 +71,20 @@ export function StudentCardVisual({
     overflow: 'hidden'
   };
 
-  // Ultra-dense staggered pattern for watermark
+  // Ultra-dense repeating pattern for watermark
   const watermarkSvg = wm.enabled ? `
-    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="30">
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="20">
       <text 
-        x="30" 
-        y="15" 
+        x="20" 
+        y="10" 
         font-family="${current.fontFamily.split(',')[0]}" 
         font-size="${wm.size}px" 
         font-weight="900"
         fill="black" 
         fill-opacity="${wm.opacity}" 
         text-anchor="middle" 
-        transform="rotate(${wm.angle}, 30, 15)"
+        dominant-baseline="middle"
+        transform="rotate(${wm.angle}, 20, 10)"
       >
         ${wm.text}
       </text>
