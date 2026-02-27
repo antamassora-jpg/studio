@@ -73,12 +73,12 @@ export function ExamCardVisual({
     overflow: 'hidden'
   };
 
-  // Ultra-dense repeating pattern for watermark
+  // Ultra-dense repeating pattern for watermark (Extreme Density)
   const watermarkSvg = wm.enabled ? `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="20">
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="12">
       <text 
-        x="20" 
-        y="10" 
+        x="12.5" 
+        y="6" 
         font-family="${current.fontFamily.split(',')[0]}" 
         font-size="${wm.size}px" 
         font-weight="900"
@@ -86,7 +86,7 @@ export function ExamCardVisual({
         fill-opacity="${wm.opacity}" 
         text-anchor="middle" 
         dominant-baseline="middle"
-        transform="rotate(${wm.angle}, 20, 10)"
+        transform="rotate(${wm.angle}, 12.5, 6)"
       >
         ${wm.text}
       </text>
