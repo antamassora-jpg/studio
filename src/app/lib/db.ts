@@ -146,6 +146,209 @@ const INITIAL_DB: DB = {
   ]
 };
 
+// Supabase client-side functions
+let cachedDB: DB | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 60000; // 1 minute cache
+
+export async function getStudents(): Promise<Student[]> {
+  try {
+    const response = await fetch('/api/students', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch students');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    return INITIAL_DB.students;
+  }
+}
+
+export async function getSettings(): Promise<SchoolSettings> {
+  try {
+    const response = await fetch('/api/settings', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch settings');
+    const data = await response.json();
+    return data || DEFAULT_SETTINGS;
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export async function getTemplates(): Promise<CardTemplate[]> {
+  try {
+    const response = await fetch('/api/templates', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch templates');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    return INITIAL_DB.templates;
+  }
+}
+
+export async function getExams(): Promise<ExamEvent[]> {
+  try {
+    const response = await fetch('/api/exams', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch exams');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching exams:', error);
+    return INITIAL_DB.exams;
+  }
+}
+
+export async function getAttendanceLogs(studentId?: string, cardCode?: string): Promise<AttendanceLog[]> {
+  try {
+    let url = '/api/attendance-logs';
+    if (studentId || cardCode) {
+      const params = new URLSearchParams();
+      if (studentId) params.append('student_id', studentId);
+      if (cardCode) params.append('card_code', cardCode);
+      url += '?' + params.toString();
+    }
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch logs');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    return [];
+  }
+}
+
+export async function addStudent(student: Omit<Student, 'id' | 'created_at' | 'updated_at'>): Promise<Student> {
+  try {
+    const response = await fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(student)
+    });
+    if (!response.ok) throw new Error('Failed to create student');
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding student:', error);
+    throw error;
+  }
+}
+
+export async function updateStudent(id: string, updates: Partial<Student>): Promise<Student> {
+  try {
+    const response = await fetch('/api/students', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates })
+    });
+    if (!response.ok) throw new Error('Failed to update student');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating student:', error);
+    throw error;
+  }
+}
+
+export async function deleteStudent(id: string): Promise<void> {
+  try {
+    const response = await fetch('/api/students', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    if (!response.ok) throw new Error('Failed to delete student');
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    throw error;
+  }
+}
+
+export async function updateSettings(settings: Partial<SchoolSettings>): Promise<SchoolSettings> {
+  try {
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    if (!response.ok) throw new Error('Failed to update settings');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    throw error;
+  }
+}
+
+export async function addTemplate(template: Omit<CardTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<CardTemplate> {
+  try {
+    const response = await fetch('/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(template)
+    });
+    if (!response.ok) throw new Error('Failed to create template');
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding template:', error);
+    throw error;
+  }
+}
+
+export async function updateTemplate(id: string, updates: Partial<CardTemplate>): Promise<CardTemplate> {
+  try {
+    const response = await fetch('/api/templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates })
+    });
+    if (!response.ok) throw new Error('Failed to update template');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating template:', error);
+    throw error;
+  }
+}
+
+export async function addExam(exam: Omit<ExamEvent, 'id' | 'created_at' | 'updated_at'>): Promise<ExamEvent> {
+  try {
+    const response = await fetch('/api/exams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exam)
+    });
+    if (!response.ok) throw new Error('Failed to create exam');
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding exam:', error);
+    throw error;
+  }
+}
+
+export async function updateExam(id: string, updates: Partial<ExamEvent>): Promise<ExamEvent> {
+  try {
+    const response = await fetch('/api/exams', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates })
+    });
+    if (!response.ok) throw new Error('Failed to update exam');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating exam:', error);
+    throw error;
+  }
+}
+
+export async function addAttendanceLog(log: Omit<AttendanceLog, 'id' | 'created_at'>): Promise<AttendanceLog> {
+  try {
+    const response = await fetch('/api/attendance-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log)
+    });
+    if (!response.ok) throw new Error('Failed to create log');
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding log:', error);
+    throw error;
+  }
+}
+
+// Legacy function for backward compatibility
 export function getDB(): DB {
   if (typeof window === 'undefined') return INITIAL_DB;
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -161,6 +364,7 @@ export function getDB(): DB {
   }
 }
 
+// Legacy function for backward compatibility
 export function saveDB(db: DB) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
