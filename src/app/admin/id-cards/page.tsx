@@ -87,8 +87,8 @@ export default function IDCardsPage() {
     if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false });
+      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
 
       const pdf = new jsPDF({ 
         orientation: 'portrait', 
@@ -118,6 +118,15 @@ export default function IDCardsPage() {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [73, 111] });
       const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
+      const canvasOptions = {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+      };
+
       for (let i = 0; i < cardElements.length; i++) {
         const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
@@ -128,32 +137,22 @@ export default function IDCardsPage() {
         if (i > 0) pdf.addPage([73, 111], 'portrait');
         
         // Render Depan
-        const canvasFront = await html2canvas(front, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasFront = await html2canvas(front, canvasOptions);
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
         
         // Render Belakang
         pdf.addPage([73, 111], 'portrait');
-        const canvasBack = await html2canvas(back, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasBack = await html2canvas(back, canvasOptions);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
 
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 100));
       }
 
       pdf.save(`Bulk_ID_Cards_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
       console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF massal." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render massal ID Card." });
     } finally {
       setIsBulkDownloading(false);
     }

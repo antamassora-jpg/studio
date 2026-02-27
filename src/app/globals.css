@@ -134,14 +134,18 @@
 }
 
 /* 
- * Area cetak disembunyikan dari layar dengan cara dipindahkan jauh ke kiri 
- * agar html2canvas tetap bisa menghitung layout secara normal.
+ * Area cetak disembunyikan dari layar namun tetap berada di (0,0) 
+ * agar html2canvas tetap bisa menemukannya di dalam cloned iframe.
  */
 #print-area {
-  position: absolute;
-  left: -9999px;
+  position: fixed;
   top: 0;
-  width: 1000px; /* Lebar tetap untuk konsistensi render */
+  left: 0;
+  width: 1000px;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -9999;
+  overflow: visible;
   background: white;
-  z-index: -1;
 }

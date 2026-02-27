@@ -108,8 +108,8 @@ export default function ExamCardsPage() {
     setIsProcessing(true);
     
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false });
+      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
 
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
@@ -134,6 +134,15 @@ export default function ExamCardsPage() {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
+      const canvasOptions = {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+      };
+
       for (let i = 0; i < cardElements.length; i++) {
         const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
@@ -144,32 +153,22 @@ export default function ExamCardsPage() {
         if (i > 0) pdf.addPage([85.6, 54], 'landscape');
         
         // Render Depan
-        const canvasFront = await html2canvas(front, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasFront = await html2canvas(front, canvasOptions);
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
         
         // Render Belakang
         pdf.addPage([85.6, 54], 'landscape');
-        const canvasBack = await html2canvas(back, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasBack = await html2canvas(back, canvasOptions);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
 
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 100));
       }
 
       pdf.save(`Bulk_Kartu_Ujian_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
       console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF massal." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render massal." });
     } finally {
       setIsBulkDownloading(false);
     }

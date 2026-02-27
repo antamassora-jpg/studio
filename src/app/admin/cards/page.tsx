@@ -105,12 +105,14 @@ export default function CardsPage() {
       const canvasFront = await html2canvas(cardRefFront.current, { 
         scale: 2, 
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff'
       });
       const canvasBack = await html2canvas(cardRefBack.current, { 
         scale: 2, 
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff'
       });
 
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
@@ -136,6 +138,15 @@ export default function CardsPage() {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
+      const canvasOptions = {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+      };
+
       for (let i = 0; i < cardElements.length; i++) {
         const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
@@ -143,37 +154,26 @@ export default function CardsPage() {
 
         if (!front || !back) continue;
 
-        // Tambah halaman baru kecuali kartu pertama
         if (i > 0) pdf.addPage([85.6, 54], 'landscape');
         
         // Render Depan
-        const canvasFront = await html2canvas(front, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasFront = await html2canvas(front, canvasOptions);
         pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
         
         // Render Belakang
         pdf.addPage([85.6, 54], 'landscape');
-        const canvasBack = await html2canvas(back, { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          backgroundColor: null
-        });
+        const canvasBack = await html2canvas(back, canvasOptions);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
         
-        // Beri nafas sedikit untuk browser
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Jeda kecil agar browser tidak hang saat render massal
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       pdf.save(`Bulk_Kartu_Pelajar_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
       console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF massal. Coba kurangi jumlah kartu yang dipilih." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render. Silakan coba kurangi jumlah kartu yang dipilih." });
     } finally {
       setIsBulkDownloading(false);
     }
@@ -188,7 +188,7 @@ export default function CardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Area Cetak Khusus (juga digunakan untuk bulk PDF capture) */}
+      {/* Area Cetak Khusus */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);
