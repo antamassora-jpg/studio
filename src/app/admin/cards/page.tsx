@@ -97,23 +97,26 @@ export default function CardsPage() {
     }
   };
 
+  const captureElement = async (el: HTMLElement) => {
+    return await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.offsetWidth,
+      windowHeight: document.documentElement.offsetHeight
+    });
+  };
+
   const handleDownloadSingle = async () => {
     if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      const canvasBack = await html2canvas(cardRefBack.current, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
+      const canvasFront = await captureElement(cardRefFront.current);
+      const canvasBack = await captureElement(cardRefBack.current);
 
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
@@ -138,15 +141,6 @@ export default function CardsPage() {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
       const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
       
-      const canvasOptions = {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
-      };
-
       for (let i = 0; i < cardElements.length; i++) {
         const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
@@ -156,24 +150,21 @@ export default function CardsPage() {
 
         if (i > 0) pdf.addPage([85.6, 54], 'landscape');
         
-        // Render Depan
-        const canvasFront = await html2canvas(front, canvasOptions);
-        pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
+        const canvasFront = await captureElement(front);
+        pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
         
-        // Render Belakang
         pdf.addPage([85.6, 54], 'landscape');
-        const canvasBack = await html2canvas(back, canvasOptions);
-        pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 85.6, 54);
+        const canvasBack = await captureElement(back);
+        pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
         
-        // Jeda kecil agar browser tidak hang saat render massal
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
 
       pdf.save(`Bulk_Kartu_Pelajar_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
       console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render. Silakan coba kurangi jumlah kartu yang dipilih." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render massal." });
     } finally {
       setIsBulkDownloading(false);
     }
@@ -188,7 +179,6 @@ export default function CardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Area Cetak Khusus */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);

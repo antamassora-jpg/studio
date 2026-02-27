@@ -40,7 +40,9 @@ export function StudentCardVisual({
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     color: current.textColor,
-    fontFamily: current.fontFamily
+    fontFamily: current.fontFamily,
+    position: 'relative' as const,
+    overflow: 'hidden'
   };
 
   const showLogoLeft = side === 'front' ? settings.student_show_logo_front : settings.student_show_logo_back;
@@ -50,26 +52,26 @@ export function StudentCardVisual({
 
   if (side === 'front') {
     return (
-      <div style={cardStyle} className="relative rounded-xl shadow-lg border overflow-hidden text-[10px] select-none">
-        <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 gap-3 relative z-10 shadow-sm border-b">
+      <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none">
+        <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
           {showLogoLeft && settings.logo_left && (
-            <div className="w-10 h-10 relative bg-white rounded-md p-1 shadow-inner shrink-0">
+            <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
               <Image src={settings.logo_left} alt="Logo" fill className="object-contain" priority unoptimized />
             </div>
           )}
           <div className="flex-1 flex flex-col text-white text-center">
-            <span className="font-bold text-[10px] uppercase leading-tight tracking-tight drop-shadow-sm">{settings.school_name}</span>
-            <span className="text-[6.5px] opacity-90 line-clamp-2 leading-tight">{settings.address}</span>
+            <span className="font-bold text-[10px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
+            <span className="text-[6.5px] opacity-90 leading-tight block mt-0.5">{settings.address}</span>
           </div>
           {showLogoRight && settings.logo_right && (
-            <div className="w-10 h-10 relative bg-white rounded-md p-1 shadow-inner shrink-0">
+            <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 ml-3">
               <Image src={settings.logo_right} alt="Logo R" fill className="object-contain" priority unoptimized />
             </div>
           )}
         </div>
 
         <div className="flex h-[calc(100%-56px)] relative z-10">
-          <div className="w-[110px] flex flex-col items-center justify-center p-3 gap-2 border-r border-dashed border-muted/50">
+          <div className="w-[110px] flex flex-col items-center justify-center p-3 border-r border-dashed border-muted/50">
             <div className="w-[80px] h-[100px] bg-muted relative rounded-md overflow-hidden border-2 border-white shadow-md">
               {student.photo_url ? (
                 <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
@@ -79,40 +81,40 @@ export function StudentCardVisual({
             </div>
           </div>
 
-          <div className="flex-1 py-3 px-4 flex flex-col justify-center gap-2.5 relative">
-            <div className="space-y-1.5" style={{ color: current.textColor }}>
-              <div className="flex flex-col">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider">Nama Lengkap</span>
-                <span className="font-extrabold text-[11px] uppercase leading-tight">{student.name}</span>
+          <div className="flex-1 py-3 px-4 flex flex-col justify-center relative">
+            <div style={{ color: current.textColor }}>
+              <div className="mb-2">
+                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Nama Lengkap</span>
+                <span className="font-extrabold text-[11px] uppercase leading-none block">{student.name}</span>
               </div>
-              <div className="flex flex-col">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider">NIS / NISN</span>
-                <span className="font-bold text-[9px]">{student.nis} / {student.nisn || '-'}</span>
+              <div className="mb-2">
+                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">NIS / NISN</span>
+                <span className="font-bold text-[9px] block leading-none">{student.nis} / {student.nisn || '-'}</span>
               </div>
-              <div className="flex flex-col">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider">Kelas & Jurusan</span>
-                <span className="font-bold text-[8px] uppercase">{student.class} - {student.major}</span>
+              <div className="mb-2">
+                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Kelas & Jurusan</span>
+                <span className="font-bold text-[8px] uppercase block leading-none">{student.class} - {student.major}</span>
               </div>
-              <div className="flex flex-col">
-                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider">Berlaku Sampai</span>
-                <span className="font-bold text-[8px]" style={{ color: current.headerBg }}>{student.valid_until}</span>
+              <div className="mb-1">
+                <span className="opacity-60 text-[6px] uppercase font-bold tracking-wider block mb-0.5">Berlaku Sampai</span>
+                <span className="font-bold text-[8px] block leading-none" style={{ color: current.headerBg }}>{student.valid_until}</span>
               </div>
             </div>
 
             {(showSig || showStamp) && (
-              <div className="absolute bottom-2 right-4 flex items-end gap-2 scale-75 origin-bottom-right">
+              <div className="absolute bottom-2 right-4 flex items-end scale-75 origin-bottom-right">
                 {showStamp && settings.stamp_image && (
-                  <div className="w-12 h-12 relative">
+                  <div className="w-12 h-12 relative mr-2">
                     <Image src={settings.stamp_image} alt="Stempel" fill className="object-contain" unoptimized />
                   </div>
                 )}
                 {(showSig && settings.signature_image) && (
                   <div className="text-center">
-                    <div className="w-14 h-7 relative">
+                    <div className="w-14 h-7 relative mb-1">
                       <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
                     </div>
                     <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
-                    <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
+                    <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings.principal_nip}</p>
                   </div>
                 )}
               </div>
@@ -126,8 +128,8 @@ export function StudentCardVisual({
   }
 
   return (
-    <div style={cardStyle} className="relative rounded-xl shadow-lg border overflow-hidden text-[10px] select-none p-6 flex flex-col">
-      <div className="flex justify-between items-start mb-3 relative z-10 border-b-2 pb-1" style={{ borderColor: current.headerBg }}>
+    <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none p-6 flex flex-col">
+      <div className="relative z-10 border-b-2 pb-1 mb-3 flex items-center justify-between" style={{ borderColor: current.headerBg }}>
         {showLogoLeft && settings.logo_left && (
           <div className="w-8 h-8 relative shrink-0 mr-2">
             <Image src={settings.logo_left} alt="Logo" fill className="object-contain" unoptimized />
@@ -141,37 +143,37 @@ export function StudentCardVisual({
         )}
       </div>
       
-      <div className="flex gap-4 flex-1 items-start relative z-10">
-        <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed">
+      <div className="flex relative z-10 items-start">
+        <div className="flex-1 whitespace-pre-line text-slate-700 italic text-[7.5px] leading-relaxed pr-4">
           {settings.terms_student}
         </div>
-        <div className="w-16 flex flex-col items-center gap-2">
-           <div className="w-14 h-14 bg-white p-1 rounded border shadow-sm relative">
+        <div className="w-16 flex flex-col items-center">
+           <div className="w-14 h-14 bg-white p-1 rounded border shadow-sm relative mb-1">
              <Image 
                src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=VERIFY-${student.card_code}`}
                alt="QR" fill className="object-contain" unoptimized
              />
            </div>
-           <div className="text-[6px] font-bold text-center text-slate-400">{student.card_code}</div>
+           <div className="text-[6px] font-bold text-center text-slate-400 uppercase tracking-tighter">{student.card_code}</div>
         </div>
       </div>
 
       {(showSig || showStamp) && (
-        <div className="mt-2 flex justify-end items-end relative z-10">
-           <div className="text-center space-y-1 relative">
-              <p className="text-[6px] font-bold text-slate-500 uppercase">Kepala Sekolah,</p>
+        <div className="mt-auto flex justify-end items-end relative z-10">
+           <div className="text-center relative">
+              <p className="text-[6px] font-bold text-slate-500 uppercase mb-1">Kepala Sekolah,</p>
               {showStamp && settings.stamp_image && (
-                <div className="absolute -left-6 top-2 w-12 h-12 pointer-events-none opacity-80">
+                <div className="absolute -left-6 top-3 w-12 h-12 pointer-events-none opacity-80">
                   <Image src={settings.stamp_image} alt="STAMP" fill className="object-contain" unoptimized />
                 </div>
               )}
               {showSig && settings.signature_image && (
-                <div className="w-16 h-8 relative mx-auto">
+                <div className="w-16 h-8 relative mx-auto mb-1">
                    <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
                 </div>
               )}
-              <p className="text-[7px] font-bold border-t pt-0.5" style={{ color: current.headerBg }}>{settings.principal_name}</p>
-              <p className="text-[5px] opacity-70">NIP: {settings.principal_nip}</p>
+              <p className="text-[7px] font-bold border-t pt-1 leading-none" style={{ color: current.headerBg }}>{settings.principal_name}</p>
+              <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings.principal_nip}</p>
            </div>
         </div>
       )}
