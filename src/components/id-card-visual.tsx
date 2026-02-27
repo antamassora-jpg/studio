@@ -144,11 +144,12 @@ export function IdCardVisual({
       </div>
 
       <div className="flex-1 w-full relative z-10">
-         <div className="relative h-8 w-full flex items-center justify-center mb-3">
-           <div className="absolute left-0 right-0 h-[1px] bg-slate-200 z-0"></div>
-           <h4 className="relative z-10 bg-[#f8fafc] px-4 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+         <div className="h-8 w-full flex items-center justify-center gap-4 mb-3">
+           <div className="flex-1 h-[1px] bg-slate-200"></div>
+           <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 whitespace-nowrap">
              Ketentuan Pengguna
            </h4>
+           <div className="flex-1 h-[1px] bg-slate-200"></div>
          </div>
          <div className="text-[9px] opacity-80 leading-relaxed italic text-slate-700 text-left whitespace-pre-line">
             {settings.terms_id}
