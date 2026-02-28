@@ -118,11 +118,18 @@ export default function LandingPage() {
     const cleanQuery = q.replace('VERIFY-', '').trim();
 
     try {
+      // Mencari di 3 kolom sekaligus untuk fleksibilitas maksimal
       const qNis = query(collection(db, 'students'), where('nis', '==', cleanQuery));
       const qCode = query(collection(db, 'students'), where('card_code', '==', cleanQuery));
+      const qNisn = query(collection(db, 'students'), where('nisn', '==', cleanQuery));
       
-      const [snapNis, snapCode] = await Promise.all([getDocs(qNis), getDocs(qCode)]);
-      const foundDoc = snapNis.docs[0] || snapCode.docs[0];
+      const [snapNis, snapCode, snapNisn] = await Promise.all([
+        getDocs(qNis), 
+        getDocs(qCode),
+        getDocs(qNisn)
+      ]);
+      
+      const foundDoc = snapNis.docs[0] || snapCode.docs[0] || snapNisn.docs[0];
 
       if (foundDoc) {
         const student = { ...foundDoc.data(), id: foundDoc.id } as Student;
@@ -143,7 +150,7 @@ export default function LandingPage() {
         toast({
           variant: "destructive",
           title: "Data Tidak Ditemukan",
-          description: "Nomor induk atau kode kartu tidak terdaftar di sistem kami."
+          description: "Nomor induk (NIS/NISN) atau kode kartu tidak terdaftar di sistem kami."
         });
       }
     } catch (error) {
@@ -193,7 +200,6 @@ export default function LandingPage() {
     setIsScannerOpen(true);
     setHasCameraPermission(null);
     
-    // Give DOM time to render div
     setTimeout(async () => {
       const element = document.getElementById("landing-reader");
       if (!element) return;
@@ -395,7 +401,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto text-center space-y-12">
             <div className="space-y-4">
                <h2 className="text-4xl font-black text-white tracking-tight uppercase">Identity Tracer System</h2>
-               <p className="text-white/40 font-medium max-w-xl mx-auto">Verifikasi data siswa dan unduh kartu digital secara instan menggunakan NIS atau pemindaian QR Code.</p>
+               <p className="text-white/40 font-medium max-w-xl mx-auto">Verifikasi data siswa dan unduh kartu digital secara instan menggunakan NIS, NISN, atau pemindaian QR Code.</p>
             </div>
             <Card className="bg-white/5 border-white/10 rounded-[3rem] overflow-hidden backdrop-blur-xl shadow-2xl">
               <CardContent className="p-10 space-y-10">
@@ -403,7 +409,7 @@ export default function LandingPage() {
                   <div className="flex-1 relative group w-full">
                     <Search className="absolute left-6 top-6 h-8 w-8 text-white/20 group-focus-within:text-primary transition-colors" />
                     <Input 
-                      placeholder="Masukkan NIS / Kode Kartu..." 
+                      placeholder="Masukkan NIS / NISN / Kode..." 
                       className="pl-20 h-20 text-lg border-2 border-white/10 bg-white/5 text-white focus-visible:ring-primary rounded-[1.5rem] font-black uppercase"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -467,7 +473,11 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ) : hasSearched && !searchResult ? (
-                   <div className="py-24 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/10"><p className="text-white/20 font-black uppercase tracking-[0.5em] text-xl">Data Tidak Ditemukan</p></div>
+                   <div className="py-24 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/10 flex flex-col items-center gap-4">
+                      <XCircle className="h-12 w-12 text-white/20" />
+                      <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xl">Data Tidak Ditemukan</p>
+                      <p className="text-white/10 text-xs">Pastikan nomor yang Anda masukkan benar (NIS/NISN/Kode)</p>
+                   </div>
                 ) : (
                   <div className="flex justify-center gap-16 opacity-10 py-10"><Users className="h-16 w-16 text-white" /><CreditCard className="h-16 w-16 text-white" /><ShieldCheck className="h-16 w-16 text-white" /></div>
                 )}
