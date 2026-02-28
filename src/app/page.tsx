@@ -14,7 +14,6 @@ import {
   LogIn, 
   ShieldCheck, 
   Loader2, 
-  Zap, 
   CheckCircle2, 
   Users, 
   CreditCard, 
@@ -22,11 +21,11 @@ import {
   QrCode, 
   Camera, 
   X,
-  Download,
-  FileText,
   Award,
   Contact,
-  Activity
+  Activity,
+  UserCircle,
+  XCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -54,7 +53,7 @@ import { StudentCardVisual } from '@/components/student-card-visual';
 import { ExamCardVisual } from '@/components/exam-card-visual';
 import { IdCardVisual } from '@/components/id-card-visual';
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -163,7 +162,23 @@ export default function LandingPage() {
       toast({ title: "Akses Berhasil", description: "Selamat datang kembali." });
       router.push('/mode-selection');
     } catch (err: any) {
-      setLoginError('Kredensial salah atau akun tidak ditemukan.');
+      setLoginError('Kredensial salah. Gunakan format email yang benar atau pilih Login Demo di bawah.');
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleQuickLogin = async (role: 'admin' | 'scanner') => {
+    setIsLoggingIn(true);
+    setLoginError('');
+    try {
+      await signInAnonymously(auth);
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userRole', role);
+      toast({ title: "Akses Demo Berhasil", description: `Masuk sebagai ${role.toUpperCase()} (Mode Tamu).` });
+      router.push(role === 'admin' ? '/admin' : '/scanner');
+    } catch (err) {
+      setLoginError('Gagal masuk mode demo. Pastikan Firebase Auth sudah aktif.');
+    } finally {
       setIsLoggingIn(false);
     }
   };
@@ -285,28 +300,50 @@ export default function LandingPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
-              <div className="bg-primary p-10 text-white text-center relative overflow-hidden">
+              <div className="bg-primary p-8 text-white text-center relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                 <ShieldCheck className="h-12 w-12 text-white mx-auto mb-4 opacity-50" />
-                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Login Sistem</DialogTitle>
-                 <DialogDescription className="text-white/70 font-bold text-xs uppercase tracking-widest">Manajemen Keamanan Terpadu</DialogDescription>
+                 <ShieldCheck className="h-10 w-10 text-white mx-auto mb-3 opacity-50" />
+                 <DialogTitle className="text-xl font-black uppercase tracking-tighter">Login Sistem</DialogTitle>
+                 <DialogDescription className="text-white/70 font-bold text-[10px] uppercase tracking-widest">Manajemen Keamanan Terpadu</DialogDescription>
               </div>
-              <form onSubmit={handleLogin} className="p-10 space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email / Username</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@sekolah.sch.id" required className="h-12 rounded-xl" />
+              <div className="p-8 space-y-6">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email Sekolah</Label>
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@sekolah.sch.id" required className="h-12 rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                      <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-12 rounded-xl" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
-                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-12 rounded-xl" />
-                  </div>
+                  {loginError && <Alert variant="destructive" className="py-2 px-3 rounded-xl border-none bg-red-50 text-red-600"><AlertDescription className="text-[10px] font-bold leading-tight">{loginError}</AlertDescription></Alert>}
+                  <Button type="submit" className="w-full h-12 text-xs font-black uppercase tracking-widest shadow-lg rounded-xl" disabled={isLoggingIn}>
+                    {isLoggingIn ? <Loader2 className="h-5 w-5 animate-spin" /> : 'MASUK KE SISTEM'}
+                  </Button>
+                </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
+                  <div className="relative flex justify-center text-[10px] uppercase font-black"><span className="bg-white px-4 text-slate-300">Atau Akses Cepat</span></div>
                 </div>
-                {loginError && <Alert variant="destructive" className="py-3 rounded-xl"><AlertDescription className="text-xs font-bold">{loginError}</AlertDescription></Alert>}
-                <Button type="submit" className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-lg rounded-2xl" disabled={isLoggingIn}>
-                  {isLoggingIn ? <Loader2 className="h-6 w-6 animate-spin" /> : 'MASUK KE SISTEM'}
-                </Button>
-              </form>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" onClick={() => handleQuickLogin('admin')} className="h-12 rounded-xl flex flex-col gap-0.5 border-slate-100 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all" disabled={isLoggingIn}>
+                    <UserCircle className="h-4 w-4" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">Login Admin</span>
+                  </Button>
+                  <Button variant="outline" onClick={() => handleQuickLogin('scanner')} className="h-12 rounded-xl flex flex-col gap-0.5 border-slate-100 hover:bg-secondary/5 hover:text-secondary hover:border-secondary/20 transition-all" disabled={isLoggingIn}>
+                    <QrCode className="h-4 w-4" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">Login Scanner</span>
+                  </Button>
+                </div>
+                
+                <p className="text-[9px] text-center text-muted-foreground font-medium italic">
+                  *Login Cepat digunakan untuk mencoba fitur aplikasi tanpa akun permanen.
+                </p>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
