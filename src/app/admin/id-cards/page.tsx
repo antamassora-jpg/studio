@@ -19,8 +19,6 @@ import {
   Download, 
   Eye, 
   Search, 
-  CheckSquare, 
-  Square,
   Loader2,
   Users,
   FileDown,
@@ -40,6 +38,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function IDCardsPage() {
   const db = useFirestore();
@@ -65,7 +64,11 @@ export default function IDCardsPage() {
 
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
   const { data: templates } = useCollection<CardTemplate>(templatesQuery);
-  const activeTemplate = templates?.find(t => t.type === 'ID_CARD' && t.is_active) || null;
+  
+  // Sinkronisasi otomatis dengan Template ID_CARD yang aktif
+  const activeTemplate = useMemo(() => 
+    templates?.find(t => t.type === 'ID_CARD' && t.is_active) || null,
+  [templates]);
 
   const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort(), [students]);
   const majors = useMemo(() => Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort(), [students]);
@@ -81,8 +84,7 @@ export default function IDCardsPage() {
 
   const previewStudent = useMemo(() => students.find(s => s.id === previewId) || (filteredStudents.length > 0 ? filteredStudents[0] : null), [students, previewId, filteredStudents]);
 
-  const toggleSelect = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -115,12 +117,13 @@ export default function IDCardsPage() {
     try {
       const canvasFront = await captureElement(cardRefFront.current);
       const canvasBack = await captureElement(cardRefBack.current);
+      // Format vertikal khusus ID Card (73mm x 111mm)
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [73, 111] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
       pdf.addPage([73, 111], 'portrait');
       pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
       pdf.save(`ID_Card_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
-      toast({ title: "Berhasil", description: "ID Card telah diunduh." });
+      toast({ title: "Berhasil", description: "ID Card telah diunduh dengan desain vertikal aktif." });
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal", description: "Gagal membuat PDF." });
     } finally {
@@ -146,7 +149,7 @@ export default function IDCardsPage() {
         pdf.addPage([73, 111], 'portrait');
         const canvasBack = await captureElement(back);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       pdf.save(`Bulk_ID_Cards_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
@@ -168,6 +171,7 @@ export default function IDCardsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Area Render - Sinkron dengan Desain Aktif */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);
@@ -187,7 +191,7 @@ export default function IDCardsPage() {
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary uppercase">ID Card Corporate</h1>
-          <p className="text-muted-foreground">Generate kartu identitas eksklusif dengan layout vertikal (7.3 x 11.1 cm).</p>
+          <p className="text-muted-foreground">Generate kartu identitas eksklusif berbasis layout vertikal aktif.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-12 px-6 rounded-xl" onClick={handleDownloadBulk} disabled={selectedIds.size === 0 || isBulkDownloading}>
@@ -239,8 +243,8 @@ export default function IDCardsPage() {
                 {filteredStudents.length > 0 ? filteredStudents.map(s => (
                   <div key={s.id} className={`p-3 text-xs cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-emerald-500 shadow-sm' : ''}`} onClick={() => setPreviewId(s.id)}>
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <div onClick={(e) => toggleSelect(s.id, e)} className="shrink-0">
-                        {selectedIds.has(s.id) ? <CheckSquare className="h-4 w-4 text-emerald-600" /> : <Square className="h-4 w-4 text-muted-foreground" />}
+                      <div onClick={(e) => { e.stopPropagation(); toggleSelect(s.id); }} className="shrink-0">
+                        <Checkbox checked={selectedIds.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} className="h-4 w-4 rounded-md border-emerald-200" />
                       </div>
                       <div className="truncate"><div className="font-bold text-slate-800">{s.name}</div><div className="text-[9px] text-muted-foreground">{s.nis}</div></div>
                     </div>
@@ -255,8 +259,8 @@ export default function IDCardsPage() {
         <Card className="lg:col-span-2 border-none shadow-sm rounded-2xl overflow-hidden">
           <CardHeader className="border-b bg-slate-50/50">
             <div className="flex justify-between items-center">
-               <CardTitle className="text-lg">Pratinjau Hasil Cetak</CardTitle>
-               <Badge variant="outline" className="bg-white">{activeTemplate?.name || 'Default ID Template'}</Badge>
+               <CardTitle className="text-lg">Pratinjau Hasil Desain</CardTitle>
+               <Badge variant="outline" className="bg-white text-emerald-600 border-emerald-200">Template: {activeTemplate?.name || 'Default Style'}</Badge>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-10 py-12 bg-muted/10">
@@ -293,7 +297,7 @@ export default function IDCardsPage() {
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
         <DialogContent className="max-w-md rounded-[2rem]">
           <DialogHeader><DialogTitle className="uppercase font-black">Konfirmasi Cetak ID Card</DialogTitle></DialogHeader>
-          <DialogDescription>Anda akan mencetak <strong>{selectedIds.size}</strong> kartu identitas umum sekaligus.</DialogDescription>
+          <DialogDescription>Anda akan mencetak <strong>{selectedIds.size}</strong> kartu identitas umum sesuai desain template vertikal yang aktif.</DialogDescription>
           <DialogFooter className="gap-2 pt-4">
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
             <Button className="bg-emerald-600 hover:bg-emerald-700 px-8 rounded-xl font-bold" onClick={() => { setIsPrintModalOpen(false); setTimeout(() => window.print(), 500); }}>MULAI CETAK</Button>

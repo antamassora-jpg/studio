@@ -19,11 +19,8 @@ import {
   Download, 
   Eye, 
   Search, 
-  CheckSquare, 
-  Square,
   Loader2,
   Users,
-  FileDown,
   Layout
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -66,7 +63,11 @@ export default function CardsPage() {
 
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
   const { data: templates } = useCollection<CardTemplate>(templatesQuery);
-  const activeTemplate = templates?.find(t => t.type === 'STUDENT_CARD' && t.is_active) || null;
+  
+  // Ambil template aktif untuk sinkronisasi otomatis dengan desain terbaru
+  const activeTemplate = useMemo(() => 
+    templates?.find(t => t.type === 'STUDENT_CARD' && t.is_active) || null, 
+  [templates]);
 
   const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort(), [students]);
   const majors = useMemo(() => Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort(), [students]);
@@ -124,7 +125,7 @@ export default function CardsPage() {
       pdf.addPage([85.6, 54], 'landscape');
       pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
       pdf.save(`Kartu_Pelajar_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
-      toast({ title: "Berhasil", description: "Kartu telah diunduh." });
+      toast({ title: "Berhasil", description: "Kartu telah diunduh dengan desain terbaru." });
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal", description: "Gagal membuat PDF." });
     } finally {
@@ -150,7 +151,8 @@ export default function CardsPage() {
         pdf.addPage([85.6, 54], 'landscape');
         const canvasBack = await captureElement(back);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay to ensure memory management
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       pdf.save(`Bulk_Kartu_Pelajar_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
@@ -165,14 +167,14 @@ export default function CardsPage() {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Menghubungkan ke Database Cloud...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sinkronisasi Data Kartu...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Print Area (Hidden) */}
+      {/* Print Area (Hidden) - Mengikuti desain template aktif */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);
@@ -193,7 +195,7 @@ export default function CardsPage() {
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline text-[#2E50B8] tracking-tight">Kartu Pelajar</h1>
-          <p className="text-muted-foreground font-medium">Generate dan cetak kartu pelajar siswa secara massal.</p>
+          <p className="text-muted-foreground font-medium">Generate kartu otomatis berbasis template desain aktif.</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="gap-2 bg-slate-50 border-slate-200 text-slate-600 font-bold rounded-xl h-11 shadow-sm" onClick={handleDownloadBulk} disabled={selectedIds.size === 0 || isBulkDownloading}>
@@ -280,9 +282,9 @@ export default function CardsPage() {
         {/* Right Column: Preview Area */}
         <Card className="lg:col-span-8 border-none shadow-sm rounded-[1.5rem] overflow-hidden flex flex-col">
           <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center justify-between py-4">
-            <CardTitle className="text-lg font-bold text-slate-800">Pratinjau Hasil Cetak</CardTitle>
-            <Badge variant="outline" className="rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 border-slate-100 bg-white">
-              {activeTemplate?.name || 'Modern Blue Style'}
+            <CardTitle className="text-lg font-bold text-slate-800">Pratinjau Hasil Desain</CardTitle>
+            <Badge variant="outline" className="rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 bg-primary/5">
+              Template: {activeTemplate?.name || 'Default Style'}
             </Badge>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col items-center justify-center py-12 bg-slate-50/30 overflow-auto">
@@ -332,7 +334,7 @@ export default function CardsPage() {
             </div>
             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-center">Konfirmasi Cetak</DialogTitle>
             <DialogDescription className="text-center font-medium leading-relaxed">
-              Anda akan mencetak <strong className="text-[#2E50B8]">{selectedIds.size}</strong> kartu pelajar sekaligus. Pastikan kertas kartu sudah siap di printer Anda.
+              Anda akan mencetak <strong className="text-[#2E50B8]">{selectedIds.size}</strong> kartu pelajar sesuai desain template yang sedang aktif.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="grid grid-cols-2 gap-3 pt-6 border-t border-slate-50">

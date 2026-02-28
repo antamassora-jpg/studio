@@ -19,8 +19,6 @@ import {
   Download, 
   Eye, 
   Search, 
-  CheckSquare, 
-  Square,
   Loader2,
   FileText,
   GraduationCap,
@@ -40,6 +38,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ExamCardsPage() {
   const db = useFirestore();
@@ -70,7 +69,11 @@ export default function ExamCardsPage() {
 
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
   const { data: templates } = useCollection<CardTemplate>(templatesQuery);
-  const activeTemplate = templates?.find(t => t.type === 'EXAM_CARD' && t.is_active) || null;
+  
+  // Ambil template aktif khusus untuk Kartu Ujian
+  const activeTemplate = useMemo(() => 
+    templates?.find(t => t.type === 'EXAM_CARD' && t.is_active) || null, 
+  [templates]);
 
   const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort(), [students]);
   const majors = useMemo(() => Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort(), [students]);
@@ -93,8 +96,7 @@ export default function ExamCardsPage() {
     }
   }, [exams]);
 
-  const toggleSelect = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -132,7 +134,7 @@ export default function ExamCardsPage() {
       pdf.addPage([85.6, 54], 'landscape');
       pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
       pdf.save(`Kartu_Ujian_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
-      toast({ title: "Berhasil", description: "Kartu ujian telah diunduh." });
+      toast({ title: "Berhasil", description: "Kartu ujian berhasil di-generate." });
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal", description: "Gagal membuat PDF." });
     } finally {
@@ -158,7 +160,7 @@ export default function ExamCardsPage() {
         pdf.addPage([85.6, 54], 'landscape');
         const canvasBack = await captureElement(back);
         pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 85.6, 54);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       pdf.save(`Bulk_Kartu_Ujian_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
@@ -173,13 +175,14 @@ export default function ExamCardsPage() {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sinkronisasi Database Cloud...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Menyiapkan Event Ujian...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Print Area - Sinkron dengan Template Aktif */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);
@@ -199,7 +202,7 @@ export default function ExamCardsPage() {
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-primary uppercase">Kartu Ujian</h1>
-          <p className="text-muted-foreground">Generate kartu tanda peserta ujian berbasis event secara massal.</p>
+          <p className="text-muted-foreground">Generate kartu peserta ujian sesuai desain yang dipilih.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 border-2 border-orange-200 text-orange-700 hover:bg-orange-50 h-12 px-6 rounded-xl" onClick={handleDownloadBulk} disabled={selectedIds.size === 0 || isBulkDownloading}>
@@ -268,8 +271,8 @@ export default function ExamCardsPage() {
                   {filteredStudents.length > 0 ? filteredStudents.map(s => (
                     <div key={s.id} className={`p-3 text-xs cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-orange-500 shadow-sm' : ''}`} onClick={() => setPreviewId(s.id)}>
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <div onClick={(e) => toggleSelect(s.id, e)} className="shrink-0">
-                          {selectedIds.has(s.id) ? <CheckSquare className="h-4 w-4 text-orange-600" /> : <Square className="h-4 w-4 text-muted-foreground" />}
+                        <div onClick={(e) => { e.stopPropagation(); toggleSelect(s.id); }} className="shrink-0">
+                          <Checkbox checked={selectedIds.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} className="h-4 w-4 rounded-md border-orange-200" />
                         </div>
                         <div className="truncate"><div className="font-bold text-slate-800">{s.name}</div><div className="text-[9px] text-muted-foreground">{s.nis}</div></div>
                       </div>
@@ -288,7 +291,7 @@ export default function ExamCardsPage() {
                <CardTitle className="text-lg">Pratinjau Hasil Cetak</CardTitle>
                <div className="flex items-center gap-2">
                  <Badge variant="outline" className="bg-white text-orange-600 border-orange-200">{selectedExam?.name || 'Pilih Ujian'}</Badge>
-                 <Badge variant="outline" className="bg-white">{activeTemplate?.name || 'Default Exam'}</Badge>
+                 <Badge variant="outline" className="bg-white text-primary border-primary/20">{activeTemplate?.name || 'Default Style'}</Badge>
                </div>
             </div>
           </CardHeader>
@@ -309,7 +312,7 @@ export default function ExamCardsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 w-full max-w-sm pt-8 border-t">
+                <div className="flex gap-3 w-full max-sm:flex-col max-w-sm pt-8 border-t">
                    <Button variant="outline" className="flex-1 h-12 font-bold rounded-xl" onClick={handleDownloadSingle} disabled={isProcessing}>
                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} UNDUH PDF
                    </Button>
@@ -326,7 +329,7 @@ export default function ExamCardsPage() {
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
         <DialogContent className="max-w-md rounded-[2rem]">
           <DialogHeader><DialogTitle className="uppercase font-black">Konfirmasi Cetak Ujian</DialogTitle></DialogHeader>
-          <DialogDescription>Anda akan mencetak <strong>{selectedIds.size}</strong> kartu ujian untuk event <span className="text-orange-600 font-bold">{selectedExam?.name}</span>.</DialogDescription>
+          <DialogDescription>Anda akan mencetak <strong>{selectedIds.size}</strong> kartu ujian sesuai desain template yang aktif.</DialogDescription>
           <DialogFooter className="gap-2 pt-4">
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
             <Button className="bg-orange-600 hover:bg-orange-700 px-8 rounded-xl font-bold" onClick={() => { setIsPrintModalOpen(false); setTimeout(() => window.print(), 500); }}>MULAI CETAK</Button>
