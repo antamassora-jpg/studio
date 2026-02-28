@@ -6,8 +6,8 @@ import Image from 'next/image';
 
 const DEFAULT_ELEMENTS = {
   photo: { x: 68, y: 100, w: 140, h: 180 },
-  qr: { x: 110, y: 290, w: 56, h: 56 },
-  info: { x: 20, y: 355, align: 'center', fontSize: 12, width: 236 },
+  qr: { x: 110, y: 320, w: 56, h: 56 },
+  info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
   sigBlock: { x: 150, y: 380, scale: 0.8 }
 };
 
@@ -186,10 +186,10 @@ export function IdCardVisual({
           }}
         >
           <h1 className="font-black uppercase tracking-tight leading-none mb-1" style={{ fontSize: (els.info.fontSize || 12) + 2 }}>{student.name}</h1>
-          <div className="inline-block px-3 py-1 rounded-full font-bold text-white uppercase tracking-wider shadow-sm" style={{ backgroundColor: current.headerBg, fontSize: (els.info.fontSize || 12) - 3 }}>
+          <div className="inline-block px-3 py-1 rounded-full font-bold text-white uppercase tracking-wider shadow-sm mb-1" style={{ backgroundColor: current.headerBg, fontSize: (els.info.fontSize || 12) - 3 }}>
             {student.major}
           </div>
-          <div className="mt-2 flex flex-col gap-0.5 opacity-70 font-bold uppercase tracking-widest" style={{ fontSize: (els.info.fontSize || 12) - 4 }}>
+          <div className="flex flex-col gap-0.5 opacity-70 font-bold uppercase tracking-widest" style={{ fontSize: (els.info.fontSize || 12) - 4 }}>
              <span>{student.nis} / {student.nisn || '-'}</span>
              {showValid && <span>Berlaku: {student.valid_until}</span>}
           </div>

@@ -100,18 +100,32 @@ export default function TemplatesPage() {
   const handleAddTemplate = async () => {
     if (!newTemplateName.trim() || !db) return;
     
+    // Set specific default elements based on orientation
+    const isPortrait = newTemplateType === 'ID_CARD';
+    const elements = isPortrait ? {
+      photo: { x: 68, y: 100, w: 140, h: 180 },
+      qr: { x: 110, y: 320, w: 56, h: 56 },
+      info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
+      sigBlock: { x: 150, y: 380, scale: 0.8 }
+    } : {
+      photo: { x: 15, y: 70, w: 60, h: 80 },
+      qr: { x: 15, y: 155, w: 48, h: 48 },
+      info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 },
+      sigBlock: { x: 240, y: 160, scale: 0.75 }
+    };
+
     const newTemplate = {
       name: newTemplateName,
       type: newTemplateType,
       config_json: JSON.stringify({
         front: { 
-          headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
-          elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 15, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
+          headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#10B981' : '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
+          elements: { ...elements },
           watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30, imageEnabled: false, imageUrl: '', imageOpacity: 0.1, imageSize: 100 }
         },
         back: { 
-          headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
-          elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 275, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
+          headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: '#f8fafc', textColor: '#334155', fontFamily: 'Inter',
+          elements: { ...elements },
           watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30, imageEnabled: false, imageUrl: '', imageOpacity: 0.1, imageSize: 100 }
         }
       }),
@@ -382,14 +396,23 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
   useEffect(() => {
     try {
       const parsed = JSON.parse(template.config_json || '{}');
+      
+      // Default elements based on card type if not present in config
+      const defaultElements = isPortrait ? {
+        photo: { x: 68, y: 100, w: 140, h: 180 },
+        qr: { x: 110, y: 320, w: 56, h: 56 },
+        info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
+        sigBlock: { x: 150, y: 380, scale: 0.8 }
+      } : { 
+        photo: { x: 15, y: 70, w: 60, h: 80 }, 
+        qr: { x: 15, y: 155, w: 48, h: 48 }, 
+        info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, 
+        sigBlock: { x: 240, y: 160, scale: 0.75 } 
+      };
+
       const base = {
-        headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter',
-        elements: { 
-          photo: { x: 15, y: 70, w: 60, h: 80 }, 
-          qr: { x: 15, y: 155, w: 48, h: 48 }, 
-          info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, 
-          sigBlock: { x: 240, y: 160, scale: 0.75 } 
-        },
+        headerBg: isPortrait ? '#1B3C33' : '#2E50B8', bodyBg: '#ffffff', footerBg: isPortrait ? '#10B981' : '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter',
+        elements: defaultElements,
         watermark: { 
           enabled: false, 
           text: 'SMKN 2 TANA TORAJA', 
@@ -403,13 +426,13 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
         }
       };
       setConfig({
-        front: { ...base, ...parsed.front },
-        back: { ...base, ...parsed.back }
+        front: { ...base, ...parsed.front, elements: { ...base.elements, ...parsed.front?.elements } },
+        back: { ...base, ...parsed.back, elements: { ...base.elements, ...parsed.back?.elements } }
       });
     } catch (e) {
       // Error recovery
     }
-  }, [template]);
+  }, [template, isPortrait]);
 
   if (!config) return null;
 
