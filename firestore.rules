@@ -75,6 +75,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Last updated: 2024-05-20 15:10 (Force redeploy to grant explicit list permissions)
+    // Last updated: 2024-05-20 15:20 (Forcing rules redeploy to fix list permissions for anonymous users)
   }
 }
