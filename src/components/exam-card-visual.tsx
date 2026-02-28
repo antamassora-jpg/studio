@@ -136,7 +136,6 @@ export function ExamCardVisual({
         <div className="flex-1 flex flex-col text-white text-center">
           <span className="font-bold text-[9px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
           <span className="text-[6px] opacity-80 leading-tight block mt-0.5 line-clamp-2 px-1">{settings.address}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest block mt-0.5" style={{ color: current.footerBg }}>KARTU PESERTA UJIAN</span>
         </div>
         {showLogoRight && settings.logo_right_exam && (
           <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 ml-3">
@@ -144,6 +143,15 @@ export function ExamCardVisual({
           </div>
         )}
       </div>
+
+      {/* Label Kartu Peserta Ujian - Berada di tengah di bawah header */}
+      {side === 'front' && (
+        <div className="absolute top-[58px] left-0 right-0 text-center z-10">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 rounded-full border border-slate-100 bg-slate-50/50 inline-block shadow-sm" style={{ color: current.footerBg }}>
+            KARTU PESERTA UJIAN
+          </span>
+        </div>
+      )}
 
       {showPhoto && (
         <div 
@@ -175,7 +183,7 @@ export function ExamCardVisual({
           className="absolute px-2 flex flex-col gap-1.5 z-10"
           style={{ 
             left: els.info.x, 
-            top: els.info.y,
+            top: els.info.y + 5, // Sedikit geser ke bawah untuk memberi ruang label
             width: `${els.info.width || 180}px`,
             textAlign: els.info.align || 'left',
             alignItems: els.info.align === 'center' ? 'center' : (els.info.align === 'right' ? 'flex-end' : 'flex-start')
