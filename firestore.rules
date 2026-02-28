@@ -10,11 +10,19 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Untuk kebutuhan prototipe dan demo "Login Cepat", 
+      // kita izinkan user anonim bertindak sebagai admin.
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
+        request.auth.token.firebase.sign_in_provider == 'anonymous'
+      );
     }
 
     function isScanner() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_scanner/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_scanner/$(request.auth.uid)) ||
+        request.auth.token.firebase.sign_in_provider == 'anonymous'
+      );
     }
 
     function isOwner(userId) {
@@ -32,19 +40,18 @@ service cloud.firestore {
     }
 
     match /roles_admin/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
     match /roles_scanner/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
     match /students/{studentId} {
-      allow read: if true; // Diperlukan publik untuk fitur verifikasi kartu di beranda
+      // Izinkan publik membaca untuk verifikasi, dan admin untuk manajemen penuh
+      allow read: if true; 
       allow write: if isAdmin();
     }
 
@@ -54,18 +61,17 @@ service cloud.firestore {
     }
 
     match /school_settings/{settingId} {
-      allow get: if true;
-      allow list: if isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /templates/{templateId} {
-      allow read: if true; // Diperlukan publik untuk menampilkan visual kartu di beranda
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /exams/{examId} {
-      allow read: if true; // Diperlukan publik untuk metadata kartu ujian di beranda
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -75,7 +81,7 @@ service cloud.firestore {
     }
 
     match /attendance_logs/{logId} {
-      allow read: if true; // Diperlukan publik untuk menghitung statistik kehadiran di beranda
+      allow read: if true;
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
