@@ -18,7 +18,12 @@ import {
   Type,
   MousePointer2,
   Save,
-  Move
+  Move,
+  Image as ImageIcon,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Upload
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -91,8 +96,16 @@ export default function TemplatesPage() {
       name: newTemplateName,
       type: newTemplateType,
       config_json: JSON.stringify({
-        front: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter' },
-        back: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter' }
+        front: { 
+          headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
+          elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 15, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
+          watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30, imageEnabled: false, imageUrl: '', imageOpacity: 0.1, imageSize: 100 }
+        },
+        back: { 
+          headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
+          elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 275, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
+          watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30, imageEnabled: false, imageUrl: '', imageOpacity: 0.1, imageSize: 100 }
+        }
       }),
       is_active: false,
       preview_color: newTemplateType === 'STUDENT_CARD' ? 'bg-blue-600' : (newTemplateType === 'EXAM_CARD' ? 'bg-orange-500' : 'bg-emerald-800')
@@ -291,21 +304,38 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
   const [isSaving, setIsSaving] = useState(false);
   const [draggingElement, setDraggingElement] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const wmLogoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
       const parsed = JSON.parse(template.config_json || '{}');
       const base = {
-        headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
-        elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 15, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
-        watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30 }
+        headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', bgImage: '', fontFamily: 'Inter',
+        elements: { 
+          photo: { x: 15, y: 70, w: 60, h: 80 }, 
+          qr: { x: 15, y: 155, w: 48, h: 48 }, 
+          info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, 
+          sigBlock: { x: 240, y: 160, scale: 0.75 } 
+        },
+        watermark: { 
+          enabled: false, 
+          text: 'SMKN 2 TANA TORAJA', 
+          opacity: 0.1, 
+          size: 10, 
+          angle: -30,
+          imageEnabled: false,
+          imageUrl: '',
+          imageOpacity: 0.1,
+          imageSize: 100
+        }
       };
       setConfig({
         front: { ...base, ...parsed.front },
         back: { ...base, ...parsed.back }
       });
     } catch (e) {
-      // Fallback
+      // Error recovery
     }
   }, [template]);
 
@@ -346,6 +376,21 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'bgImage' | 'wmLogo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (field === 'bgImage') {
+        updateConfig(activeSide, 'bgImage', dataUrl);
+      } else {
+        updateConfig(activeSide, 'watermark', { ...current.watermark, imageUrl: dataUrl, imageEnabled: true });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handlePointerDown = (e: React.PointerEvent, el: string) => {
     e.stopPropagation();
     setDraggingElement(el);
@@ -358,7 +403,7 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
     
-    // Constraints (340x215)
+    // Bounds (340x215)
     const boundedX = Math.max(0, Math.min(x, 340));
     const boundedY = Math.max(0, Math.min(y, 215));
 
@@ -374,16 +419,16 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[1100px] p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl bg-white">
+      <DialogContent className="max-w-[1200px] p-0 rounded-[2.5rem] overflow-hidden border-none shadow-2xl bg-white">
         <DialogHeader className="sr-only">
           <DialogTitle>Visual Editor & Layout Hub</DialogTitle>
-          <DialogDescription>Sesuaikan warna, font, dan posisi elemen secara presisi untuk template {template.name}</DialogDescription>
+          <DialogDescription>Editor profesional untuk mengatur tata letak dan estetika kartu.</DialogDescription>
         </DialogHeader>
         
         <div className="bg-[#1e293b] p-8 text-white flex justify-between items-center">
           <div className="flex flex-col">
             <h2 className="text-2xl font-black uppercase tracking-tighter">Visual Editor & Layout Hub</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sesuaikan warna, font, dan posisi elemen secara presisi</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sesuai skema warna, font, dan posisi elemen secara presisi</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="bg-white/5 border-white/10 text-white gap-2 h-10 rounded-full text-[10px] font-bold uppercase tracking-widest"><RotateCcw className="h-3 w-3" /> Reset Layout</Button>
@@ -391,9 +436,9 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row h-[70vh]">
+        <div className="flex flex-col lg:flex-row h-[75vh]">
           {/* Sidebar Editor */}
-          <div className="w-full lg:w-[350px] bg-slate-50/50 border-r p-8 overflow-y-auto space-y-10 custom-scrollbar">
+          <div className="w-full lg:w-[400px] bg-slate-50/50 border-r p-8 overflow-y-auto space-y-10 custom-scrollbar">
             {/* Side Tabs */}
             <div className="grid grid-cols-2 p-1 bg-white rounded-xl shadow-inner">
               <button onClick={() => setActiveSide('front')} className={cn("h-10 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all", activeSide === 'front' ? "bg-[#1e293b] text-white shadow-lg" : "text-slate-400 hover:text-slate-600")}>Tampak Depan</button>
@@ -438,6 +483,57 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
                   </div>
                 </div>
               )}
+
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-2"><ImageIcon className="h-4 w-4 text-[#2E50B8]" /><h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Watermark Gambar (Logo)</h4></div>
+                <Switch checked={current.watermark.imageEnabled} onCheckedChange={(v) => updateConfig(activeSide, 'watermark', { ...current.watermark, imageEnabled: v })} />
+              </div>
+              {current.watermark.imageEnabled && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <Button variant="outline" className="w-full h-10 text-[9px] font-black uppercase" onClick={() => wmLogoInputRef.current?.click()}>GANTI LOGO WATERMARK</Button>
+                  <input type="file" ref={wmLogoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'wmLogo')} />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-bold uppercase text-slate-400"><span>Ukuran Gambar</span><span>{current.watermark.imageSize}px</span></div>
+                    <Slider value={[current.watermark.imageSize]} onValueChange={([v]) => updateConfig(activeSide, 'watermark', { ...current.watermark, imageSize: v })} max={300} min={50} step={5} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-bold uppercase text-slate-400"><span>Opacity</span><span>{Math.round(current.watermark.imageOpacity * 100)}%</span></div>
+                    <Slider value={[current.watermark.imageOpacity * 100]} onValueChange={([v]) => updateConfig(activeSide, 'watermark', { ...current.watermark, imageOpacity: v/100 })} max={50} step={1} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Dimensi & Ukuran Elemen */}
+            <div className="space-y-6 pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-2"><Move className="h-4 w-4 text-[#2E50B8]" /><h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Dimensi & Ukuran Elemen</h4></div>
+              
+              <DimensionSlider label="Lebar Foto" value={current.elements.photo.w} max={150} min={30} onChange={(v) => { updateElement(activeSide, 'photo', 'w', v); updateElement(activeSide, 'photo', 'h', Math.round(v * 1.33)); }} unit="px" />
+              <DimensionSlider label="Ukuran QR Code" value={current.elements.qr.w} max={100} min={20} onChange={(v) => { updateElement(activeSide, 'qr', 'w', v); updateElement(activeSide, 'qr', 'h', v); }} unit="px" />
+              <DimensionSlider label="Lebar Blok Identitas" value={current.elements.info.width} max={300} min={100} onChange={(v) => updateElement(activeSide, 'info', 'width', v)} unit="px" />
+              <DimensionSlider label="Ukuran Font Teks" value={current.elements.info.fontSize} max={24} min={6} onChange={(v) => updateElement(activeSide, 'info', 'fontSize', v)} unit="px" />
+              <DimensionSlider label="Skala Tanda Tangan & Stempel" value={Math.round(current.elements.sigBlock.scale * 100)} max={150} min={30} onChange={(v) => updateElement(activeSide, 'sigBlock', 'scale', v/100)} unit="%" />
+
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Perataan Identitas</Label>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className={cn("flex-1 h-10", current.elements.info.align === 'left' && "bg-primary text-white border-none")} onClick={() => updateElement(activeSide, 'info', 'align', 'left')}><AlignLeft className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="sm" className={cn("flex-1 h-10", current.elements.info.align === 'center' && "bg-primary text-white border-none")} onClick={() => updateElement(activeSide, 'info', 'align', 'center')}><AlignCenter className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="sm" className={cn("flex-1 h-10", current.elements.info.align === 'right' && "bg-primary text-white border-none")} onClick={() => updateElement(activeSide, 'info', 'align', 'right')}><AlignRight className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Background Image */}
+            <div className="space-y-6 pt-4 border-t border-slate-100 pb-10">
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Background Sisi Ini</h4>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-dashed border-2 text-slate-400 gap-2 font-black uppercase tracking-widest text-[10px]" onClick={() => bgInputRef.current?.click()}>
+                <Upload className="h-4 w-4" /> UNGGAH LATAR
+              </Button>
+              <input type="file" ref={bgInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'bgImage')} />
+              {current.bgImage && (
+                <Button variant="ghost" className="w-full text-[9px] text-red-500 font-bold uppercase" onClick={() => updateConfig(activeSide, 'bgImage', '')}>HAPUS BACKGROUND</Button>
+              )}
             </div>
           </div>
 
@@ -449,7 +545,6 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
             </div>
 
             <div className="relative group cursor-crosshair">
-              {/* Overlay untuk menangkap event drag di atas visual kartu */}
               <div 
                 ref={editorRef}
                 className="relative shadow-[0_30px_100px_-12px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden bg-white"
@@ -498,6 +593,18 @@ function ColorField({ label, value, onChange }: { label: string, value: string, 
         </div>
         <span className="text-[10px] font-mono font-bold text-slate-600 uppercase">{value}</span>
       </div>
+    </div>
+  );
+}
+
+function DimensionSlider({ label, value, max, min, onChange, unit }: { label: string, value: number, max: number, min: number, onChange: (v: number) => void, unit: string }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-[9px] font-bold uppercase text-slate-400">
+        <span>{label}</span>
+        <span>{value}{unit}</span>
+      </div>
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} max={max} min={min} step={1} />
     </div>
   );
 }
