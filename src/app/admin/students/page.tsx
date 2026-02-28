@@ -26,7 +26,8 @@ import {
   Filter,
   User as UserIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -443,7 +444,22 @@ export default function StudentsPage() {
                 </div>
               </div>
               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-              <Button variant="outline" size="sm" className="w-full rounded-xl font-bold border-slate-200" onClick={() => photoInputRef.current?.click()}>Ganti Foto</Button>
+              <div className="space-y-3">
+                <Button variant="outline" size="sm" className="w-full rounded-xl font-bold border-slate-200" onClick={() => photoInputRef.current?.click()}>Unggah Gambar</Button>
+                
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Atau Link URL Foto</Label>
+                  <div className="relative group">
+                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-300 group-focus-within:text-primary" />
+                    <Input 
+                      value={newStudent.photo_url || ''} 
+                      onChange={e => setNewStudent({...newStudent, photo_url: e.target.value})} 
+                      className="h-10 pl-9 rounded-xl bg-slate-50 border-none text-xs font-medium" 
+                      placeholder="https://..." 
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="md:col-span-2 grid grid-cols-2 gap-6">
               <div className="col-span-2 space-y-2">
