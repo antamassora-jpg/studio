@@ -106,12 +106,14 @@ export default function TemplatesPage() {
       photo: { x: 68, y: 100, w: 140, h: 180 },
       qr: { x: 110, y: 320, w: 56, h: 56 },
       info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
-      sigBlock: { x: 150, y: 380, scale: 0.8 }
+      sigBlock: { x: 150, y: 380, scale: 0.8 },
+      terms: { x: 18, y: 120, width: 240 }
     } : {
       photo: { x: 15, y: 70, w: 60, h: 80 },
       qr: { x: 15, y: 155, w: 48, h: 48 },
       info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 },
-      sigBlock: { x: 240, y: 160, scale: 0.75 }
+      sigBlock: { x: 240, y: 160, scale: 0.75 },
+      terms: { x: 30, y: 60, width: 280 }
     };
 
     const newTemplate = {
@@ -402,12 +404,14 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
         photo: { x: 68, y: 100, w: 140, h: 180 },
         qr: { x: 110, y: 320, w: 56, h: 56 },
         info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
-        sigBlock: { x: 150, y: 380, scale: 0.8 }
+        sigBlock: { x: 150, y: 380, scale: 0.8 },
+        terms: { x: 18, y: 120, width: 240 }
       } : { 
         photo: { x: 15, y: 70, w: 60, h: 80 }, 
         qr: { x: 15, y: 155, w: 48, h: 48 }, 
         info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, 
-        sigBlock: { x: 240, y: 160, scale: 0.75 } 
+        sigBlock: { x: 240, y: 160, scale: 0.75 },
+        terms: { x: 30, y: 60, width: 280 }
       };
 
       const base = {
@@ -608,6 +612,10 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
               <DimensionSlider label="Lebar Blok Identitas" value={current.elements.info.width} max={300} min={100} onChange={(v) => updateElement(activeSide, 'info', 'width', v)} unit="px" />
               <DimensionSlider label="Ukuran Font Teks" value={current.elements.info.fontSize} max={24} min={6} onChange={(v) => updateElement(activeSide, 'info', 'fontSize', v)} unit="px" />
               <DimensionSlider label="Skala Tanda Tangan & Stempel" value={Math.round(current.elements.sigBlock.scale * 100)} max={150} min={30} onChange={(v) => updateElement(activeSide, 'sigBlock', 'scale', v/100)} unit="%" />
+              
+              {activeSide === 'back' && (
+                <DimensionSlider label="Lebar Teks Ketentuan" value={current.elements.terms?.width || 240} max={320} min={100} onChange={(v) => updateElement(activeSide, 'terms', 'width', v)} unit="px" />
+              )}
 
               <div className="space-y-2">
                 <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Perataan Identitas</Label>
@@ -654,6 +662,18 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
                 <EditorHotspot x={current.elements.qr.x} y={current.elements.qr.y} w={current.elements.qr.w} h={current.elements.qr.h} onDown={(e) => handlePointerDown(e, 'qr')} isActive={draggingElement === 'qr'} label="QR" />
                 <EditorHotspot x={current.elements.info.x} y={current.elements.info.y} w={current.elements.info.width} h={60} onDown={(e) => handlePointerDown(e, 'info')} isActive={draggingElement === 'info'} label="INFO SISWA" />
                 <EditorHotspot x={current.elements.sigBlock.x} y={current.elements.sigBlock.y} w={80} h={40} onDown={(e) => handlePointerDown(e, 'sigBlock')} isActive={draggingElement === 'sigBlock'} label="LEGALITAS" />
+                
+                {activeSide === 'back' && current.elements.terms && (
+                  <EditorHotspot 
+                    x={current.elements.terms.x} 
+                    y={current.elements.terms.y} 
+                    w={current.elements.terms.width} 
+                    h={100} 
+                    onDown={(e) => handlePointerDown(e, 'terms')} 
+                    isActive={draggingElement === 'terms'} 
+                    label="KETENTUAN" 
+                  />
+                )}
               </div>
             </div>
 

@@ -8,7 +8,8 @@ const DEFAULT_ELEMENTS = {
   photo: { x: 15, y: 70, w: 60, h: 80 },
   qr: { x: 15, y: 155, w: 48, h: 48 },
   info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 },
-  sigBlock: { x: 240, y: 160, scale: 0.75 }
+  sigBlock: { x: 240, y: 160, scale: 0.75 },
+  terms: { x: 30, y: 60, width: 280 }
 };
 
 const DEFAULT_WATERMARK = {
@@ -211,7 +212,14 @@ export function ExamCardVisual({
       )}
 
       {side === 'back' && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[280px] text-center z-10">
+        <div 
+          className="absolute text-center z-10"
+          style={{ 
+            left: els.terms?.x || 30, 
+            top: els.terms?.y || 60, 
+            width: `${els.terms?.width || 280}px` 
+          }}
+        >
            <div className="flex items-center justify-center gap-3 mb-3 relative py-1">
               <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-slate-300 -z-10"></div>
               <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white px-3 relative z-10 border border-slate-100 rounded-full">Tata Tertib Ujian</span>
@@ -249,7 +257,7 @@ export function ExamCardVisual({
         </div>
       )}
 
-      <div style={{ backgroundColor: current.footerBg }} className="absolute bottom-0 left-0 right-0 h-1.5 z-10"></div>
+      <div style={{ backgroundColor: current.headerBg }} className="absolute bottom-0 left-0 right-0 h-1.5 z-10"></div>
     </div>
   );
 }

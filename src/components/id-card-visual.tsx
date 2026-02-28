@@ -8,7 +8,8 @@ const DEFAULT_ELEMENTS = {
   photo: { x: 68, y: 100, w: 140, h: 180 },
   qr: { x: 110, y: 320, w: 56, h: 56 },
   info: { x: 20, y: 285, align: 'center', fontSize: 12, width: 236 },
-  sigBlock: { x: 150, y: 380, scale: 0.8 }
+  sigBlock: { x: 150, y: 380, scale: 0.8 },
+  terms: { x: 18, y: 120, width: 240 }
 };
 
 const DEFAULT_WATERMARK = {
@@ -224,7 +225,14 @@ export function IdCardVisual({
       )}
 
       {side === 'back' && (
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 w-[240px] text-center z-10">
+        <div 
+          className="absolute text-center z-10"
+          style={{ 
+            left: els.terms?.x || 18, 
+            top: els.terms?.y || 120, 
+            width: `${els.terms?.width || 240}px` 
+          }}
+        >
            <div className="flex items-center justify-center gap-3 mb-4 relative py-1">
               <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-slate-300 -z-10"></div>
               <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white px-3 relative z-10 border border-slate-100 rounded-full">Ketentuan ID Card</span>
