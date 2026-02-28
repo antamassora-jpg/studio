@@ -261,10 +261,10 @@ export default function TemplatesPage() {
               </div>
 
               <div className="flex-1 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 p-6 flex flex-col items-center gap-8 mb-8 overflow-hidden">
-                <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden">
+                <div className={cn("origin-top shadow-2xl rounded-xl overflow-hidden", template.type === 'ID_CARD' ? "scale-[0.35] -mb-[220px]" : "scale-[0.45] -mb-[110px]")}>
                   {renderPreview(template.type, dummyStudent, activeSettings, 'front', template)}
                 </div>
-                <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden pt-4">
+                <div className={cn("origin-top shadow-2xl rounded-xl overflow-hidden pt-4", template.type === 'ID_CARD' ? "scale-[0.35] -mb-[220px]" : "scale-[0.45] -mb-[110px]")}>
                   {renderPreview(template.type, dummyStudent, activeSettings, 'back', template)}
                 </div>
               </div>
@@ -375,6 +375,10 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
   const bgInputRef = useRef<HTMLInputElement>(null);
   const wmLogoInputRef = useRef<HTMLInputElement>(null);
 
+  // Define canvas size based on card type
+  const isPortrait = template.type === 'ID_CARD';
+  const dimensions = isPortrait ? { w: 276, h: 420 } : { w: 340, h: 215 };
+
   useEffect(() => {
     try {
       const parsed = JSON.parse(template.config_json || '{}');
@@ -471,9 +475,9 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
     
-    // Bounds (340x215)
-    const boundedX = Math.max(0, Math.min(x, 340));
-    const boundedY = Math.max(0, Math.min(y, 215));
+    // Bounds using dynamic dimensions
+    const boundedX = Math.max(0, Math.min(x, dimensions.w));
+    const boundedY = Math.max(0, Math.min(y, dimensions.h));
 
     updateElement(activeSide, draggingElement, 'x', boundedX);
     updateElement(activeSide, draggingElement, 'y', boundedY);
@@ -616,7 +620,7 @@ function VisualEditorModal({ isOpen, onClose, template, student, settings, db }:
               <div 
                 ref={editorRef}
                 className="relative shadow-[0_30px_100px_-12px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden bg-white"
-                style={{ width: '340px', height: '215px' }}
+                style={{ width: `${dimensions.w}px`, height: `${dimensions.h}px` }}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
               >
