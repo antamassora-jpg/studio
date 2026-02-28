@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { CardTemplate, TemplateType, Student, SchoolSettings } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +57,7 @@ import { StudentCardVisual } from '@/components/student-card-visual';
 import { ExamCardVisual } from '@/components/exam-card-visual';
 import { IdCardVisual } from '@/components/id-card-visual';
 import { cn } from '@/lib/utils';
+import { DEFAULT_SETTINGS } from '@/app/lib/db';
 
 export default function TemplatesPage() {
   const db = useFirestore();
@@ -72,7 +73,10 @@ export default function TemplatesPage() {
   const templates = templatesData || [];
 
   const settingsRef = useMemoFirebase(() => db ? doc(db, 'school_settings', 'default') : null, [db]);
-  const { data: settings } = useDoc<SchoolSettings>(settingsRef);
+  const { data: dbSettings } = useDoc<SchoolSettings>(settingsRef);
+  
+  // Use DB settings if available, otherwise use defaults for visual preview
+  const activeSettings = useMemo(() => dbSettings || DEFAULT_SETTINGS, [dbSettings]);
 
   // Dummy student for preview
   const dummyStudent: Student = {
@@ -194,10 +198,10 @@ export default function TemplatesPage() {
 
               <div className="flex-1 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 p-6 flex flex-col items-center gap-8 mb-8 overflow-hidden">
                 <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden">
-                  {renderPreview(template.type, dummyStudent, settings, 'front', template)}
+                  {renderPreview(template.type, dummyStudent, activeSettings, 'front', template)}
                 </div>
                 <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden pt-4">
-                  {renderPreview(template.type, dummyStudent, settings, 'back', template)}
+                  {renderPreview(template.type, dummyStudent, activeSettings, 'back', template)}
                 </div>
               </div>
 
@@ -282,7 +286,7 @@ export default function TemplatesPage() {
             onClose={() => { setIsEditorOpen(false); setEditingTemplate(null); }} 
             template={editingTemplate} 
             student={dummyStudent}
-            settings={settings}
+            settings={activeSettings}
             db={db!}
           />
         )}
@@ -628,15 +632,16 @@ function EditorHotspot({ x, y, w, h, onDown, isActive, label }: { x: number, y: 
 }
 
 function renderPreview(type: TemplateType, student: Student, settings: SchoolSettings | null, side: 'front' | 'back', template: CardTemplate) {
-  if (!settings) return <div className="w-[340px] h-[215px] bg-slate-100 animate-pulse" />;
+  // Use DEFAULT_SETTINGS if settings is null to ensure something is always rendered
+  const activeSettings = settings || DEFAULT_SETTINGS;
   
   switch(type) {
     case 'STUDENT_CARD':
-      return <StudentCardVisual student={student} settings={settings} side={side} template={template} />;
+      return <StudentCardVisual student={student} settings={activeSettings} side={side} template={template} />;
     case 'EXAM_CARD':
-      return <ExamCardVisual student={student} settings={settings} side={side} template={template} />;
+      return <ExamCardVisual student={student} settings={activeSettings} side={side} template={template} />;
     case 'ID_CARD':
-      return <IdCardVisual student={student} settings={settings} side={side} template={template} />;
+      return <IdCardVisual student={student} settings={activeSettings} side={side} template={template} />;
     default:
       return null;
   }
