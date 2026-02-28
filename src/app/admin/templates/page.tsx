@@ -23,7 +23,8 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
-  Upload
+  Upload,
+  Edit2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -68,6 +69,11 @@ export default function TemplatesPage() {
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateType, setNewTemplateType] = useState<TemplateType>('STUDENT_CARD');
 
+  // State for inline name editing
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [tempName, setTempName] = useState('');
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
   const { data: templatesData, isLoading } = useCollection<CardTemplate>(templatesQuery);
   const templates = templatesData || [];
@@ -75,10 +81,8 @@ export default function TemplatesPage() {
   const settingsRef = useMemoFirebase(() => db ? doc(db, 'school_settings', 'default') : null, [db]);
   const { data: dbSettings } = useDoc<SchoolSettings>(settingsRef);
   
-  // Use DB settings if available, otherwise use defaults for visual preview
   const activeSettings = useMemo(() => dbSettings || DEFAULT_SETTINGS, [dbSettings]);
 
-  // Dummy student for preview
   const dummyStudent: Student = {
     id: 'preview',
     name: 'ANDI PRATAMA',
@@ -149,6 +153,25 @@ export default function TemplatesPage() {
     }
   };
 
+  const handleStartRename = (id: string, currentName: string) => {
+    setRenamingId(id);
+    setTempName(currentName);
+  };
+
+  const handleSaveRename = async (id: string) => {
+    if (!db || !tempName.trim()) return;
+    setIsUpdatingName(true);
+    try {
+      await updateDoc(doc(db, 'templates', id), { name: tempName });
+      setRenamingId(null);
+      toast({ title: "Nama Diperbarui", description: "Nama template berhasil diubah." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Gagal", description: "Gagal merubah nama." });
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
+
   if (isLoading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
        <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -192,7 +215,48 @@ export default function TemplatesPage() {
               </div>
 
               <div className="mb-8">
-                <h3 className="text-xl font-black uppercase tracking-tight text-slate-800 leading-tight">{template.name}</h3>
+                {renamingId === template.id ? (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                    <Input 
+                      value={tempName} 
+                      onChange={(e) => setTempName(e.target.value)} 
+                      className="h-9 font-bold uppercase rounded-lg border-primary focus-visible:ring-primary"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveRename(template.id)}
+                    />
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-8 w-8 text-emerald-500 hover:bg-emerald-50"
+                      onClick={() => handleSaveRename(template.id)}
+                      disabled={isUpdatingName}
+                    >
+                      {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-8 w-8 text-red-400 hover:bg-red-50"
+                      onClick={() => setRenamingId(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between group/title">
+                    <h3 className="text-xl font-black uppercase tracking-tight text-slate-800 leading-tight">
+                      {template.name}
+                    </h3>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 opacity-0 group-hover/title:opacity-100 transition-opacity text-slate-300 hover:text-primary"
+                      onClick={() => handleStartRename(template.id, template.name)}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-1">{template.type.replace('_', ' ')}</p>
               </div>
 
@@ -632,7 +696,6 @@ function EditorHotspot({ x, y, w, h, onDown, isActive, label }: { x: number, y: 
 }
 
 function renderPreview(type: TemplateType, student: Student, settings: SchoolSettings | null, side: 'front' | 'back', template: CardTemplate) {
-  // Use DEFAULT_SETTINGS if settings is null to ensure something is always rendered
   const activeSettings = settings || DEFAULT_SETTINGS;
   
   switch(type) {
