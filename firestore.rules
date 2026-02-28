@@ -14,15 +14,15 @@ service cloud.firestore {
       // 1. Memiliki dokumen di koleksi roles_admin
       // 2. ATAU merupakan pengguna Anonim (Fitur Login Cepat/Demo)
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
-        request.auth.token.firebase.sign_in_provider == 'anonymous'
+        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
       );
     }
 
     function isScanner() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_scanner/$(request.auth.uid)) ||
-        request.auth.token.firebase.sign_in_provider == 'anonymous'
+        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
+        exists(/databases/$(database)/documents/roles_scanner/$(request.auth.uid))
       );
     }
 
@@ -45,36 +45,36 @@ service cloud.firestore {
     }
 
     // Koleksi Utama: Siswa
-    // Izinkan 'read' (get & list) secara publik agar fitur verifikasi di landing page berfungsi
+    // Izinkan 'get' dan 'list' secara publik agar fitur verifikasi di landing page dan manajemen admin berfungsi
     match /students/{studentId} {
-      allow read: if true; 
-      allow write: if isAdmin();
+      allow get, list: if true; 
+      allow create, update, delete: if isAdmin();
     }
 
     // Koleksi Utama: Ujian
     match /exams/{examId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // Koleksi Utama: Log Absensi
     match /attendance_logs/{logId} {
-      allow read: if isSignedIn();
+      allow get, list: if true;
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
     // Koleksi Utama: Pengaturan & Template
     match /school_settings/{settingId} {
-      allow read: if true;
+      allow get, list: if true;
       allow write: if isAdmin();
     }
 
     match /templates/{templateId} {
-      allow read: if true;
+      allow get, list: if true;
       allow write: if isAdmin();
     }
 
-    // Last updated: 2024-05-20 (Force redeploy)
+    // Last updated: 2024-05-20 14:30 (Force redeploy to fix list permissions)
   }
 }
