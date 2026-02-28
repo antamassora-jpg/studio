@@ -1,74 +1,580 @@
-
 {
   "entities": {
-    "Student": {
-      "title": "Student",
-      "description": "Data master identitas siswa.",
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
+      "description": "Represents an internal user account within the application, used for authentication and role-based access to features. Sensitive authentication details like passwords are not stored here.",
       "properties": {
-        "id": { "type": "string" },
-        "nis": { "type": "string" },
-        "nisn": { "type": "string" },
-        "name": { "type": "string" },
-        "class": { "type": "string" },
-        "major": { "type": "string" },
-        "school_year": { "type": "string" },
-        "photo_url": { "type": "string" },
-        "status": { "type": "string", "enum": ["Aktif", "Nonaktif", "Lulus", "Pindah"] },
-        "valid_until": { "type": "string" },
-        "card_code": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "A unique username for logging into the application."
+        },
+        "roleMode": {
+          "type": "string",
+          "description": "The operational mode or primary role assigned to the user (e.g., 'Admin', 'Petugas/Scanner'). This may reflect their default access level or capabilities within the application. (Relationship: UserProfile 1:N AttendanceLog)"
+        }
       },
-      "required": ["nis", "name", "card_code"]
+      "required": [
+        "id",
+        "username"
+      ]
+    },
+    "Student": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Student",
+      "type": "object",
+      "description": "Represents a student enrolled in the school, including their personal and academic details, and information relevant for card generation and attendance.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Student entity."
+        },
+        "nis": {
+          "type": "string",
+          "description": "Student's unique School Identification Number (Nomor Induk Siswa)."
+        },
+        "nisn": {
+          "type": "string",
+          "description": "Student's National Student Identification Number (Nomor Induk Siswa Nasional). Optional."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the student."
+        },
+        "studentClass": {
+          "type": "string",
+          "description": "The current class or grade level of the student."
+        },
+        "major": {
+          "type": "string",
+          "description": "The major or competency program the student is enrolled in (Jurusan/Kompetensi)."
+        },
+        "schoolYear": {
+          "type": "string",
+          "description": "The academic year the student is currently active in (e.g., '2023/2024')."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL to the student's profile photo. Optional.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the student or their card (e.g., 'Aktif', 'Nonaktif', 'Lulus', 'Pindah')."
+        },
+        "validUntil": {
+          "type": "string",
+          "description": "The date until which the student's card is considered valid, typically the end of an academic year. Optional.",
+          "format": "date"
+        },
+        "cardCode": {
+          "type": "string",
+          "description": "A unique, auto-generated, and difficult-to-guess code embedded in the student's card (e.g., QR/Barcode) for verification and attendance scanning. (Relationship: Student 1:N AttendanceLog, Student 1:N ExamCard)"
+        }
+      },
+      "required": [
+        "id",
+        "nis",
+        "name",
+        "studentClass",
+        "major",
+        "schoolYear",
+        "status",
+        "cardCode"
+      ]
+    },
+    "SchoolSetting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SchoolSetting",
+      "type": "object",
+      "description": "Stores global settings and identity information for the school, configurable by administrators.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SchoolSetting entity (typically a singleton)."
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "The official name of the school (e.g., 'SMKN 2 Tana Toraja')."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the school."
+        },
+        "contactWebsite": {
+          "type": "string",
+          "description": "Optional contact information or website URL for the school.",
+          "format": "uri"
+        },
+        "logoLeft": {
+          "type": "string",
+          "description": "URL to the school's primary logo image, typically displayed on the left of cards.",
+          "format": "uri"
+        },
+        "logoRight": {
+          "type": "string",
+          "description": "URL to an optional secondary logo image, such as an educational ministry logo, displayed on the right of cards.",
+          "format": "uri"
+        },
+        "principalName": {
+          "type": "string",
+          "description": "The full name of the school's principal (Kepala Sekolah)."
+        },
+        "principalNip": {
+          "type": "string",
+          "description": "Optional NIP (Nomor Induk Pegawai) or employee ID of the principal."
+        },
+        "signatureImage": {
+          "type": "string",
+          "description": "URL to the image of the principal's signature.",
+          "format": "uri"
+        },
+        "stampImage": {
+          "type": "string",
+          "description": "URL to the image of the school's official stamp (transparent background recommended).",
+          "format": "uri"
+        },
+        "cardValidityPeriod": {
+          "type": "string",
+          "description": "Describes the logic or duration for student card validity (e.g., 'akhir tahun ajaran')."
+        },
+        "termsText": {
+          "type": "string",
+          "description": "The text containing terms and conditions for using the student card, displayed on the back of the card."
+        },
+        "uiTheme": {
+          "type": "string",
+          "description": "Optional setting for the application's user interface theme."
+        }
+      },
+      "required": [
+        "id",
+        "schoolName",
+        "address",
+        "logoLeft",
+        "logoRight",
+        "principalName",
+        "signatureImage",
+        "stampImage",
+        "cardValidityPeriod",
+        "termsText"
+      ]
+    },
+    "Template": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Template",
+      "type": "object",
+      "description": "Defines configurable templates for generating student cards and exam cards, allowing for customizable designs and content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Template entity."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of card this template is for (e.g., 'STUDENT_CARD', 'EXAM_CARD')."
+        },
+        "name": {
+          "type": "string",
+          "description": "A descriptive name for the template."
+        },
+        "configJson": {
+          "type": "string",
+          "description": "JSON string containing the configuration and layout details for the card template."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether this template is currently active and available for use."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "configJson",
+        "isActive"
+      ]
+    },
+    "Exam": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Exam",
+      "type": "object",
+      "description": "Represents a specific examination event, containing details like its name, academic period, and duration.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Exam entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the examination event (e.g., 'PAS Genap 2026')."
+        },
+        "schoolYear": {
+          "type": "string",
+          "description": "The academic year the exam takes place in."
+        },
+        "semester": {
+          "type": "string",
+          "description": "The semester in which the exam is conducted."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the examination period.",
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the examination period.",
+          "format": "date"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes or additional information about the exam."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "schoolYear",
+        "semester",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "ExamCard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExamCard",
+      "type": "object",
+      "description": "Represents an individual exam card generated for a student for a specific exam event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ExamCard entity."
+        },
+        "examId": {
+          "type": "string",
+          "description": "Reference to the Exam event this card belongs to. (Relationship: Exam 1:N ExamCard)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the Student for whom this card is generated. (Relationship: Student 1:N ExamCard)"
+        },
+        "room": {
+          "type": "string",
+          "description": "Optional: The assigned examination room for the student."
+        },
+        "seatNo": {
+          "type": "string",
+          "description": "Optional: The assigned seat number for the student."
+        },
+        "participantNo": {
+          "type": "string",
+          "description": "Optional: The participant number assigned to the student for the exam."
+        },
+        "qrCode": {
+          "type": "string",
+          "description": "Optional: A QR/Barcode embedded in the exam card, potentially for verification or specific exam-related functions."
+        }
+      },
+      "required": [
+        "id",
+        "examId",
+        "studentId"
+      ]
+    },
+    "AttendanceSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AttendanceSession",
+      "type": "object",
+      "description": "Defines different types of attendance sessions (e.g., 'Masuk' for entry, 'Pulang' for exit), including their operational hours.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AttendanceSession entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the attendance session (e.g., 'Masuk', 'Pulang', 'Istirahat')."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Optional: The official start time for this attendance session.",
+          "format": "time"
+        },
+        "lateAfter": {
+          "type": "string",
+          "description": "Optional: The time after which an attendance entry for this session is considered late.",
+          "format": "time"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
     },
     "AttendanceLog": {
-      "title": "Attendance Log",
-      "description": "Catatan kehadiran hasil pemindaian kartu.",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AttendanceLog",
       "type": "object",
+      "description": "Records individual attendance entries made by scanning student cards, including validation details and timestamps.",
       "properties": {
-        "student_id": { "type": "string" },
-        "card_code": { "type": "string" },
-        "date": { "type": "string" },
-        "session_id": { "type": "string" },
-        "exam_id": { "type": "string" },
-        "scanned_at": { "type": "string" },
-        "scanned_by_user_id": { "type": "string" },
-        "is_valid": { "type": "boolean" }
-      }
-    },
-    "SchoolSettings": {
-      "title": "School Settings",
-      "description": "Konfigurasi global identitas sekolah dan aset kartu.",
-      "type": "object",
-      "properties": {
-        "school_name": { "type": "string" },
-        "address": { "type": "string" },
-        "principal_name": { "type": "string" }
-      }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AttendanceLog entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the Student who performed the attendance scan. (Relationship: Student 1:N AttendanceLog)"
+        },
+        "cardCode": {
+          "type": "string",
+          "description": "The unique code from the student's card that was scanned."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date on which the attendance was logged.",
+          "format": "date"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Reference to the AttendanceSession type (e.g., 'Masuk', 'Pulang'). (Relationship: AttendanceSession 1:N AttendanceLog)"
+        },
+        "scannedAt": {
+          "type": "string",
+          "description": "The exact date and time when the card was scanned.",
+          "format": "date-time"
+        },
+        "scannedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (Petugas/Scanner) who performed the scan. (Relationship: UserProfile 1:N AttendanceLog)"
+        },
+        "isValid": {
+          "type": "boolean",
+          "description": "Indicates whether the scanned card was valid (e.g., active, not expired) at the time of scan."
+        },
+        "reason": {
+          "type": "string",
+          "description": "A textual reason if the scan was invalid, or additional notes."
+        },
+        "deviceInfo": {
+          "type": "string",
+          "description": "Information about the device used for scanning (e.g., browser, OS)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Optional: The physical location or position where the attendance was taken (e.g., 'Gerbang Utama', 'Kelas X-IPA 1')."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "cardCode",
+        "date",
+        "sessionId",
+        "scannedAt",
+        "scannedByUserId",
+        "isValid",
+        "reason",
+        "deviceInfo"
+      ]
     }
   },
   "auth": {
-    "providers": ["password"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/students/{studentId}": {
-      "schema": "#/backend/entities/Student",
-      "description": "Koleksi data master siswa."
-    },
-    "/attendance_logs/{logId}": {
-      "schema": "#/backend/entities/AttendanceLog",
-      "description": "Koleksi riwayat absensi real-time."
-    },
-    "/exam_events/{examId}": {
-      "schema": { "$ref": "#/backend/entities/ExamEvent" },
-      "description": "Daftar pelaksanaan ujian."
-    },
-    "/settings/school": {
-      "schema": "#/backend/entities/SchoolSettings",
-      "description": "Dokumen tunggal pengaturan sekolah."
-    },
-    "/templates/{templateId}": {
-      "schema": { "type": "object" },
-      "description": "Konfigurasi desain kartu."
-    }
+    "structure": [
+      {
+        "path": "/user_profiles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profiles for application authentication. Each document represents a user and includes their 'roleMode' (e.g., 'Admin', 'Petugas/Scanner'). Users can read their own profile. Full CRUD access is reserved for 'Admin' users. For global role-based authorization, existence checks against '/roles_admin/{userId}' and '/roles_scanner/{userId}' are prioritized.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, corresponding to `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "A collection for Database-Backed Access Control (DBAC). The mere existence of a document at this path signifies that the specified user (`userId`) holds the 'Admin' role. This collection is used for fast and authorization-independent role checks within Firestore security rules, avoiding expensive 'get()' calls on user profiles. Managed only by existing 'Admin' users.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who has been assigned the 'Admin' role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_scanner/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "A collection for Database-Backed Access Control (DBAC). The existence of a document at this path signifies that the specified user (`userId`) holds the 'Petugas/Scanner' role. Used for authorization-independent role checks in security rules. Managed only by 'Admin' users.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who has been assigned the 'Petugas/Scanner' role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/students/{studentId}",
+        "definition": {
+          "entityName": "Student",
+          "schema": {
+            "$ref": "#/backend/entities/Student"
+          },
+          "description": "Master data storage for all student records, including sensitive personal and academic details. Only 'Admin' users have full CRUD access. Updates to these documents trigger Cloud Functions to update the corresponding denormalized public data in '/public_student_verifications/{cardCode}', ensuring Authorization Independence for public lookups.",
+          "params": [
+            {
+              "name": "studentId",
+              "description": "The unique identifier for the student."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/public_student_verifications/{cardCode}",
+        "definition": {
+          "entityName": "Student",
+          "schema": {
+            "$ref": "#/backend/entities/Student"
+          },
+          "description": "A denormalized collection containing a subset of non-sensitive student data (e.g., name, class, status, photoUrl, validUntil, studentId) specifically for public card verification. Documents are keyed by `cardCode` for direct lookup. This structure ensures QAP-compliant public read-only access for individual card verification pages, without exposing full student data or allowing list operations. Kept in sync with '/students/{studentId}' via Cloud Functions.",
+          "params": [
+            {
+              "name": "cardCode",
+              "description": "The unique, auto-generated code from the student's card used for public verification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/school_settings/default",
+        "definition": {
+          "entityName": "SchoolSetting",
+          "schema": {
+            "$ref": "#/backend/entities/SchoolSetting"
+          },
+          "description": "A singleton document (`id: 'default'`) storing all global school settings and identity information. Only 'Admin' users have full CRUD access. Updates to this document trigger a Cloud Function to update the corresponding denormalized public data in '/public_school_settings/default' for public visibility.",
+          "params": []
+        }
+      },
+      {
+        "path": "/public_school_settings/default",
+        "definition": {
+          "entityName": "SchoolSetting",
+          "schema": {
+            "$ref": "#/backend/entities/SchoolSetting"
+          },
+          "description": "A singleton document (`id: 'default'`) containing a denormalized subset of school settings (e.g., school name, logos, terms text) intended for public read access. This ensures QAP-compliant access for unauthenticated users on card verification pages or public displays without exposing sensitive admin-only settings. Kept in sync with '/school_settings/default' via Cloud Functions.",
+          "params": []
+        }
+      },
+      {
+        "path": "/templates/{templateId}",
+        "definition": {
+          "entityName": "Template",
+          "schema": {
+            "$ref": "#/backend/entities/Template"
+          },
+          "description": "Stores configurable templates for generating both student and exam cards. Only 'Admin' users have full CRUD access to this collection. All template types ('STUDENT_CARD', 'EXAM_CARD') share a homogeneous security posture within this collection.",
+          "params": [
+            {
+              "name": "templateId",
+              "description": "The unique identifier for a card template."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/exams/{examId}",
+        "definition": {
+          "entityName": "Exam",
+          "schema": {
+            "$ref": "#/backend/entities/Exam"
+          },
+          "description": "Defines specific examination events, including names, dates, and academic periods. Only 'Admin' users have full CRUD access to these documents.",
+          "params": [
+            {
+              "name": "examId",
+              "description": "The unique identifier for the examination event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/exam_cards/{examCardId}",
+        "definition": {
+          "entityName": "ExamCard",
+          "schema": {
+            "$ref": "#/backend/entities/ExamCard"
+          },
+          "description": "Stores individual exam cards generated for a student for a specific exam event. Contains foreign key references to 'examId' and 'studentId' as data fields, not for authorization. Only 'Admin' users have full CRUD access to these documents.",
+          "params": [
+            {
+              "name": "examCardId",
+              "description": "The unique identifier for the generated exam card."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/attendance_sessions/{sessionId}",
+        "definition": {
+          "entityName": "AttendanceSession",
+          "schema": {
+            "$ref": "#/backend/entities/AttendanceSession"
+          },
+          "description": "Defines different types of attendance sessions (e.g., 'Masuk', 'Pulang'). 'Admin' users have full CRUD access, while 'Petugas/Scanner' users can read and list these sessions to select the current scanning context. This collection has a homogeneous security posture for both roles.",
+          "params": [
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for an attendance session type."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/attendance_logs/{logId}",
+        "definition": {
+          "entityName": "AttendanceLog",
+          "schema": {
+            "$ref": "#/backend/entities/AttendanceLog"
+          },
+          "description": "Records individual attendance entries. Each document includes the `scannedByUserId` (the UID of the 'Petugas/Scanner' who performed the scan), enabling Authorization Independence by allowing rules to verify the scanner's identity directly from the document. 'Petugas/Scanner' users can create new logs (with `scannedByUserId` matching their `request.auth.uid`) and can read/list their own log entries (via queries using a 'where' clause on `scannedByUserId`). 'Admin' users have full CRUD access to all attendance logs. Foreign keys `studentId` and `sessionId` are for data linkage, not authorization checks.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "The unique identifier for an attendance log entry."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed with a strong emphasis on **Authorization Independence**, **Structural Segregation**, and **QAP-compliant access modeling** to ensure security, scalability, and debuggability. The Next.js module not found error is a front-end build issue and is not addressed by this database structure recommendation.\n\n**Authorization Independence via Denormalization:**\n*   **Global Roles (DBAC):** Instead of storing a user's role directly within their `UserProfile` and relying on `get()` calls in rules (e.g., `get(/user_profiles/$(request.auth.uid)).data.roleMode == 'Admin'`), dedicated top-level collections like `/roles_admin/{userId}` and `/roles_scanner/{userId}` are used. The *existence* of a document in these collections grants the respective role. This completely eliminates `get()` calls for role checks, making rules atomic and independent.\n*   **Attendance Logs:** Each `attendance_log` document includes `scannedByUserId`. This denormalizes the scanner's UID directly into the log, allowing rules to authorize log creation or viewing by matching `request.auth.uid` against `resource.data.scannedByUserId` without fetching the `UserProfile` of the scanner. This is crucial for atomic writes and independent authorization.\n*   **Public Data:** For entities like `Student` and `SchoolSetting` that have public-facing attributes, dedicated denormalized collections (`/public_student_verifications/{cardCode}` and `/public_school_settings/default`) are created. These collections contain only the non-sensitive data required for public access (e.g., student name, status, school name, logos). This ensures that public access is granted without performing `get()` operations on the full, potentially sensitive, master data. Cloud Functions are mandated to keep these denormalized collections synchronized with their master counterparts.\n\n**Structural Segregation for Homogeneous Security Posture (QAPs Compliance):**\n*   **Public vs. Private Data:** Sensitive master data (`/students/{studentId}`, `/school_settings/default`) is kept strictly separate from its public-facing, denormalized counterparts (`/public_student_verifications/{cardCode}`, `/public_school_settings/default`). This ensures that security rules applied to one collection do not inadvertently expose or restrict access to data with different security requirements. This is fundamental for **Query-as-Permission (QAP)**, as it guarantees that `list` operations on sensitive collections (`/students`) only yield data authorized for the querying user (e.g., Admins), and public `list` operations are entirely prevented on sensitive data.\n*   **Role-Based Data:** Collections are segmented based on the roles that primarily interact with them. For example, `/templates`, `/exams`, and `/exam_cards` are exclusively managed by `Admin` users, allowing for simple rules to check `if exists(/roles_admin/$(request.auth.uid))`. `/attendance_sessions` is readable by `Scanner` and `Admin`, and `/attendance_logs` is writable by `Scanner` (for their own logs) and fully accessible by `Admin`.\n\n**Access Modeling & Consistency:**\n*   **Path-Based Ownership:** User-specific data (e.g., `UserProfile`) is primarily stored under `/user_profiles/{userId}` for clear ownership.\n*   **Global Singleton Documents:** `/school_settings/default` and `/public_school_settings/default` use a fixed document ID (`default`) for predictable access to singleton settings.\n*   **Descriptive Wildcards:** All wildcards are semantically named (e.g., `{userId}`, `{studentId}`, `{cardCode}`), enhancing clarity in rules and queries.\n*   **Explicit State:** The `Student` entity uses a clear `status` field for its lifecycle (`Aktif`, `Nonaktif`, etc.).\n\nThis design minimizes complex conditional logic within Firestore rules, moving authorization complexity into the data structure itself. This leads to simpler, more robust, and easily debuggable security rules that inherently support QAPs and atomic operations."
   }
 }
