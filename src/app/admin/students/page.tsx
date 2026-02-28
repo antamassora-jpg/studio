@@ -59,6 +59,8 @@ export default function StudentsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
   const [editingStudent, setEditStudent] = useState<Student | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const photoInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   
@@ -69,10 +71,15 @@ export default function StudentsPage() {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
+    name: '',
+    nis: '',
+    nisn: '',
+    class: '',
+    major: '',
+    school_year: '2024/2025',
     status: 'Aktif',
     valid_until: '2030-06-30',
     photo_url: '',
-    nisn: ''
   });
 
   const studentsQuery = useMemoFirebase(() => 
@@ -96,45 +103,44 @@ export default function StudentsPage() {
     });
   }, [students, search, selectedClass, selectedMajor]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newStudent.name || !newStudent.nis || !db) {
       toast({ title: "Gagal", description: "Nama dan NIS wajib diisi.", variant: "destructive" });
       return;
     }
 
-    if (editingStudent) {
-      updateDoc(doc(db, 'students', editingStudent.id), newStudent)
-        .then(() => {
-          setIsAddOpen(false);
-          setEditStudent(null);
-          toast({ title: "Berhasil", description: `Data ${newStudent.name} diperbarui.` });
-        })
-        .catch(err => toast({ title: "Gagal", variant: "destructive" }));
-    } else {
-      const studentData = {
-        ...newStudent,
-        card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-      };
-
-      addDoc(collection(db, 'students'), studentData)
-        .then(() => {
-          setIsAddOpen(false);
-          setNewStudent({ status: 'Aktif', valid_until: '2030-06-30', photo_url: '', nisn: '' });
-          toast({ title: "Berhasil", description: `Siswa ${studentData.name} ditambahkan.` });
-        })
-        .catch(async (err) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'students',
-            operation: 'create',
-            requestResourceData: studentData
-          }));
-        });
+    setIsSaving(true);
+    try {
+      if (editingStudent) {
+        // Clean data: remove ID before updating
+        const { id, ...dataToUpdate } = newStudent as any;
+        await updateDoc(doc(db, 'students', editingStudent.id), dataToUpdate);
+        toast({ title: "Berhasil", description: `Data ${newStudent.name} diperbarui.` });
+      } else {
+        const studentData = {
+          ...newStudent,
+          card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+        };
+        await addDoc(collection(db, 'students'), studentData);
+        toast({ title: "Berhasil", description: `Siswa ${studentData.name} ditambahkan.` });
+      }
+      setIsAddOpen(false);
+      setEditStudent(null);
+      setNewStudent({ name: '', nis: '', nisn: '', class: '', major: '', school_year: '2024/2025', status: 'Aktif', valid_until: '2030-06-30', photo_url: '' });
+    } catch (err: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: editingStudent ? `students/${editingStudent.id}` : 'students',
+        operation: editingStudent ? 'update' : 'create',
+        requestResourceData: newStudent
+      }));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleEdit = (s: Student) => {
     setEditStudent(s);
-    setNewStudent(s);
+    setNewStudent({ ...s });
     setIsAddOpen(true);
   };
 
@@ -281,7 +287,7 @@ export default function StudentsPage() {
           <Button variant="destructive" className="gap-2 font-bold rounded-xl h-11 px-6 shadow-lg shadow-red-500/10" onClick={() => setIsDeleteAllOpen(true)} disabled={students.length === 0}>
             <Trash2 className="h-4 w-4" /> Hapus Semua
           </Button>
-          <Button className="gap-2 bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-blue-500/20" onClick={() => { setEditStudent(null); setNewStudent({ status: 'Aktif', valid_until: '2030-06-30' }); setIsAddOpen(true); }}>
+          <Button className="gap-2 bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-blue-500/20" onClick={() => { setEditStudent(null); setNewStudent({ name: '', nis: '', nisn: '', class: '', major: '', school_year: '2024/2025', status: 'Aktif', valid_until: '2030-06-30', photo_url: '' }); setIsAddOpen(true); }}>
             <Plus className="h-4 w-4" /> Siswa Baru
           </Button>
         </div>
@@ -390,10 +396,10 @@ export default function StudentsPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#2E50B8] hover:bg-blue-50 rounded-full"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-xl border-slate-100 shadow-xl min-w-[120px]">
-                      <DropdownMenuItem className="gap-2 font-bold text-slate-600 focus:text-[#2E50B8] cursor-pointer" onClick={() => handleEdit(student)}>
+                      <DropdownMenuItem className="gap-2 font-bold text-slate-600 focus:text-[#2E50B8] cursor-pointer" onSelect={() => handleEdit(student)}>
                         <Edit className="h-4 w-4" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 font-bold text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer" onClick={() => handleDelete(student.id)}>
+                      <DropdownMenuItem className="gap-2 font-bold text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer" onSelect={() => handleDelete(student.id)}>
                         <Trash2 className="h-4 w-4" /> Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -415,7 +421,7 @@ export default function StudentsPage() {
       </div>
 
       {/* ADD/EDIT DIALOG */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={(val) => { setIsAddOpen(val); if(!val) setEditStudent(null); }}>
         <DialogContent className="max-w-3xl rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
           <div className="bg-[#2E50B8] p-8 text-white">
             <DialogHeader>
@@ -479,7 +485,8 @@ export default function StudentsPage() {
           </div>
           <DialogFooter className="p-8 bg-slate-50 border-t flex gap-3">
             <Button variant="ghost" onClick={() => setIsAddOpen(false)} className="font-bold rounded-xl h-12 px-8">Batal</Button>
-            <Button onClick={handleAdd} className="bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-black uppercase tracking-widest h-12 px-12 rounded-xl shadow-lg shadow-blue-500/20">
+            <Button onClick={handleAdd} className="bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-black uppercase tracking-widest h-12 px-12 rounded-xl shadow-lg shadow-blue-500/20" disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               SIMPAN DATA
             </Button>
           </DialogFooter>
