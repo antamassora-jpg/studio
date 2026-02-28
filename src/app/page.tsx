@@ -72,12 +72,14 @@ export default function LandingPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
 
-  // Firestore Queries
+  // Firestore Queries with fallbacks
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
-  const { data: templates = [] } = useCollection(templatesQuery);
+  const { data: templatesData } = useCollection<CardTemplate>(templatesQuery);
+  const templates = templatesData || [];
   
   const examsQuery = useMemoFirebase(() => db ? collection(db, 'exams') : null, [db]);
-  const { data: exams = [] } = useCollection(examsQuery);
+  const { data: examsData } = useCollection<ExamEvent>(examsQuery);
+  const exams = examsData || [];
 
   // Login States
   const [email, setEmail] = useState('');
@@ -152,7 +154,6 @@ export default function LandingPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       localStorage.setItem('isLoggedIn', 'true');
-      // Perkiraan role, nantinya bisa dicek via DBAC
       localStorage.setItem('userRole', email.includes('admin') ? 'admin' : 'scanner');
       
       toast({ title: "Akses Berhasil", description: "Selamat datang kembali." });

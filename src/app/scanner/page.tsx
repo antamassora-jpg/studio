@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, CheckCircle2, XCircle, Clock, History, ChevronsLeftRight, Camera, Loader2 } from 'lucide-react';
-import { Student } from '@/app/lib/types';
+import { Student, ExamEvent, AttendanceLog } from '@/app/lib/types';
 import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
@@ -29,10 +29,12 @@ export default function ScannerPage() {
   const [lastScan, setLastScan] = useState<{ status: 'valid' | 'invalid' | 'duplicate', student?: Student, reason?: string } | null>(null);
   
   const studentsQuery = useMemoFirebase(() => db ? collection(db, 'students') : null, [db]);
-  const { data: students = [] } = useCollection(studentsQuery);
+  const { data: studentsData } = useCollection<Student>(studentsQuery);
+  const students = studentsData || [];
   
   const examsQuery = useMemoFirebase(() => db ? collection(db, 'exams') : null, [db]);
-  const { data: exams = [] } = useCollection(examsQuery);
+  const { data: examsData } = useCollection<ExamEvent>(examsQuery);
+  const exams = examsData || [];
   
   const todayStr = new Date().toISOString().split('T')[0];
   const logsQuery = useMemoFirebase(() => 
@@ -43,7 +45,8 @@ export default function ScannerPage() {
       limit(10)
     ) : null, [db, todayStr]
   );
-  const { data: todayLogs = [] } = useCollection(logsQuery);
+  const { data: todayLogsData } = useCollection<AttendanceLog>(logsQuery);
+  const todayLogs = todayLogsData || [];
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
@@ -99,7 +102,7 @@ export default function ScannerPage() {
 
   const handleProcessScan = async (decodedText: string) => {
     const cleanCode = decodedText.replace('VERIFY-', '').trim();
-    const student = students?.find((s: any) => s.card_code === cleanCode || s.nis === cleanCode);
+    const student = students.find((s: Student) => s.card_code === cleanCode || s.nis === cleanCode);
     
     if (!student) {
       setLastScan({ status: 'invalid', reason: 'Kode Tidak Terdaftar' });
@@ -107,7 +110,7 @@ export default function ScannerPage() {
     }
 
     const sessionId = attendanceType === 'ujian' ? 'exam' : selectedSession;
-    const isDuplicate = todayLogs?.some((l: any) => 
+    const isDuplicate = todayLogs.some((l: AttendanceLog) => 
       l.student_id === student.id && 
       l.session_id === sessionId &&
       (attendanceType === 'ujian' ? l.exam_id === selectedExamId : true)
@@ -132,7 +135,9 @@ export default function ScannerPage() {
       reason: isValid ? null : 'Kartu Tidak Aktif'
     };
 
-    addDoc(collection(db, 'attendance_logs'), newLog);
+    if (db) {
+      addDoc(collection(db, 'attendance_logs'), newLog);
+    }
     
     setLastScan({ 
       status: isValid ? 'valid' : 'invalid', 
@@ -199,7 +204,7 @@ export default function ScannerPage() {
                   <Select value={selectedExamId} onValueChange={setSelectedExamId}>
                     <SelectTrigger className="w-full h-11 bg-slate-50 border-none font-bold"><SelectValue placeholder="Pilih Ujian" /></SelectTrigger>
                     <SelectContent>
-                      {exams?.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                      {exams.map((e: ExamEvent) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -246,13 +251,13 @@ export default function ScannerPage() {
         <div className="space-y-4">
           <h3 className="font-black uppercase tracking-[0.2em] text-xs flex items-center gap-2 text-slate-500 px-2"><History className="h-4 w-4" /> Riwayat Terkini</h3>
           <div className="space-y-2">
-            {todayLogs?.map((log: any) => {
-              const s = students?.find((x: any) => x.id === log.student_id);
+            {todayLogs.map((log: AttendanceLog) => {
+              const s = students.find((x: Student) => x.id === log.student_id);
               return (
                 <div key={log.id} className={cn("bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm", log.session_id === 'exam' ? 'border-l-4 border-l-orange-500' : 'border-l-4 border-l-primary')}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 overflow-hidden relative">
-                       {s?.photo_url ? <Image src={s.photo_url} alt="X" fill className="object-cover" unoptimized /> : <span className="p-2">{s?.name.charAt(0)}</span>}
+                       {s?.photo_url ? <Image src={s.photo_url} alt="X" fill className="object-cover" unoptimized /> : <div className="w-full h-full flex items-center justify-center font-bold text-xs">{s?.name.charAt(0)}</div>}
                     </div>
                     <div>
                       <div className="text-sm font-black uppercase leading-none mb-1">{s?.name || 'Siswa'}</div>

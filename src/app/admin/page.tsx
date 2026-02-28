@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { Student, AttendanceLog, ExamEvent } from '@/app/lib/types';
 
 export default function AdminDashboard() {
   const db = useFirestore();
@@ -28,19 +29,22 @@ export default function AdminDashboard() {
     db ? collection(db, 'students') : null, 
     [db]
   );
-  const { data: students = [], isLoading: loadingStudents } = useCollection(studentsQuery);
+  const { data: studentsData, isLoading: loadingStudents } = useCollection<Student>(studentsQuery);
+  const students = studentsData || [];
 
   const logsQuery = useMemoFirebase(() => 
     db ? collection(db, 'attendance_logs') : null, 
     [db]
   );
-  const { data: logs = [], isLoading: loadingLogs } = useCollection(logsQuery);
+  const { data: logsData, isLoading: loadingLogs } = useCollection<AttendanceLog>(logsQuery);
+  const logs = logsData || [];
 
   const examsQuery = useMemoFirebase(() => 
     db ? collection(db, 'exams') : null, 
     [db]
   );
-  const { data: exams = [] } = useCollection(examsQuery);
+  const { data: examsData } = useCollection<ExamEvent>(examsQuery);
+  const exams = examsData || [];
 
   const [majorData, setMajorData] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -54,8 +58,8 @@ export default function AdminDashboard() {
     if (!students || students.length === 0) {
       setStats({
         totalStudents: 0,
-        totalLogs: logs?.length || 0,
-        activeExams: exams?.length || 0,
+        totalLogs: logs.length,
+        activeExams: exams.length,
         activeCards: 0
       });
       setMajorData([]);
@@ -64,13 +68,13 @@ export default function AdminDashboard() {
 
     setStats({
       totalStudents: students.length,
-      totalLogs: logs?.length || 0,
-      activeExams: exams?.length || 0,
-      activeCards: students.filter((s: any) => s.status === 'Aktif').length
+      totalLogs: logs.length,
+      activeExams: exams.length,
+      activeCards: students.filter((s: Student) => s.status === 'Aktif').length
     });
 
     // Hitung distribusi jurusan secara dinamis
-    const counts = students.reduce((acc: Record<string, number>, s: any) => {
+    const counts = students.reduce((acc: Record<string, number>, s: Student) => {
       const major = s.major || 'Lainnya';
       acc[major] = (acc[major] || 0) + 1;
       return acc;
