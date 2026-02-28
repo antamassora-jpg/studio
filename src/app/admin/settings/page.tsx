@@ -12,21 +12,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from '@/components/ui/switch';
 import { 
   Save, 
-  Upload, 
   ImageIcon, 
   FileText, 
-  Settings2, 
-  Building2, 
-  Database,
+  Link as LinkIcon,
   Loader2,
-  PenTool,
-  CheckCircle2
+  CheckCircle2,
+  Building2,
+  ShieldCheck
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, setDoc, collection, getDocs, addDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { DEFAULT_SETTINGS } from '@/app/lib/db';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const db = useFirestore();
@@ -35,7 +33,7 @@ export default function SettingsPage() {
   
   const [localSettings, setLocalSettings] = useState<SchoolSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [activeAssetTab, setActiveAssetTab] = useState('student');
 
   useEffect(() => {
     if (dbSettings) {
@@ -51,7 +49,7 @@ export default function SettingsPage() {
     setIsSaving(true);
     setDoc(doc(db, 'school_settings', 'default'), localSettings)
       .then(() => {
-        toast({ title: "Konfigurasi Disimpan", description: "Seluruh pengaturan telah diperbarui di Cloud Firestore." });
+        toast({ title: "Berhasil", description: "Seluruh pengaturan telah diperbarui di Cloud Firestore." });
       })
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -63,19 +61,6 @@ export default function SettingsPage() {
       .finally(() => setIsSaving(false));
   };
 
-  const handleSeedData = async () => {
-    if (!db) return;
-    setIsSeeding(true);
-    try {
-      await setDoc(doc(db, 'school_settings', 'default'), DEFAULT_SETTINGS);
-      toast({ title: "Berhasil", description: "Data awal telah dipulihkan ke cloud." });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Gagal", description: "Gagal melakukan inisialisasi." });
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
   const updateSetting = (field: keyof SchoolSettings, value: any) => {
     setLocalSettings(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
@@ -83,192 +68,231 @@ export default function SettingsPage() {
   if (isLoading || !localSettings) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-       <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Memuat Pengaturan Sistem...</p>
+       <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Memuat Konfigurasi...</p>
     </div>
   );
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-black font-headline text-primary uppercase tracking-tighter">Konfigurasi Sistem</h1>
-          <p className="text-muted-foreground">Kelola identitas institusi dan visual kartu secara terpusat.</p>
+          <h1 className="text-3xl font-bold font-headline text-[#2E50B8]">Pengaturan Sekolah</h1>
+          <p className="text-muted-foreground">Kelola identitas, ketentuan, dan aset visual tiap kartu.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSeedData} disabled={isSeeding} className="gap-2 border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-xl">
-            {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-            Reset Default
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="gap-2 shadow-lg shadow-primary/20 min-w-[180px] rounded-xl font-bold">
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            SIMPAN PERUBAHAN
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-[#2E50B8] hover:bg-[#2E50B8]/90 shadow-lg px-8 py-6 rounded-xl font-bold">
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Simpan Perubahan
+        </Button>
       </div>
 
-      <Tabs defaultValue="identity" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-14 bg-white border p-1 rounded-2xl mb-8">
-          <TabsTrigger value="identity" className="rounded-xl gap-2 font-bold uppercase text-[10px] tracking-widest"><Building2 className="h-4 w-4" /> Identitas</TabsTrigger>
-          <TabsTrigger value="branding" className="rounded-xl gap-2 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="h-4 w-4" /> Branding</TabsTrigger>
-          <TabsTrigger value="terms" className="rounded-xl gap-2 font-bold uppercase text-[10px] tracking-widest"><FileText className="h-4 w-4" /> Ketentuan</TabsTrigger>
-          <TabsTrigger value="layout" className="rounded-xl gap-2 font-bold uppercase text-[10px] tracking-widest"><Settings2 className="h-4 w-4" /> Layout</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="identity" className="animate-in fade-in slide-in-from-bottom-2">
-          <Card className="rounded-3xl border-none shadow-sm ring-1 ring-slate-100">
-            <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg">Informasi Institusi</CardTitle>
-              <CardDescription>Detail resmi sekolah yang akan tercetak pada kop kartu.</CardDescription>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* KOLOM KIRI: IDENTITAS & ATURAN */}
+        <div className="lg:col-span-2 space-y-8">
+          <Card className="rounded-2xl border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
+            <CardHeader className="bg-white pb-2">
+              <CardTitle className="text-lg font-bold text-slate-800">Identitas & Legalitas</CardTitle>
+              <CardDescription>Informasi utama yang akan tampil pada kop surat dan kartu.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6 pt-6 bg-white">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nama Institusi / Sekolah</Label>
+                <Input 
+                  value={localSettings.school_name} 
+                  onChange={e => updateSetting('school_name', e.target.value)} 
+                  className="h-12 rounded-xl bg-slate-50 border-slate-200" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Alamat Operasional</Label>
+                <Textarea 
+                  value={localSettings.address} 
+                  onChange={e => updateSetting('address', e.target.value)} 
+                  className="min-h-[100px] rounded-xl bg-slate-50 border-slate-200" 
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nama Sekolah</Label>
-                  <Input value={localSettings.school_name} onChange={e => updateSetting('school_name', e.target.value)} className="h-12 rounded-xl" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Alamat</Label>
-                  <Input value={localSettings.address} onChange={e => updateSetting('address', e.target.value)} className="h-12 rounded-xl" />
-                </div>
-                <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nama Kepala Sekolah</Label>
-                  <Input value={localSettings.principal_name} onChange={e => updateSetting('principal_name', e.target.value)} className="h-12 rounded-xl" />
+                  <Input 
+                    value={localSettings.principal_name} 
+                    onChange={e => updateSetting('principal_name', e.target.value)} 
+                    className="h-12 rounded-xl bg-slate-50 border-slate-200" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">NIP Kepala Sekolah</Label>
-                  <Input value={localSettings.principal_nip} onChange={e => updateSetting('principal_nip', e.target.value)} className="h-12 rounded-xl" />
+                  <Input 
+                    value={localSettings.principal_nip} 
+                    onChange={e => updateSetting('principal_nip', e.target.value)} 
+                    className="h-12 rounded-xl bg-slate-50 border-slate-200" 
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="branding" className="animate-in fade-in slide-in-from-bottom-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="rounded-3xl border-none shadow-sm ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-50/50 border-b">
-                <CardTitle className="text-lg">Logo & Stempel</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">URL Logo Utama (Kiri)</Label>
-                  <Input value={localSettings.logo_left} onChange={e => updateSetting('logo_left', e.target.value)} className="h-12 rounded-xl font-mono text-xs" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">URL Logo Sekunder (Kanan)</Label>
-                  <Input value={localSettings.logo_right} onChange={e => updateSetting('logo_right', e.target.value)} className="h-12 rounded-xl font-mono text-xs" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">URL Stempel Sekolah (Transparent)</Label>
-                  <Input value={localSettings.stamp_image} onChange={e => updateSetting('stamp_image', e.target.value)} className="h-12 rounded-xl font-mono text-xs" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-3xl border-none shadow-sm ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-50/50 border-b">
-                <CardTitle className="text-lg">Otoritas & TTD</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">URL Tanda Tangan Digital</Label>
-                  <Input value={localSettings.signature_image} onChange={e => updateSetting('signature_image', e.target.value)} className="h-12 rounded-xl font-mono text-xs" />
-                </div>
-                <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed flex flex-col items-center gap-4">
-                   <p className="text-[10px] font-bold text-muted-foreground uppercase">Pratinjau TTD & Stempel</p>
-                   <div className="relative w-48 h-24 bg-white rounded-xl shadow-inner flex items-center justify-center overflow-hidden">
-                      {localSettings.signature_image && (
-                        <img src={localSettings.signature_image} alt="Sig" className="max-h-full object-contain relative z-10" />
-                      )}
-                      {localSettings.stamp_image && (
-                        <img src={localSettings.stamp_image} alt="Stamp" className="absolute w-20 h-20 opacity-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0" />
-                      )}
-                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="terms" className="animate-in fade-in slide-in-from-bottom-2">
-          <Card className="rounded-3xl border-none shadow-sm ring-1 ring-slate-100">
-            <CardHeader className="bg-slate-50/50 border-b">
-              <CardTitle className="text-lg">Aturan Penggunaan Kartu</CardTitle>
-              <CardDescription>Teks ini akan muncul pada bagian belakang kartu masing-masing jenis.</CardDescription>
+          <Card className="rounded-2xl border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
+            <CardHeader className="bg-white pb-2">
+              <CardTitle className="text-lg font-bold text-slate-800">Aturan & Ketentuan Kartu</CardTitle>
+              <CardDescription>Teks tata tertib di bagian belakang setiap jenis kartu.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Ketentuan Kartu Pelajar</Label>
-                <Textarea value={localSettings.terms_student} onChange={e => updateSetting('terms_student', e.target.value)} rows={4} className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Ketentuan Kartu Ujian (Tata Tertib)</Label>
-                <Textarea value={localSettings.terms_exam} onChange={e => updateSetting('terms_exam', e.target.value)} rows={4} className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Ketentuan ID Card Umum</Label>
-                <Textarea value={localSettings.terms_id} onChange={e => updateSetting('terms_id', e.target.value)} rows={4} className="rounded-xl" />
-              </div>
+            <CardContent className="pt-4 bg-white">
+              <Tabs defaultValue="student" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-12 bg-slate-50 border p-1 rounded-xl mb-6">
+                  <TabsTrigger value="student" className="rounded-lg gap-2 text-xs font-bold"><FileText className="h-3 w-3" /> Pelajar</TabsTrigger>
+                  <TabsTrigger value="exam" className="rounded-lg gap-2 text-xs font-bold"><FileText className="h-3 w-3" /> Ujian</TabsTrigger>
+                  <TabsTrigger value="id" className="rounded-lg gap-2 text-xs font-bold"><FileText className="h-3 w-3" /> ID Card</TabsTrigger>
+                </TabsList>
+                <TabsContent value="student" className="space-y-2">
+                  <Textarea 
+                    value={localSettings.terms_student} 
+                    onChange={e => updateSetting('terms_student', e.target.value)} 
+                    className="min-h-[150px] rounded-xl bg-slate-50"
+                    placeholder="Contoh: 1. Kartu wajib dibawa..."
+                  />
+                </TabsContent>
+                <TabsContent value="exam" className="space-y-2">
+                  <Textarea 
+                    value={localSettings.terms_exam} 
+                    onChange={e => updateSetting('terms_exam', e.target.value)} 
+                    className="min-h-[150px] rounded-xl bg-slate-50"
+                    placeholder="Contoh: 1. Peserta dilarang menyontek..."
+                  />
+                </TabsContent>
+                <TabsContent value="id" className="space-y-2">
+                  <Textarea 
+                    value={localSettings.terms_id} 
+                    onChange={e => updateSetting('terms_id', e.target.value)} 
+                    className="min-h-[150px] rounded-xl bg-slate-50"
+                    placeholder="Contoh: 1. Kartu ini milik sekolah..."
+                  />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="layout" className="animate-in fade-in slide-in-from-bottom-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <LayoutSection 
-              title="Kartu Pelajar" 
-              settings={localSettings} 
-              prefix="student" 
-              updateFn={updateSetting} 
-            />
-            <LayoutSection 
-              title="Kartu Ujian" 
-              settings={localSettings} 
-              prefix="exam" 
-              updateFn={updateSetting} 
-            />
-            <LayoutSection 
-              title="ID Card Umum" 
-              settings={localSettings} 
-              prefix="id" 
-              updateFn={updateSetting} 
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+        {/* KOLOM KANAN: ASSET VISUAL SIDEBAR */}
+        <div className="lg:col-span-1">
+          <Card className="rounded-2xl border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-[#FFF8F0]">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold text-slate-800">Aset & Identitas Visual</CardTitle>
+              <CardDescription className="text-slate-500">Upload Logo, TTD, dan Stempel serta atur penempatannya.</CardDescription>
+            </CardHeader>
+            <div className="px-1 border-b border-slate-200/50">
+              <Tabs value={activeAssetTab} onValueChange={setActiveAssetTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-14 bg-transparent p-0 rounded-none">
+                  <TabsTrigger value="student" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-white/50 text-[10px] font-bold uppercase tracking-wider">Pelajar</TabsTrigger>
+                  <TabsTrigger value="exam" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-white/50 text-[10px] font-bold uppercase tracking-wider">Ujian</TabsTrigger>
+                  <TabsTrigger value="id" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-white/50 text-[10px] font-bold uppercase tracking-wider">ID Card</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <CardContent className="p-6 space-y-8 max-h-[800px] overflow-y-auto custom-scrollbar">
+              
+              {/* LOGO KIRI */}
+              <AssetSection 
+                title="Logo Kiri (Sekolah)" 
+                url={activeAssetTab === 'exam' ? localSettings.logo_left_exam : (activeAssetTab === 'id' ? localSettings.logo_left_id : localSettings.logo_left)}
+                onUrlChange={(val) => updateSetting(activeAssetTab === 'exam' ? 'logo_left_exam' : (activeAssetTab === 'id' ? 'logo_left_id' : 'logo_left'), val)}
+                showFront={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_front` as keyof SchoolSettings] as boolean}
+                onFrontChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_front` as keyof SchoolSettings, val)}
+                showBack={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_back` as keyof SchoolSettings] as boolean}
+                onBackChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_back` as keyof SchoolSettings, val)}
+              />
+
+              {/* LOGO KANAN */}
+              <AssetSection 
+                title="Logo Kanan (Sekunder)" 
+                url={activeAssetTab === 'exam' ? localSettings.logo_right_exam : (activeAssetTab === 'id' ? localSettings.logo_right_id : localSettings.logo_right)}
+                onUrlChange={(val) => updateSetting(activeAssetTab === 'exam' ? 'logo_right_exam' : (activeAssetTab === 'id' ? 'logo_right_id' : 'logo_right'), val)}
+                showFront={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_right_front` as keyof SchoolSettings] as boolean}
+                onFrontChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_right_front` as keyof SchoolSettings, val)}
+                showBack={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_right_back` as keyof SchoolSettings] as boolean}
+                onBackChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_logo_right_back` as keyof SchoolSettings, val)}
+              />
+
+              {/* TANDA TANGAN */}
+              <AssetSection 
+                title="Tanda Tangan Digital" 
+                url={activeAssetTab === 'exam' ? localSettings.signature_exam : (activeAssetTab === 'id' ? localSettings.signature_id : localSettings.signature_image)}
+                onUrlChange={(val) => updateSetting(activeAssetTab === 'exam' ? 'signature_exam' : (activeAssetTab === 'id' ? 'signature_id' : 'signature_image'), val)}
+                showFront={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_sig_front` as keyof SchoolSettings] as boolean}
+                onFrontChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_sig_front` as keyof SchoolSettings, val)}
+                showBack={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_sig_back` as keyof SchoolSettings] as boolean}
+                onBackChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_sig_back` as keyof SchoolSettings, val)}
+              />
+
+              {/* STEMPEL */}
+              <AssetSection 
+                title="Stempel Sekolah" 
+                url={activeAssetTab === 'exam' ? localSettings.stamp_exam : (activeAssetTab === 'id' ? localSettings.stamp_id : localSettings.stamp_image)}
+                onUrlChange={(val) => updateSetting(activeAssetTab === 'exam' ? 'stamp_exam' : (activeAssetTab === 'id' ? 'stamp_id' : 'stamp_image'), val)}
+                showFront={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_stamp_front` as keyof SchoolSettings] as boolean}
+                onFrontChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_stamp_front` as keyof SchoolSettings, val)}
+                showBack={localSettings[`${activeAssetTab as 'student' | 'exam' | 'id'}_show_stamp_back` as keyof SchoolSettings] as boolean}
+                onBackChange={(val) => updateSetting(`${activeAssetTab as 'student' | 'exam' | 'id'}_show_stamp_back` as keyof SchoolSettings, val)}
+              />
+
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-function LayoutSection({ title, settings, prefix, updateFn }: { title: string, settings: any, prefix: string, updateFn: any }) {
-  const fields = [
-    { id: 'show_logo_front', label: 'Logo Depan' },
-    { id: 'show_logo_back', label: 'Logo Belakang' },
-    { id: 'show_photo_front', label: 'Foto Depan' },
-    { id: 'show_qr_back', label: 'QR Belakang' },
-    { id: 'show_sig_back', label: 'TTD Belakang' },
-    { id: 'show_stamp_back', label: 'Stempel Belakang' },
-  ];
-
+function AssetSection({ 
+  title, 
+  url, 
+  onUrlChange, 
+  showFront, 
+  onFrontChange, 
+  showBack, 
+  onBackChange 
+}: { 
+  title: string, 
+  url: string, 
+  onUrlChange: (v: string) => void,
+  showFront: boolean,
+  onFrontChange: (v: boolean) => void,
+  showBack: boolean,
+  onBackChange: (v: boolean) => void
+}) {
   return (
-    <Card className="rounded-3xl border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
-      <CardHeader className="bg-slate-50/50 border-b py-4">
-        <CardTitle className="text-sm font-black uppercase tracking-widest text-primary">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-4">
-        {fields.map(field => {
-          const fieldName = `${prefix}_${field.id}`;
-          return (
-            <div key={fieldName} className="flex items-center justify-between py-1">
-              <span className="text-xs font-bold text-slate-600">{field.label}</span>
-              <Switch 
-                checked={settings[fieldName]} 
-                onCheckedChange={(val) => updateFn(fieldName, val)} 
-              />
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Label className="text-[10px] font-black uppercase text-slate-600 tracking-widest">{title}</Label>
+      <div className="bg-white rounded-xl border border-slate-200 border-dashed p-4 flex flex-col items-center justify-center min-h-[160px] relative shadow-inner overflow-hidden group">
+        {url ? (
+          <img src={url} alt="Preview" className="max-h-[140px] object-contain relative z-10 transition-transform group-hover:scale-105" />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-slate-300">
+            <ImageIcon className="h-10 w-10" />
+            <span className="text-[10px] font-bold uppercase">No Image</span>
+          </div>
+        )}
+      </div>
+      <div className="space-y-3">
+        <div className="relative">
+          <LinkIcon className="h-3 w-3 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input 
+            value={url} 
+            onChange={(e) => onUrlChange(e.target.value)} 
+            placeholder="Link URL Gambar" 
+            className="pl-8 h-10 text-[10px] bg-white border-slate-200 rounded-lg font-mono" 
+          />
+        </div>
+        <div className="flex gap-4">
+          <div className="flex-1 bg-white px-3 py-2 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm">
+            <span className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Depan</span>
+            <Switch checked={showFront} onCheckedChange={onFrontChange} className="scale-75 origin-right" />
+          </div>
+          <div className="flex-1 bg-white px-3 py-2 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm">
+            <span className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Belakang</span>
+            <Switch checked={showBack} onCheckedChange={onBackChange} className="scale-75 origin-right" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
