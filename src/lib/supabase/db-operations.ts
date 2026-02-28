@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import { Student, SchoolSettings, AttendanceSession, AttendanceLog, ExamEvent, CardTemplate } from '@/app/lib/types';
+import type { Student, SchoolSettings, AttendanceSession, AttendanceLog, ExamEvent, CardTemplate } from '@/app/lib/types';
 
 const supabase = createClient();
 

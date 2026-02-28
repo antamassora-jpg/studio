@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import { Student, SchoolSettings, AttendanceSession, ExamEvent, CardTemplate } from '@/app/lib/types';
+import type { Student, SchoolSettings, AttendanceSession, ExamEvent, CardTemplate } from '@/app/lib/types';
 
 const STORAGE_KEY = 'educard_sync_db';
 
