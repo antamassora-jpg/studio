@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SchoolSettings } from '@/app/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ import {
   ClipboardList,
   Link as LinkIcon,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -135,7 +137,7 @@ export default function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <Tabs defaultValue="student" className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 h-14 bg-slate-100/80 p-1 rounded-2xl mb-6">
                   <TabsTrigger value="student" className="rounded-xl text-[10px] font-black uppercase tracking-widest transition-all data-[state=active]:bg-white data-[state=active]:text-[#2E50B8] data-[state=active]:shadow-md">Pelajar</TabsTrigger>
                   <TabsTrigger value="exam" className="rounded-xl text-[10px] font-black uppercase tracking-widest transition-all data-[state=active]:bg-white data-[state=active]:text-[#2E50B8] data-[state=active]:shadow-md">Ujian</TabsTrigger>
@@ -335,15 +337,36 @@ function AssetCard({
   onFrontToggle: (v: boolean) => void,
   onBackToggle: (v: boolean) => void
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onChange(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-[10px] font-black uppercase text-slate-800 tracking-tight">{label}</Label>
       </div>
       
-      <div className="aspect-[4/3] bg-white rounded-[1.5rem] border-2 border-dashed border-slate-100 flex items-center justify-center p-6 shadow-inner overflow-hidden group transition-all hover:border-primary/20 relative">
+      <div 
+        className="aspect-[4/3] bg-white rounded-[1.5rem] border-2 border-dashed border-slate-100 flex items-center justify-center p-6 shadow-inner overflow-hidden group transition-all hover:border-primary/20 relative cursor-pointer"
+        onClick={() => fileInputRef.current?.click()}
+      >
         {value ? (
-          <img src={value} alt={label} className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105 duration-500" />
+          <>
+            <img src={value} alt={label} className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105 duration-500" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <Upload className="text-white h-6 w-6" />
+              <span className="text-white text-[9px] font-black uppercase">Ganti Aset</span>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center gap-2 opacity-20">
             <ImageIcon className="h-10 w-10" />
@@ -352,17 +375,44 @@ function AssetCard({
         )}
       </div>
 
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={handleFileChange} 
+      />
+
       <div className="space-y-3">
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1 h-11 rounded-xl border-slate-200 text-[9px] font-black uppercase tracking-widest gap-2 bg-slate-50"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-3.5 w-3.5" /> Unggah Aset
+          </Button>
+          {value && (
+            <Button 
+              variant="ghost" 
+              className="h-11 px-4 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50"
+              onClick={() => onChange('')}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
         <div className="relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
             <LinkIcon className="h-3 w-3 text-slate-300 group-focus-within:text-primary" />
-            <span className="text-[8px] font-black text-slate-300 group-focus-within:text-primary uppercase tracking-tighter">Link URL Foto/Logo</span>
+            <span className="text-[8px] font-black text-slate-300 group-focus-within:text-primary uppercase tracking-tighter">Atau Link URL</span>
           </div>
           <Input 
             value={value} 
             onChange={(e) => onChange(e.target.value)} 
             placeholder="" 
-            className="pl-28 h-12 text-[10px] bg-slate-50 border-none rounded-xl font-medium focus-visible:ring-primary/10" 
+            className="pl-24 h-11 text-[10px] bg-slate-50 border-none rounded-xl font-medium focus-visible:ring-primary/10" 
           />
         </div>
 
