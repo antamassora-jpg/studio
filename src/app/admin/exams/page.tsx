@@ -40,7 +40,8 @@ export default function ExamsPage() {
     db ? query(collection(db, 'exams'), orderBy('start_date', 'desc')) : null, 
     [db]
   );
-  const { data: exams = [], isLoading } = useCollection<ExamEvent>(examsQuery);
+  const { data: examsData, isLoading } = useCollection<ExamEvent>(examsQuery);
+  const exams = examsData || [];
 
   const handleAdd = () => {
     if (!newExam.name || !newExam.start_date || !db) {
@@ -143,7 +144,7 @@ export default function ExamsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(exams || []).map((exam) => (
+              {exams.length > 0 ? exams.map((exam) => (
                 <TableRow key={exam.id}>
                   <TableCell>
                     <div className="font-semibold text-primary">{exam.name}</div>
@@ -168,7 +169,11 @@ export default function ExamsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">Belum ada event ujian.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

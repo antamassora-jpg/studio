@@ -39,7 +39,8 @@ export default function TemplatesPage() {
   const [newTemplateType, setNewTemplateType] = useState<TemplateType>('STUDENT_CARD');
 
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
-  const { data: templates = [], isLoading } = useCollection<CardTemplate>(templatesQuery);
+  const { data: templatesData, isLoading } = useCollection<CardTemplate>(templatesQuery);
+  const templates = templatesData || [];
 
   const handleAddTemplate = async () => {
     if (!newTemplateName.trim() || !db) return;
@@ -106,7 +107,7 @@ export default function TemplatesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {(templates || []).map((template) => (
+        {templates.length > 0 ? templates.map((template) => (
           <Card key={template.id} className={`overflow-hidden border-4 transition-all rounded-[2rem] ${template.is_active ? "border-primary" : "border-transparent"}`}>
             <CardHeader className="p-6">
               <div className="flex justify-between items-start">
@@ -133,7 +134,11 @@ export default function TemplatesPage() {
               )}
             </CardContent>
           </Card>
-        ))}
+        )) : (
+          <div className="col-span-full py-20 text-center text-muted-foreground italic">
+            Belum ada template desain yang ditambahkan.
+          </div>
+        )}
       </div>
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>

@@ -56,8 +56,6 @@ export default function StudentsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedMajor, setSelectedMajor] = useState<string>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
@@ -71,14 +69,15 @@ export default function StudentsPage() {
     db ? query(collection(db, 'students'), orderBy('name', 'asc')) : null, 
     [db]
   );
-  const { data: students = [], isLoading } = useCollection<Student>(studentsQuery);
+  const { data: studentsData, isLoading } = useCollection<Student>(studentsQuery);
+  const students = studentsData || [];
 
-  const classes = Array.from(new Set(students.map(s => s.class))).sort();
-  const majors = Array.from(new Set(students.map(s => s.major))).sort();
+  const classes = Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort();
+  const majors = Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort();
 
-  const filteredStudents = (students || []).filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
-                       s.nis.includes(search) || 
+  const filteredStudents = students.filter(s => {
+    const matchSearch = (s.name?.toLowerCase() || '').includes(search.toLowerCase()) || 
+                       (s.nis || '').includes(search) || 
                        (s.nisn && s.nisn.includes(search));
     const matchClass = selectedClass === 'all' || s.class === selectedClass;
     const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
@@ -165,7 +164,7 @@ export default function StudentsPage() {
                   <Label>Foto Siswa</Label>
                   <div className="aspect-[3/4] bg-muted rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group">
                     {newStudent.photo_url ? (
-                      <Image src={newStudent.photo_url} alt="Preview" fill className="object-cover" />
+                      <Image src={newStudent.photo_url} alt="Preview" fill className="object-cover" unoptimized />
                     ) : (
                       <UserIcon className="h-12 w-12 text-muted-foreground" />
                     )}
@@ -248,7 +247,7 @@ export default function StudentsPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 bg-slate-50 border rounded-full overflow-hidden shrink-0">
                       {student.photo_url ? (
-                        <Image src={student.photo_url} alt={student.name} fill className="object-cover" />
+                        <Image src={student.photo_url} alt={student.name} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300"><UserIcon className="h-5 w-5" /></div>
                       )}
