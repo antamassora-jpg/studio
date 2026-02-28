@@ -114,6 +114,17 @@ export function StudentCardVisual({
         ></div>
       )}
 
+      {wm.imageEnabled && wm.imageUrl && (
+        <div 
+          className="absolute inset-0 pointer-events-none flex items-center justify-center z-0"
+          style={{ opacity: wm.imageOpacity }}
+        >
+          <div className="relative" style={{ width: wm.imageSize, height: wm.imageSize }}>
+            <Image src={wm.imageUrl} alt="Watermark Image" fill className="object-contain" priority unoptimized />
+          </div>
+        </div>
+      )}
+
       <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
         {showLogoLeft && settings.logo_left && (
           <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
@@ -130,6 +141,15 @@ export function StudentCardVisual({
           </div>
         )}
       </div>
+
+      {/* Label KARTU PELAJAR di tengah */}
+      {side === 'front' && (
+        <div className="absolute top-[58px] left-0 right-0 text-center z-10">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 rounded-full border border-slate-100 bg-slate-50/50 inline-block shadow-sm" style={{ color: current.footerBg }}>
+            KARTU PELAJAR
+          </span>
+        </div>
+      )}
 
       {showPhoto && (
         <div 
