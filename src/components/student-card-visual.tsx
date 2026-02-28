@@ -94,7 +94,6 @@ export function StudentCardVisual({
     </svg>
   ` : '';
 
-  // Use encodeURIComponent instead of btoa for SSR compatibility
   const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(watermarkSvg)}")` : 'none';
 
   const showLogoLeft = side === 'front' ? settings.student_show_logo_front : settings.student_show_logo_back;
@@ -115,18 +114,6 @@ export function StudentCardVisual({
         ></div>
       )}
 
-      {wm.imageEnabled && wm.imageUrl && (
-        <div 
-          className="absolute inset-0 pointer-events-none flex items-center justify-center z-0"
-          style={{ opacity: wm.imageOpacity }}
-        >
-          <div className="relative" style={{ width: wm.imageSize, height: wm.imageSize }}>
-            <Image src={wm.imageUrl} alt="Watermark Logo" fill className="object-contain" priority unoptimized />
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
       <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
         {showLogoLeft && settings.logo_left && (
           <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
@@ -144,7 +131,6 @@ export function StudentCardVisual({
         )}
       </div>
 
-      {/* Photo */}
       {showPhoto && (
         <div 
           className="absolute bg-muted rounded-md overflow-hidden border-2 border-white shadow-md z-10"
@@ -158,7 +144,6 @@ export function StudentCardVisual({
         </div>
       )}
 
-      {/* QR Code */}
       {showQr && (
         <div 
           className="absolute bg-white p-1 rounded border shadow-sm z-10"
@@ -171,7 +156,6 @@ export function StudentCardVisual({
         </div>
       )}
 
-      {/* Info Block */}
       {showInfo && (
         <div 
           className="absolute px-2 flex flex-col gap-1.5 z-10"

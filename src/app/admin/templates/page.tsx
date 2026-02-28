@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { CardTemplate, TemplateType, Student, SchoolSettings } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,13 @@ import {
   Loader2,
   RefreshCw,
   Palette,
-  Check
+  Check,
+  X,
+  RotateCcw,
+  Type,
+  MousePointer2,
+  Save,
+  Move
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -37,15 +43,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 import { StudentCardVisual } from '@/components/student-card-visual';
 import { ExamCardVisual } from '@/components/exam-card-visual';
 import { IdCardVisual } from '@/components/id-card-visual';
+import { cn } from '@/lib/utils';
 
 export default function TemplatesPage() {
   const db = useFirestore();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<CardTemplate | null>(null);
+  
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateType, setNewTemplateType] = useState<TemplateType>('STUDENT_CARD');
 
@@ -77,7 +89,10 @@ export default function TemplatesPage() {
     const newTemplate = {
       name: newTemplateName,
       type: newTemplateType,
-      config_json: '{}',
+      config_json: JSON.stringify({
+        front: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter' },
+        back: { headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter' }
+      }),
       is_active: false,
       preview_color: newTemplateType === 'STUDENT_CARD' ? 'bg-blue-600' : (newTemplateType === 'EXAM_CARD' ? 'bg-orange-500' : 'bg-emerald-800')
     };
@@ -126,7 +141,6 @@ export default function TemplatesPage() {
   return (
     <TooltipProvider>
       <div className="space-y-10 pb-20">
-        {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
             <h1 className="text-4xl font-black font-headline text-[#2E50B8] tracking-tight uppercase">Template Desain</h1>
@@ -142,14 +156,12 @@ export default function TemplatesPage() {
           </div>
         </div>
 
-        {/* TEMPLATES GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {templates.length > 0 ? templates.map((template) => (
             <div 
               key={template.id} 
               className={`group relative flex flex-col bg-white rounded-[2.5rem] border-[3px] transition-all duration-500 p-8 shadow-sm ${template.is_active ? "border-[#2E50B8] shadow-2xl shadow-blue-500/10" : "border-slate-100 hover:border-slate-200 hover:shadow-xl"}`}
             >
-              {/* Header Card */}
               <div className="flex justify-between items-start mb-6">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${template.preview_color || 'bg-slate-400'}`}>
                   <Layout className="h-6 w-6" />
@@ -161,29 +173,20 @@ export default function TemplatesPage() {
                 )}
               </div>
 
-              {/* Title & Type */}
               <div className="mb-8">
                 <h3 className="text-xl font-black uppercase tracking-tight text-slate-800 leading-tight">{template.name}</h3>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-1">{template.type.replace('_', ' ')}</p>
               </div>
 
-              {/* Visual Preview Container */}
-              <div className="flex-1 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 p-6 flex flex-col items-center gap-8 mb-8">
-                <div className="space-y-4 w-full flex flex-col items-center">
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">TAMPAK DEPAN</span>
-                  <div className="scale-[0.5] origin-top -mb-[100px] shadow-2xl rounded-xl overflow-hidden">
-                    {renderPreview(template.type, dummyStudent, settings, 'front', template)}
-                  </div>
+              <div className="flex-1 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 p-6 flex flex-col items-center gap-8 mb-8 overflow-hidden">
+                <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden">
+                  {renderPreview(template.type, dummyStudent, settings, 'front', template)}
                 </div>
-                <div className="space-y-4 w-full flex flex-col items-center pt-4">
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">TAMPAK BELAKANG</span>
-                  <div className="scale-[0.5] origin-top -mb-[100px] shadow-2xl rounded-xl overflow-hidden">
-                    {renderPreview(template.type, dummyStudent, settings, 'back', template)}
-                  </div>
+                <div className="scale-[0.45] origin-top -mb-[110px] shadow-2xl rounded-xl overflow-hidden pt-4">
+                  {renderPreview(template.type, dummyStudent, settings, 'back', template)}
                 </div>
               </div>
 
-              {/* Footer Actions */}
               <div className="flex gap-3">
                 <Button 
                   className={`flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${template.is_active ? 'bg-[#2E50B8]/10 text-[#2E50B8] border-none hover:bg-[#2E50B8]/20' : 'bg-slate-100 text-slate-400 hover:bg-[#2E50B8] hover:text-white'}`}
@@ -195,13 +198,11 @@ export default function TemplatesPage() {
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-2 border-slate-100 text-slate-400 hover:text-[#2E50B8] hover:border-[#2E50B8] transition-colors">
+                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-2 border-slate-100 text-slate-400 hover:text-[#2E50B8] hover:border-[#2E50B8] transition-colors" onClick={() => { setEditingTemplate(template); setIsEditorOpen(true); }}>
                       <Palette className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-[10px] font-bold uppercase tracking-widest">Visual Editor & Warna</p>
-                  </TooltipContent>
+                  <TooltipContent><p className="text-[10px] font-bold uppercase tracking-widest">Visual Editor & Kustomisasi Warna</p></TooltipContent>
                 </Tooltip>
 
                 {!template.is_active && (
@@ -211,9 +212,7 @@ export default function TemplatesPage() {
                         <Trash2 className="h-5 w-5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-[10px] font-bold uppercase tracking-widest">Hapus Varian</p>
-                    </TooltipContent>
+                    <TooltipContent><p className="text-[10px] font-bold uppercase tracking-widest">Hapus Varian</p></TooltipContent>
                   </Tooltip>
                 )}
               </div>
@@ -228,7 +227,7 @@ export default function TemplatesPage() {
           )}
         </div>
 
-        {/* ADD DIALOG */}
+        {/* MODAL BUAT VARIAN */}
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogContent className="rounded-[2.5rem] max-w-md p-0 overflow-hidden border-none shadow-2xl">
             <div className="bg-[#2E50B8] p-8 text-white text-center">
@@ -240,19 +239,12 @@ export default function TemplatesPage() {
             <div className="p-8 space-y-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nama Varian</Label>
-                <Input 
-                  value={newTemplateName} 
-                  onChange={e => setNewTemplateName(e.target.value)} 
-                  placeholder="Contoh: Modern Blue Style" 
-                  className="h-12 rounded-xl bg-slate-50 border-none font-bold" 
-                />
+                <Input value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} placeholder="Contoh: Modern Blue Style" className="h-12 rounded-xl bg-slate-50 border-none font-bold" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Jenis Kartu</Label>
                 <Select value={newTemplateType} onValueChange={(v: any) => setNewTemplateType(v)}>
-                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100">
                     <SelectItem value="STUDENT_CARD">Kartu Pelajar</SelectItem>
                     <SelectItem value="EXAM_CARD">Kartu Ujian</SelectItem>
@@ -268,8 +260,257 @@ export default function TemplatesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* VISUAL EDITOR MODAL */}
+        {isEditorOpen && editingTemplate && (
+          <VisualEditorModal 
+            isOpen={isEditorOpen} 
+            onClose={() => { setIsEditorOpen(false); setEditingTemplate(null); }} 
+            template={editingTemplate} 
+            student={dummyStudent}
+            settings={settings}
+            db={db!}
+          />
+        )}
       </div>
     </TooltipProvider>
+  );
+}
+
+function VisualEditorModal({ isOpen, onClose, template, student, settings, db }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  template: CardTemplate,
+  student: Student,
+  settings: SchoolSettings | null,
+  db: any
+}) {
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [config, setConfig] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [draggingElement, setDraggingElement] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(template.config_json || '{}');
+      const base = {
+        headerBg: '#2E50B8', bodyBg: '#ffffff', footerBg: '#4FBFDD', textColor: '#334155', fontFamily: 'Inter',
+        elements: { photo: { x: 15, y: 70, w: 60, h: 80 }, qr: { x: 15, y: 155, w: 48, h: 48 }, info: { x: 90, y: 70, align: 'left', fontSize: 10, width: 180 }, sigBlock: { x: 240, y: 160, scale: 0.75 } },
+        watermark: { enabled: false, text: 'SMKN 2 TANA TORAJA', opacity: 0.1, size: 10, angle: -30 }
+      };
+      setConfig({
+        front: { ...base, ...parsed.front },
+        back: { ...base, ...parsed.back }
+      });
+    } catch (e) {
+      // Fallback
+    }
+  }, [template]);
+
+  if (!config) return null;
+
+  const updateConfig = (side: 'front' | 'back', field: string, value: any) => {
+    setConfig((prev: any) => ({
+      ...prev,
+      [side]: { ...prev[side], [field]: value }
+    }));
+  };
+
+  const updateElement = (side: 'front' | 'back', el: string, field: string, value: any) => {
+    setConfig((prev: any) => ({
+      ...prev,
+      [side]: { 
+        ...prev[side], 
+        elements: { 
+          ...prev[side].elements, 
+          [el]: { ...prev[side].elements[el], [field]: value } 
+        } 
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'templates', template.id), {
+        config_json: JSON.stringify(config)
+      });
+      toast({ title: "Desain Tersimpan", description: "Tata letak kartu telah diperbarui." });
+      onClose();
+    } catch (err) {
+      toast({ variant: "destructive", title: "Gagal Simpan" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent, el: string) => {
+    e.stopPropagation();
+    setDraggingElement(el);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!draggingElement || !editorRef.current) return;
+    const rect = editorRef.current.getBoundingClientRect();
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
+    
+    // Constraints (340x215)
+    const boundedX = Math.max(0, Math.min(x, 340));
+    const boundedY = Math.max(0, Math.min(y, 215));
+
+    updateElement(activeSide, draggingElement, 'x', boundedX);
+    updateElement(activeSide, draggingElement, 'y', boundedY);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setDraggingElement(null);
+  };
+
+  const current = config[activeSide];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-[1100px] p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl bg-white">
+        <div className="bg-[#1e293b] p-8 text-white flex justify-between items-center">
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-black uppercase tracking-tighter">Visual Editor & Layout Hub</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sesuaikan warna, font, dan posisi elemen secara presisi</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="bg-white/5 border-white/10 text-white gap-2 h-10 rounded-full text-[10px] font-bold uppercase tracking-widest"><RotateCcw className="h-3 w-3" /> Reset Layout</Button>
+            <Button variant="ghost" onClick={onClose} className="text-white h-10 w-10 p-0 rounded-full hover:bg-white/10"><X className="h-5 w-5" /></Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row h-[70vh]">
+          {/* Sidebar Editor */}
+          <div className="w-full lg:w-[350px] bg-slate-50/50 border-r p-8 overflow-y-auto space-y-10 custom-scrollbar">
+            {/* Side Tabs */}
+            <div className="grid grid-cols-2 p-1 bg-white rounded-xl shadow-inner">
+              <button onClick={() => setActiveSide('front')} className={cn("h-10 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all", activeSide === 'front' ? "bg-[#1e293b] text-white shadow-lg" : "text-slate-400 hover:text-slate-600")}>Tampak Depan</button>
+              <button onClick={() => setActiveSide('back')} className={cn("h-10 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all", activeSide === 'back' ? "bg-[#1e293b] text-white shadow-lg" : "text-slate-400 hover:text-slate-600")}>Tampak Belakang</button>
+            </div>
+
+            {/* Estetika */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2"><Palette className="h-4 w-4 text-[#2E50B8]" /><h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Estetika & Visual</h4></div>
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipografi Utama</Label>
+                <Select value={current.fontFamily} onValueChange={(v) => updateConfig(activeSide, 'fontFamily', v)}>
+                  <SelectTrigger className="h-12 rounded-xl bg-white border-none shadow-sm font-bold"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Inter">Inter (Default)</SelectItem>
+                    <SelectItem value="Oswald">Oswald (Bold Headline)</SelectItem>
+                    <SelectItem value="Roboto Mono">Roboto Mono (Tech)</SelectItem>
+                    <SelectItem value="Montserrat">Montserrat</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <ColorField label="Header" value={current.headerBg} onChange={(v) => updateConfig(activeSide, 'headerBg', v)} />
+                <ColorField label="Body" value={current.bodyBg} onChange={(v) => updateConfig(activeSide, 'bodyBg', v)} />
+                <ColorField label="Footer" value={current.footerBg} onChange={(v) => updateConfig(activeSide, 'footerBg', v)} />
+                <ColorField label="Teks" value={current.textColor} onChange={(v) => updateConfig(activeSide, 'textColor', v)} />
+              </div>
+            </div>
+
+            {/* Watermark Section */}
+            <div className="space-y-6 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><Check className="h-4 w-4 text-[#2E50B8]" /><h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Watermark Teks</h4></div>
+                <Switch checked={current.watermark.enabled} onCheckedChange={(v) => updateConfig(activeSide, 'watermark', { ...current.watermark, enabled: v })} />
+              </div>
+              {current.watermark.enabled && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <Input value={current.watermark.text} onChange={(e) => updateConfig(activeSide, 'watermark', { ...current.watermark, text: e.target.value })} className="h-10 rounded-lg text-xs" placeholder="Teks Watermark..." />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-bold uppercase text-slate-400"><span>Opacity</span><span>{Math.round(current.watermark.opacity * 100)}%</span></div>
+                    <Slider value={[current.watermark.opacity * 100]} onValueChange={([v]) => updateConfig(activeSide, 'watermark', { ...current.watermark, opacity: v/100 })} max={50} step={1} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Interactive Preview Canvas */}
+          <div className="flex-1 bg-slate-100/50 flex flex-col items-center justify-center p-12 relative overflow-hidden">
+            <div className="absolute top-8 bg-white/80 backdrop-blur-md px-6 py-2 rounded-full shadow-sm border border-slate-200 flex items-center gap-3 z-20">
+              <MousePointer2 className="h-4 w-4 text-primary animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Mode Editor: Drag untuk pindahkan elemen</span>
+            </div>
+
+            <div className="relative group cursor-crosshair">
+              {/* Overlay untuk menangkap event drag di atas visual kartu */}
+              <div 
+                ref={editorRef}
+                className="relative shadow-[0_30px_100px_-12px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden bg-white"
+                style={{ width: '340px', height: '215px' }}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+              >
+                {renderPreview(template.type, student, settings, activeSide, { ...template, config_json: JSON.stringify(config) })}
+                
+                {/* Draggable Hotspots */}
+                <EditorHotspot x={current.elements.photo.x} y={current.elements.photo.y} w={current.elements.photo.w} h={current.elements.photo.h} onDown={(e) => handlePointerDown(e, 'photo')} isActive={draggingElement === 'photo'} label="FOTO" />
+                <EditorHotspot x={current.elements.qr.x} y={current.elements.qr.y} w={current.elements.qr.w} h={current.elements.qr.h} onDown={(e) => handlePointerDown(e, 'qr')} isActive={draggingElement === 'qr'} label="QR" />
+                <EditorHotspot x={current.elements.info.x} y={current.elements.info.y} w={current.elements.info.width} h={60} onDown={(e) => handlePointerDown(e, 'info')} isActive={draggingElement === 'info'} label="INFO SISWA" />
+                <EditorHotspot x={current.elements.sigBlock.x} y={current.elements.sigBlock.y} w={80} h={40} onDown={(e) => handlePointerDown(e, 'sigBlock')} isActive={draggingElement === 'sigBlock'} label="LEGALITAS" />
+              </div>
+            </div>
+
+            <div className="mt-12 bg-white rounded-2xl p-6 border border-slate-200 max-w-sm flex items-start gap-4">
+               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0"><Type className="h-5 w-5 text-primary" /></div>
+               <div className="space-y-1">
+                 <h5 className="text-xs font-black uppercase tracking-tight text-slate-800">Kustomisasi Tata Letak</h5>
+                 <p className="text-[10px] text-slate-500 leading-relaxed">Geser elemen langsung pada kartu untuk menentukan posisi terbaik. Gunakan slider di panel kiri untuk mengubah ukuran foto, barcode, teks, dan skala legalitas secara presisi.</p>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="p-6 bg-slate-50 border-t flex items-center justify-between">
+          <Button variant="ghost" onClick={onClose} className="text-[10px] font-black uppercase tracking-widest text-slate-400">Batal</Button>
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#2E50B8] hover:bg-[#1e3a8a] text-white px-10 h-12 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20 gap-3">
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} SIMPAN DESAIN
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ColorField({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-2 bg-white p-3 rounded-xl shadow-sm border border-slate-100 group transition-all hover:border-primary/20">
+      <Label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">{label}</Label>
+      <div className="flex items-center gap-2">
+        <div className="relative w-8 h-8 rounded-full border-2 border-slate-50 shadow-sm overflow-hidden" style={{ backgroundColor: value }}>
+          <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
+        </div>
+        <span className="text-[10px] font-mono font-bold text-slate-600 uppercase">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function EditorHotspot({ x, y, w, h, onDown, isActive, label }: { x: number, y: number, w: number, h: number, onDown: (e: any) => void, isActive: boolean, label: string }) {
+  return (
+    <div 
+      onPointerDown={onDown}
+      className={cn(
+        "absolute cursor-move border-2 transition-all group/hotspot flex items-center justify-center overflow-hidden",
+        isActive ? "border-primary bg-primary/10 scale-105 z-50 shadow-2xl" : "border-transparent hover:border-primary/40 hover:bg-primary/5 z-40"
+      )}
+      style={{ left: x, top: y, width: w, height: h }}
+    >
+      <div className="bg-primary text-white text-[7px] font-black px-1.5 py-0.5 rounded-br-md absolute top-0 left-0 opacity-0 group-hover/hotspot:opacity-100 transition-opacity">
+        {label}
+      </div>
+      <Move className={cn("h-4 w-4 text-primary opacity-0 group-hover/hotspot:opacity-100 transition-opacity", isActive && "opacity-100")} />
+    </div>
   );
 }
 
