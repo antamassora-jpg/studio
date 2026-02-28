@@ -53,7 +53,7 @@ import { StudentCardVisual } from '@/components/student-card-visual';
 import { ExamCardVisual } from '@/components/exam-card-visual';
 import { IdCardVisual } from '@/components/id-card-visual';
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -174,23 +174,7 @@ export default function LandingPage() {
       toast({ title: "Akses Berhasil", description: "Selamat datang kembali." });
       router.push('/mode-selection');
     } catch (err: any) {
-      setLoginError('Kredensial salah. Gunakan format email yang benar atau pilih Login Demo di bawah.');
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleQuickLogin = async (role: 'admin' | 'scanner') => {
-    setIsLoggingIn(true);
-    setLoginError('');
-    try {
-      await signInAnonymously(auth);
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', role);
-      toast({ title: "Akses Demo Berhasil", description: `Masuk sebagai ${role.toUpperCase()} (Mode Tamu).` });
-      router.push(role === 'admin' ? '/admin' : '/scanner');
-    } catch (err) {
-      setLoginError('Gagal masuk mode demo. Pastikan Firebase Auth sudah aktif.');
-    } finally {
+      setLoginError('Kredensial salah. Pastikan email dan password yang Anda masukkan benar.');
       setIsLoggingIn(false);
     }
   };
@@ -347,26 +331,6 @@ export default function LandingPage() {
                     {isLoggingIn ? <Loader2 className="h-5 w-5 animate-spin" /> : 'MASUK KE SISTEM'}
                   </Button>
                 </form>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
-                  <div className="relative flex justify-center text-[10px] uppercase font-black"><span className="bg-white px-4 text-slate-300">Atau Akses Cepat</span></div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => handleQuickLogin('admin')} className="h-12 rounded-xl flex flex-col gap-0.5 border-slate-100 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all" disabled={isLoggingIn}>
-                    <UserCircle className="h-4 w-4" />
-                    <span className="text-[8px] font-black uppercase tracking-tighter">Login Admin</span>
-                  </Button>
-                  <Button variant="outline" onClick={() => handleQuickLogin('scanner')} className="h-12 rounded-xl flex flex-col gap-0.5 border-slate-100 hover:bg-secondary/5 hover:text-secondary hover:border-secondary/20 transition-all" disabled={isLoggingIn}>
-                    <QrCode className="h-4 w-4" />
-                    <span className="text-[8px] font-black uppercase tracking-tighter">Login Scanner</span>
-                  </Button>
-                </div>
-                
-                <p className="text-[9px] text-center text-muted-foreground font-medium italic">
-                  * Login Cepat digunakan untuk mencoba fitur aplikasi tanpa akun permanen.
-                </p>
               </div>
             </DialogContent>
           </Dialog>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useMemo } from 'react';
@@ -24,7 +25,6 @@ import {
   Calendar,
   Filter,
   User as UserIcon,
-  ChevronDown,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
@@ -48,7 +48,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, addDoc, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function StudentsPage() {
@@ -57,6 +57,7 @@ export default function StudentsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedMajor, setSelectedMajor] = useState<string>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
   const [editingStudent, setEditStudent] = useState<Student | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +66,7 @@ export default function StudentsPage() {
   const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
   const [importData, setImportData] = useState<Partial<Student>[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
     status: 'Aktif',
@@ -150,6 +152,25 @@ export default function StudentsPage() {
       });
   };
 
+  const handleDeleteAll = async () => {
+    if (!db || students.length === 0) return;
+    setIsDeletingAll(true);
+    const batch = writeBatch(db);
+    
+    try {
+      students.forEach((s) => {
+        batch.delete(doc(db, 'students', s.id));
+      });
+      await batch.commit();
+      toast({ title: "Berhasil", description: "Seluruh data siswa telah dihapus." });
+      setIsDeleteAllOpen(false);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus data massal." });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -160,7 +181,6 @@ export default function StudentsPage() {
     reader.readAsDataURL(file);
   };
 
-  // CSV Import Logic
   const handleDownloadTemplate = () => {
     const headers = "name;nis;nisn;class;major;school_year;status;valid_until";
     const sample = "Andi Pratama;2021001;0051234567;XII;TEKNIK KOMPUTER & JARINGAN;2023/2024;Aktif;2030-06-30";
@@ -186,7 +206,6 @@ export default function StudentsPage() {
       const lines = text.split('\n');
       const results: Partial<Student>[] = [];
       
-      // Assume first line is header
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
@@ -251,7 +270,7 @@ export default function StudentsPage() {
           <h1 className="text-4xl font-bold font-headline text-[#2E50B8] tracking-tight">Data Siswa</h1>
           <p className="text-muted-foreground mt-1 font-medium">Kelola database master siswa dan verifikasi kartu.</p>
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Button variant="outline" className="gap-2 bg-slate-50 border-slate-200 text-slate-600 font-bold rounded-xl h-11" onClick={handleDownloadTemplate}>
             <FileSpreadsheet className="h-4 w-4" /> Format CSV (;)
           </Button>
@@ -259,6 +278,9 @@ export default function StudentsPage() {
             <Upload className="h-4 w-4" /> Import Data
           </Button>
           <input type="file" ref={csvInputRef} className="hidden" accept=".csv" onChange={handleFileChange} />
+          <Button variant="destructive" className="gap-2 font-bold rounded-xl h-11 px-6 shadow-lg shadow-red-500/10" onClick={() => setIsDeleteAllOpen(true)} disabled={students.length === 0}>
+            <Trash2 className="h-4 w-4" /> Hapus Semua
+          </Button>
           <Button className="gap-2 bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-blue-500/20" onClick={() => { setEditStudent(null); setNewStudent({ status: 'Aktif', valid_until: '2030-06-30' }); setIsAddOpen(true); }}>
             <Plus className="h-4 w-4" /> Siswa Baru
           </Button>
@@ -461,6 +483,32 @@ export default function StudentsPage() {
               SIMPAN DATA
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE ALL CONFIRMATION */}
+      <Dialog open={isDeleteAllOpen} onOpenChange={setIsDeleteAllOpen}>
+        <DialogContent className="max-w-md rounded-[2rem] border-none shadow-2xl p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+              <Trash2 className="h-10 w-10" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Hapus Semua Siswa?</DialogTitle>
+              <DialogDescription className="font-medium text-slate-500">
+                Tindakan ini akan menghapus permanen <strong>{students.length}</strong> data siswa dari database Cloud Firestore. Tindakan ini tidak dapat dibatalkan.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 w-full pt-4">
+              <Button variant="destructive" onClick={handleDeleteAll} disabled={isDeletingAll} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]">
+                {isDeletingAll ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                IYA, HAPUS SEMUANYA
+              </Button>
+              <Button variant="ghost" onClick={() => setIsDeleteAllOpen(false)} disabled={isDeletingAll} className="h-12 rounded-xl font-bold text-slate-400">
+                BATALKAN
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
