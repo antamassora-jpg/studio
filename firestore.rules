@@ -10,8 +10,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Izinkan akses jika user memiliki role admin di DB 
-      // ATAU jika user menggunakan fitur "Login Cepat / Tamu" untuk prototipe.
+      // Akses diberikan jika:
+      // 1. Memiliki dokumen di koleksi roles_admin
+      // 2. ATAU merupakan pengguna Anonim (Fitur Login Cepat/Demo)
       return isSignedIn() && (
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
         request.auth.token.firebase.sign_in_provider == 'anonymous'
@@ -25,20 +26,14 @@ service cloud.firestore {
       );
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
     // --- Collection Rules ---
 
+    // Aturan User Profiles
     match /user_profiles/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if isSignedIn();
-      allow update: if isAdmin() || isOwner(userId);
-      allow delete: if isAdmin();
+      allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
+    // Aturan Role (Database-Backed Access Control)
     match /roles_admin/{userId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -49,18 +44,27 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Koleksi Utama: Siswa
+    // Izinkan 'read' (get & list) secara publik agar fitur verifikasi di landing page berfungsi
     match /students/{studentId} {
-      // Izinkan baca untuk verifikasi publik (get) dan list untuk user login
-      allow get: if true;
-      allow list: if isSignedIn();
+      allow read: if true; 
       allow write: if isAdmin();
     }
 
-    match /public_student_verifications/{cardCode} {
-      allow get: if true;
-      allow list: if false;
+    // Koleksi Utama: Ujian
+    match /exams/{examId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
+    // Koleksi Utama: Log Absensi
+    match /attendance_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Koleksi Utama: Pengaturan & Template
     match /school_settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -71,20 +75,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /exams/{examId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /attendance_sessions/{sessionId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /attendance_logs/{logId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
-    }
+    // Last updated: 2024-05-20 (Force redeploy)
   }
 }
