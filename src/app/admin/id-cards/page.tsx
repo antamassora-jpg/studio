@@ -1,27 +1,33 @@
+
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { getDB } from '@/app/lib/db';
+import { useState, useRef, useMemo } from 'react';
 import { Student, SchoolSettings, CardTemplate } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { IdCardVisual } from '@/components/id-card-visual';
 import { 
   Printer, 
   Download, 
   Eye, 
-  RefreshCw, 
   Search, 
   CheckSquare, 
   Square,
   Loader2,
   Users,
-  FileDown
+  FileDown,
+  Layout
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
-import { IdCardVisual } from '@/components/id-card-visual';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import {
   Dialog,
   DialogContent,
@@ -30,11 +36,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 
 export default function IDCardsPage() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [settings, setSettings] = useState<SchoolSettings | null>(null);
-  const [activeTemplate, setActiveTemplate] = useState<CardTemplate | null>(null);
+  const db = useFirestore();
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedMajor, setSelectedMajor] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -46,23 +56,30 @@ export default function IDCardsPage() {
   const cardRefBack = useRef<HTMLDivElement>(null);
   const bulkContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const db = getDB();
-    setStudents(db.students);
-    setSettings(db.school_settings);
-    
-    const template = db.templates.find(t => t.type === 'ID_CARD' && t.is_active);
-    setActiveTemplate(template || null);
-    
-    if (db.students.length > 0) setPreviewId(db.students[0].id);
-  }, []);
+  const studentsQuery = useMemoFirebase(() => db ? query(collection(db, 'students'), orderBy('name', 'asc')) : null, [db]);
+  const { data: studentsData, isLoading: loadingStudents } = useCollection<Student>(studentsQuery);
+  const students = studentsData || [];
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.nis.includes(searchQuery)
-  );
+  const settingsRef = useMemoFirebase(() => db ? doc(db, 'school_settings', 'default') : null, [db]);
+  const { data: settings } = useDoc<SchoolSettings>(settingsRef);
 
-  const previewStudent = students.find(s => s.id === previewId);
+  const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
+  const { data: templates } = useCollection<CardTemplate>(templatesQuery);
+  const activeTemplate = templates?.find(t => t.type === 'ID_CARD' && t.is_active) || null;
+
+  const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort(), [students]);
+  const majors = useMemo(() => Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort(), [students]);
+
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      const matchClass = selectedClass === 'all' || s.class === selectedClass;
+      const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
+      const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.nis.includes(searchQuery);
+      return matchClass && matchMajor && matchSearch;
+    });
+  }, [students, selectedClass, selectedMajor, searchQuery]);
+
+  const previewStudent = useMemo(() => students.find(s => s.id === previewId) || (filteredStudents.length > 0 ? filteredStudents[0] : null), [students, previewId, filteredStudents]);
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,23 +100,25 @@ export default function IDCardsPage() {
     }
   };
 
+  const captureElement = async (el: HTMLElement) => {
+    return await html2canvas(el, {
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+  };
+
   const handleDownloadSingle = async () => {
     if (!previewStudent || !cardRefFront.current || !cardRefBack.current) return;
     setIsProcessing(true);
     try {
-      const canvasFront = await html2canvas(cardRefFront.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-      const canvasBack = await html2canvas(cardRefBack.current, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-
-      const pdf = new jsPDF({ 
-        orientation: 'portrait', 
-        unit: 'mm', 
-        format: [73, 111] 
-      });
-      
+      const canvasFront = await captureElement(cardRefFront.current);
+      const canvasBack = await captureElement(cardRefBack.current);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [73, 111] });
       pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
       pdf.addPage([73, 111], 'portrait');
       pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
-      
       pdf.save(`ID_Card_${previewStudent.name.replace(/\s+/g, '_')}.pdf`);
       toast({ title: "Berhasil", description: "ID Card telah diunduh." });
     } catch (error) {
@@ -113,61 +132,42 @@ export default function IDCardsPage() {
     if (selectedIds.size === 0 || !bulkContainerRef.current) return;
     setIsBulkDownloading(true);
     toast({ title: "Memulai Proses", description: `Menyiapkan ${selectedIds.size} ID Card...` });
-
     try {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [73, 111] });
       const cardElements = Array.from(bulkContainerRef.current.querySelectorAll('.page-break'));
-      
-      const canvasOptions = {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
-      };
-
       for (let i = 0; i < cardElements.length; i++) {
         const set = cardElements[i] as HTMLElement;
         const front = set.querySelector('.visual-front') as HTMLElement;
         const back = set.querySelector('.visual-back') as HTMLElement;
-
         if (!front || !back) continue;
-
         if (i > 0) pdf.addPage([73, 111], 'portrait');
-        
-        // Render Depan
-        const canvasFront = await html2canvas(front, canvasOptions);
-        pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
-        
-        // Render Belakang
+        const canvasFront = await captureElement(front);
+        pdf.addImage(canvasFront.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
         pdf.addPage([73, 111], 'portrait');
-        const canvasBack = await html2canvas(back, canvasOptions);
-        pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 73, 111);
-
-        await new Promise(r => setTimeout(r, 100));
+        const canvasBack = await captureElement(back);
+        pdf.addImage(canvasBack.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 73, 111);
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-
       pdf.save(`Bulk_ID_Cards_${new Date().getTime()}.pdf`);
       toast({ title: "Berhasil", description: "Dokumen PDF massal telah diunduh." });
     } catch (error) {
-      console.error('Download Bulk Error:', error);
-      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render massal ID Card." });
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan render massal." });
     } finally {
       setIsBulkDownloading(false);
     }
   };
 
-  const handlePrint = () => {
-    setIsPrintModalOpen(false);
-    setTimeout(() => {
-      window.print();
-    }, 500);
-  };
+  if (loadingStudents) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Menghubungkan ke Cloud Database...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Area Cetak Khusus */}
       <div id="print-area" ref={bulkContainerRef}>
         {Array.from(selectedIds).map(id => {
           const s = students.find(x => x.id === id);
@@ -186,131 +186,117 @@ export default function IDCardsPage() {
 
       <div className="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">ID Card Corporate</h1>
-          <p className="text-muted-foreground">Cetak kartu identitas eksklusif dengan ukuran 7.3 x 11.1 cm.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary uppercase">ID Card Corporate</h1>
+          <p className="text-muted-foreground">Generate kartu identitas eksklusif dengan layout vertikal (7.3 x 11.1 cm).</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 shadow-sm border-2" onClick={handleDownloadBulk} disabled={selectedIds.size === 0 || isBulkDownloading}>
+          <Button variant="outline" className="gap-2 border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-12 px-6 rounded-xl" onClick={handleDownloadBulk} disabled={selectedIds.size === 0 || isBulkDownloading}>
             {isBulkDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-            Unduh PDF Massal ({selectedIds.size})
+            UNDUH PDF ({selectedIds.size})
           </Button>
-          <Button className="gap-2 shadow-sm" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
-            <Printer className="h-4 w-4" /> Cetak Massal ({selectedIds.size})
+          <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 h-12 px-6 rounded-xl font-bold" onClick={() => setIsPrintModalOpen(true)} disabled={selectedIds.size === 0}>
+            <Printer className="h-4 w-4" /> CETAK MASSAL
           </Button>
         </div>
       </div>
 
       <div className="no-print grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Daftar Individu</CardTitle>
-            <CardDescription>Pilih personil untuk dicetak kartunya.</CardDescription>
+        <Card className="lg:col-span-1 border-none shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-emerald-50/50">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-emerald-600" /> Daftar Personil
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Cari nama..." 
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <Input placeholder="Cari nama..." className="pl-9 h-11 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
-
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Kelas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  {classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={selectedMajor} onValueChange={setSelectedMajor}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Jurusan" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Jurusan</SelectItem>
+                  {majors.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Daftar Nama</span>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={toggleSelectAll}>
-                  {selectedIds.size === filteredStudents.length ? 'Batal' : 'Semua'}
+                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Pilih Item ({filteredStudents.length})</label>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold" onClick={toggleSelectAll}>
+                  {selectedIds.size === filteredStudents.length ? 'Batal Semua' : 'Pilih Semua'}
                 </Button>
               </div>
-              <div className="max-h-[400px] overflow-y-auto border rounded divide-y bg-muted/5">
-                {filteredStudents.map(s => (
-                  <div 
-                    key={s.id} 
-                    className={`p-3 text-sm cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-primary' : ''}`}
-                    onClick={() => setPreviewId(s.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div onClick={(e) => toggleSelect(s.id, e)}>
-                        {selectedIds.has(s.id) ? (
-                          <CheckSquare className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Square className="h-4 w-4 text-muted-foreground" />
-                        )}
+              <div className="max-h-[400px] overflow-y-auto border rounded-2xl divide-y bg-muted/5">
+                {filteredStudents.length > 0 ? filteredStudents.map(s => (
+                  <div key={s.id} className={`p-3 text-xs cursor-pointer hover:bg-white flex items-center justify-between transition-colors ${previewId === s.id ? 'bg-white border-l-4 border-emerald-500 shadow-sm' : ''}`} onClick={() => setPreviewId(s.id)}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div onClick={(e) => toggleSelect(s.id, e)} className="shrink-0">
+                        {selectedIds.has(s.id) ? <CheckSquare className="h-4 w-4 text-emerald-600" /> : <Square className="h-4 w-4 text-muted-foreground" />}
                       </div>
-                      <span className="font-medium">{s.name}</span>
+                      <div className="truncate"><div className="font-bold text-slate-800">{s.name}</div><div className="text-[9px] text-muted-foreground">{s.nis}</div></div>
                     </div>
-                    <Eye className={`h-3 w-3 ${previewId === s.id ? 'text-primary' : 'opacity-20'}`} />
+                    <Eye className={`h-4 w-4 ${previewId === s.id ? 'text-emerald-600' : 'opacity-10'}`} />
                   </div>
-                ))}
+                )) : <div className="p-10 text-center text-xs text-muted-foreground italic">Tidak ditemukan</div>}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
+        <Card className="lg:col-span-2 border-none shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b bg-slate-50/50">
             <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-lg">Pratinjau: {activeTemplate?.name || 'Default'}</CardTitle>
-                <CardDescription>Layout Vertikal 7.3 x 11.1 cm.</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+               <CardTitle className="text-lg">Pratinjau Hasil Cetak</CardTitle>
+               <Badge variant="outline" className="bg-white">{activeTemplate?.name || 'Default ID Template'}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-12 py-10 bg-muted/10 rounded-b-lg overflow-x-auto">
+          <CardContent className="flex flex-col items-center gap-10 py-12 bg-muted/10">
             {previewStudent && settings ? (
               <>
                 <div className="flex flex-col md:flex-row gap-12 items-start justify-center">
                   <div className="flex flex-col items-center gap-4">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Front</span>
-                    <div ref={cardRefFront} className="shadow-2xl">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Halaman Depan</span>
+                    <div ref={cardRefFront} className="shadow-2xl rounded-2xl overflow-hidden">
                       <IdCardVisual student={previewStudent} settings={settings} side="front" template={activeTemplate} />
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-4">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Back</span>
-                    <div ref={cardRefBack} className="shadow-2xl">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Halaman Belakang</span>
+                    <div ref={cardRefBack} className="shadow-2xl rounded-2xl overflow-hidden">
                       <IdCardVisual student={previewStudent} settings={settings} side="back" template={activeTemplate} />
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 w-full max-w-md pt-8 border-t">
-                  <Button variant="outline" className="flex-1 gap-2 h-12" onClick={handleDownloadSingle} disabled={isProcessing}>
-                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                    Download PDF
-                  </Button>
-                  <Button className="flex-1 gap-2 h-12" onClick={() => {
-                    setSelectedIds(new Set([previewStudent.id]));
-                    setIsPrintModalOpen(true);
-                  }}>
-                    <Printer className="h-4 w-4" /> Cetak Sekarang
-                  </Button>
+                <div className="flex gap-3 w-full max-w-sm pt-8 border-t">
+                   <Button variant="outline" className="flex-1 h-12 font-bold rounded-xl" onClick={handleDownloadSingle} disabled={isProcessing}>
+                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} UNDUH PDF
+                   </Button>
+                   <Button className="flex-1 h-12 font-bold bg-emerald-600 hover:bg-emerald-700 rounded-xl" onClick={() => { setSelectedIds(new Set([previewStudent.id])); setIsPrintModalOpen(true); }}>
+                     <Printer className="h-4 w-4 mr-2" /> CETAK
+                   </Button>
                 </div>
               </>
-            ) : (
-              <div className="py-20 text-muted-foreground italic">Pilih nama untuk pratinjau kartu</div>
-            )}
+            ) : <div className="py-32 italic text-muted-foreground">Pilih personil untuk pratinjau</div>}
           </CardContent>
         </Card>
       </div>
 
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-        <DialogContent className="max-w-md no-print rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Konfirmasi Cetak</DialogTitle>
-            <DialogDescription>
-              Anda akan mencetak <strong>{selectedIds.size}</strong> ID Card.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
+        <DialogContent className="max-w-md rounded-[2rem]">
+          <DialogHeader><DialogTitle className="uppercase font-black">Konfirmasi Cetak ID Card</DialogTitle></DialogHeader>
+          <DialogDescription>Anda akan mencetak <strong>{selectedIds.size}</strong> kartu identitas umum sekaligus.</DialogDescription>
+          <DialogFooter className="gap-2 pt-4">
             <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>Batal</Button>
-            <Button className="gap-2 px-8 shadow-lg shadow-primary/20" onClick={handlePrint}>
-              <Printer className="h-4 w-4" /> Mulai Cetak
-            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 px-8 rounded-xl font-bold" onClick={() => { setIsPrintModalOpen(false); setTimeout(() => window.print(), 500); }}>MULAI CETAK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
