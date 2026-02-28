@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Student } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,13 +20,12 @@ import {
   MoreVertical, 
   Edit, 
   Trash2,
-  FileDown,
+  FileSpreadsheet,
   Loader2,
   Calendar,
-  Camera,
-  Link as LinkIcon,
+  Filter,
   User as UserIcon,
-  Filter
+  ChevronDown
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -40,7 +39,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -48,7 +46,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function StudentsPage() {
   const db = useFirestore();
@@ -56,11 +55,12 @@ export default function StudentsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedMajor, setSelectedMajor] = useState<string>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingStudent, setEditStudent] = useState<Student | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
     status: 'Aktif',
-    valid_until: '2025-06-30',
+    valid_until: '2030-06-30',
     photo_url: '',
     nisn: ''
   });
@@ -72,17 +72,19 @@ export default function StudentsPage() {
   const { data: studentsData, isLoading } = useCollection<Student>(studentsQuery);
   const students = studentsData || [];
 
-  const classes = Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort();
-  const majors = Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort();
+  const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))).filter(Boolean).sort(), [students]);
+  const majors = useMemo(() => Array.from(new Set(students.map(s => s.major))).filter(Boolean).sort(), [students]);
 
-  const filteredStudents = students.filter(s => {
-    const matchSearch = (s.name?.toLowerCase() || '').includes(search.toLowerCase()) || 
-                       (s.nis || '').includes(search) || 
-                       (s.nisn && s.nisn.includes(search));
-    const matchClass = selectedClass === 'all' || s.class === selectedClass;
-    const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
-    return matchSearch && matchClass && matchMajor;
-  });
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      const matchSearch = (s.name?.toLowerCase() || '').includes(search.toLowerCase()) || 
+                         (s.nis || '').includes(search) || 
+                         (s.nisn && s.nisn.includes(search));
+      const matchClass = selectedClass === 'all' || s.class === selectedClass;
+      const matchMajor = selectedMajor === 'all' || s.major === selectedMajor;
+      return matchSearch && matchClass && matchMajor;
+    });
+  }, [students, search, selectedClass, selectedMajor]);
 
   const handleAdd = () => {
     if (!newStudent.name || !newStudent.nis || !db) {
@@ -90,24 +92,40 @@ export default function StudentsPage() {
       return;
     }
 
-    const studentData = {
-      ...newStudent,
-      card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-    };
+    if (editingStudent) {
+      updateDoc(doc(db, 'students', editingStudent.id), newStudent)
+        .then(() => {
+          setIsAddOpen(false);
+          setEditStudent(null);
+          toast({ title: "Berhasil", description: `Data ${newStudent.name} diperbarui.` });
+        })
+        .catch(err => toast({ title: "Gagal", variant: "destructive" }));
+    } else {
+      const studentData = {
+        ...newStudent,
+        card_code: `CC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+      };
 
-    addDoc(collection(db, 'students'), studentData)
-      .then(() => {
-        setIsAddOpen(false);
-        setNewStudent({ status: 'Aktif', valid_until: '2025-06-30', photo_url: '', nisn: '' });
-        toast({ title: "Berhasil", description: `Siswa ${studentData.name} berhasil ditambahkan.` });
-      })
-      .catch(async (err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'students',
-          operation: 'create',
-          requestResourceData: studentData
-        }));
-      });
+      addDoc(collection(db, 'students'), studentData)
+        .then(() => {
+          setIsAddOpen(false);
+          setNewStudent({ status: 'Aktif', valid_until: '2030-06-30', photo_url: '', nisn: '' });
+          toast({ title: "Berhasil", description: `Siswa ${studentData.name} ditambahkan.` });
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'students',
+            operation: 'create',
+            requestResourceData: studentData
+          }));
+        });
+    }
+  };
+
+  const handleEdit = (s: Student) => {
+    setEditStudent(s);
+    setNewStudent(s);
+    setIsAddOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -138,89 +156,60 @@ export default function StudentsPage() {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Memuat Database Siswa...</p>
+        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Menghubungkan ke Database Cloud...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Data Siswa</h1>
-          <p className="text-muted-foreground">Kelola database master siswa secara real-time di Firestore.</p>
+          <h1 className="text-4xl font-bold font-headline text-[#2E50B8] tracking-tight">Data Siswa</h1>
+          <p className="text-muted-foreground mt-1 font-medium">Kelola database master siswa dan verifikasi kartu.</p>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Tambah Siswa
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader><DialogTitle>Tambah Siswa Baru</DialogTitle></DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
-                <div className="md:col-span-1 space-y-4">
-                  <Label>Foto Siswa</Label>
-                  <div className="aspect-[3/4] bg-muted rounded-xl border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group">
-                    {newStudent.photo_url ? (
-                      <Image src={newStudent.photo_url} alt="Preview" fill className="object-cover" unoptimized />
-                    ) : (
-                      <UserIcon className="h-12 w-12 text-muted-foreground" />
-                    )}
-                  </div>
-                  <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => photoInputRef.current?.click()}>Upload Foto</Button>
-                </div>
-                <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                  <div className="col-span-2 space-y-2">
-                    <Label>Nama Lengkap</Label>
-                    <Input value={newStudent.name || ''} onChange={e => setNewStudent({...newStudent, name: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>NIS</Label>
-                    <Input value={newStudent.nis || ''} onChange={e => setNewStudent({...newStudent, nis: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Kelas</Label>
-                    <Input value={newStudent.class || ''} onChange={e => setNewStudent({...newStudent, class: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Jurusan</Label>
-                    <Input value={newStudent.major || ''} onChange={e => setNewStudent({...newStudent, major: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tahun Ajaran</Label>
-                    <Input value={newStudent.school_year || ''} onChange={e => setNewStudent({...newStudent, school_year: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter><Button onClick={handleAdd}>Simpan Data</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" className="gap-2 bg-slate-50 border-slate-200 text-slate-600 font-bold rounded-xl h-11">
+            <FileSpreadsheet className="h-4 w-4" /> Format CSV (;)
+          </Button>
+          <Button variant="outline" className="gap-2 bg-slate-50 border-slate-200 text-slate-600 font-bold rounded-xl h-11">
+            <Upload className="h-4 w-4" /> Import Data
+          </Button>
+          <Button className="gap-2 bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-blue-500/20" onClick={() => { setEditStudent(null); setNewStudent({ status: 'Aktif', valid_until: '2030-06-30' }); setIsAddOpen(true); }}>
+            <Plus className="h-4 w-4" /> Siswa Baru
+          </Button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 bg-white p-4 rounded-lg border shadow-sm">
-        <div className="flex-1 relative flex items-center">
-          <Search className="h-4 w-4 text-muted-foreground absolute left-3" />
+      {/* FILTER SECTION */}
+      <div className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-[#2E50B8] transition-colors" />
           <Input 
-            placeholder="Cari nama atau NIS..." 
-            className="pl-9"
+            placeholder="Cari nama, NIS, atau NISN..." 
+            className="pl-12 h-12 bg-slate-50/50 border-none rounded-[1rem] font-medium focus-visible:ring-1 focus-visible:ring-slate-200"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <Filter className="h-4 w-4 text-slate-300" />
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-32"><SelectValue placeholder="Kelas" /></SelectTrigger>
+            <SelectTrigger className="w-40 h-12 bg-slate-50/50 border-none rounded-[1rem] font-bold text-slate-600">
+              <SelectValue placeholder="Semua Kelas" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kelas</SelectItem>
-              {classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {classes.map(c => <SelectItem key={c} value={c}>Kelas {c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={selectedMajor} onValueChange={setSelectedMajor}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Jurusan" /></SelectTrigger>
+            <SelectTrigger className="w-56 h-12 bg-slate-50/50 border-none rounded-[1rem] font-bold text-slate-600">
+              <SelectValue placeholder="Semua Jurusan" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Jurusan</SelectItem>
               {majors.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -229,62 +218,168 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
+      {/* TABLE SECTION */}
+      <div className="rounded-[1.5rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
         <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead>Identitas</TableHead>
-              <TableHead>NIS</TableHead>
-              <TableHead>Kelas/Jurusan</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+          <TableHeader className="bg-slate-50/50 border-b border-slate-100">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="py-5 px-6 font-black uppercase text-[10px] text-slate-400 tracking-widest">Identitas</TableHead>
+              <TableHead className="py-5 font-black uppercase text-[10px] text-slate-400 tracking-widest">NIS / NISN</TableHead>
+              <TableHead className="py-5 font-black uppercase text-[10px] text-slate-400 tracking-widest">Kelas/Jurusan</TableHead>
+              <TableHead className="py-5 font-black uppercase text-[10px] text-slate-400 tracking-widest">Masa Berlaku</TableHead>
+              <TableHead className="py-5 font-black uppercase text-[10px] text-slate-400 tracking-widest">Status</TableHead>
+              <TableHead className="py-5 font-black uppercase text-[10px] text-slate-400 tracking-widest text-center">QR Code</TableHead>
+              <TableHead className="py-5 px-6 font-black uppercase text-[10px] text-slate-400 tracking-widest text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredStudents.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 bg-slate-50 border rounded-full overflow-hidden shrink-0">
-                      {student.photo_url ? (
-                        <Image src={student.photo_url} alt={student.name} fill className="object-cover" unoptimized />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300"><UserIcon className="h-5 w-5" /></div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-900 leading-tight">{student.name}</div>
-                      <div className="text-[10px] text-muted-foreground font-medium uppercase">{student.card_code}</div>
+            {filteredStudents.length > 0 ? filteredStudents.map((student) => (
+              <TableRow key={student.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
+                <TableCell className="px-6 py-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                      <AvatarImage src={student.photo_url} className="object-cover" />
+                      <AvatarFallback className="bg-slate-100 text-slate-400"><UserIcon className="h-6 w-6" /></AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 leading-tight text-sm">{student.name}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{student.card_code}</span>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-xs font-bold">{student.nis}</TableCell>
                 <TableCell>
-                  <div className="font-medium">Kelas {student.class}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase">{student.major}</div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-700 text-sm">{student.nis}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">{student.nisn || '-'}</span>
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={student.status === 'Aktif' ? 'default' : 'secondary'} className="text-[10px] uppercase">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-700 text-sm">Kelas {student.class}</span>
+                    <span className="text-[9px] text-slate-400 font-black uppercase tracking-tighter leading-tight mt-0.5">{student.major}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2 text-slate-500 font-medium text-xs">
+                    <Calendar className="h-3.5 w-3.5 text-slate-300" />
+                    {student.valid_until}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge className="bg-[#2E50B8] hover:bg-[#2E50B8] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
                     {student.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-center">
+                  <div className="inline-block p-1 bg-white border rounded-md shadow-xs">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=VERIFY-${student.card_code}`}
+                      alt="QR" 
+                      className="w-8 h-8 opacity-80"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="px-6 text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#2E50B8] hover:bg-blue-50 rounded-full"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleDelete(student.id)}>
+                    <DropdownMenuContent align="end" className="rounded-xl border-slate-100 shadow-xl min-w-[120px]">
+                      <DropdownMenuItem className="gap-2 font-bold text-slate-600 focus:text-[#2E50B8] cursor-pointer" onClick={() => handleEdit(student)}>
+                        <Edit className="h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 font-bold text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer" onClick={() => handleDelete(student.id)}>
                         <Trash2 className="h-4 w-4" /> Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-24">
+                  <div className="flex flex-col items-center gap-2 opacity-20">
+                    <UserIcon className="h-12 w-12" />
+                    <p className="text-sm font-black uppercase tracking-widest">Tidak ada data ditemukan</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
+
+      {/* ADD/EDIT DIALOG */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="max-w-3xl rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-[#2E50B8] p-8 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight">{editingStudent ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}</DialogTitle>
+              <p className="text-white/60 font-medium text-sm">Lengkapi formulir di bawah untuk memperbarui database master.</p>
+            </DialogHeader>
+          </div>
+          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1 space-y-4">
+              <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Foto Profil</Label>
+              <div className="aspect-[3/4] bg-slate-50 rounded-[1.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center relative overflow-hidden group">
+                {newStudent.photo_url ? (
+                  <Image src={newStudent.photo_url} alt="Preview" fill className="object-cover" unoptimized />
+                ) : (
+                  <UserIcon className="h-16 w-16 text-slate-200" />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => photoInputRef.current?.click()}>
+                  <Upload className="text-white h-8 w-8" />
+                </div>
+              </div>
+              <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+              <Button variant="outline" size="sm" className="w-full rounded-xl font-bold border-slate-200" onClick={() => photoInputRef.current?.click()}>Ganti Foto</Button>
+            </div>
+            <div className="md:col-span-2 grid grid-cols-2 gap-6">
+              <div className="col-span-2 space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Nama Lengkap</Label>
+                <Input value={newStudent.name || ''} onChange={e => setNewStudent({...newStudent, name: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" placeholder="Contoh: Andi Pratama" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">NIS</Label>
+                <Input value={newStudent.nis || ''} onChange={e => setNewStudent({...newStudent, nis: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">NISN (Opsional)</Label>
+                <Input value={newStudent.nisn || ''} onChange={e => setNewStudent({...newStudent, nisn: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Kelas</Label>
+                <Input value={newStudent.class || ''} onChange={e => setNewStudent({...newStudent, class: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" placeholder="XII" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Jurusan</Label>
+                <Input value={newStudent.major || ''} onChange={e => setNewStudent({...newStudent, major: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" placeholder="TKJ" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</Label>
+                <Select value={newStudent.status} onValueChange={(val: any) => setNewStudent({...newStudent, status: val})}>
+                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Aktif">Aktif</SelectItem>
+                    <SelectItem value="Nonaktif">Nonaktif</SelectItem>
+                    <SelectItem value="Lulus">Lulus</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Berlaku Sampai</Label>
+                <Input type="date" value={newStudent.valid_until || ''} onChange={e => setNewStudent({...newStudent, valid_until: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none font-bold text-slate-700" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="p-8 bg-slate-50 border-t flex gap-3">
+            <Button variant="ghost" onClick={() => setIsAddOpen(false)} className="font-bold rounded-xl h-12 px-8">Batal</Button>
+            <Button onClick={handleAdd} className="bg-[#2E50B8] hover:bg-[#1e3a8a] text-white font-black uppercase tracking-widest h-12 px-12 rounded-xl shadow-lg shadow-blue-500/20">
+              SIMPAN DATA
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
