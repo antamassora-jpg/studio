@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -14,7 +13,9 @@ import {
   YAxis, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  Legend,
+  CartesianGrid
 } from 'recharts';
 import { Calendar, Filter, GraduationCap, Loader2, Users, School, LayoutDashboard, History } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,9 +66,11 @@ export default function AttendanceAdminPage() {
       classesCount: uniqueClasses,
       majorsCount: uniqueMajors,
       validCount,
-      invalidCount: filteredLogs.length - validCount
+      invalidCount: filteredLogs.length - validCount,
+      harianCount: logs.filter(l => l.session_id !== 'exam').length,
+      ujianCount: logs.filter(l => l.session_id === 'exam').length
     };
-  }, [filteredLogs, students]);
+  }, [logs, filteredLogs, students]);
 
   if (loadingLogs) {
     return (
@@ -88,7 +91,7 @@ export default function AttendanceAdminPage() {
         </div>
         <Badge variant="outline" className="h-10 px-4 rounded-xl border-emerald-200 bg-emerald-50 text-emerald-700 gap-2 font-bold">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Cloud Firestore Sync Active
+          Scanner Role Auto-Sync Active
         </Badge>
       </div>
 
@@ -102,11 +105,18 @@ export default function AttendanceAdminPage() {
           color="text-blue-600 bg-blue-50"
         />
         <StatSummaryCard 
-          label="Kehadiran Hari Ini" 
-          value={stats.totalParticipants} 
-          subLabel="Siswa Melakukan Scan" 
+          label="Scan Harian" 
+          value={stats.harianCount} 
+          subLabel="Total Log Masuk/Pulang" 
           icon={History} 
           color="text-emerald-600 bg-emerald-50"
+        />
+        <StatSummaryCard 
+          label="Scan Ujian" 
+          value={stats.ujianCount} 
+          subLabel="Total Log Event Ujian" 
+          icon={GraduationCap} 
+          color="text-orange-600 bg-orange-50"
         />
         <StatSummaryCard 
           label="Varian Kelas" 
@@ -114,13 +124,6 @@ export default function AttendanceAdminPage() {
           subLabel="Tingkat Terdeteksi" 
           icon={School} 
           color="text-purple-600 bg-purple-50"
-        />
-        <StatSummaryCard 
-          label="Jumlah Jurusan" 
-          value={stats.majorsCount} 
-          subLabel="Kompetensi Keahlian" 
-          icon={LayoutDashboard} 
-          color="text-orange-600 bg-orange-50"
         />
       </div>
 
@@ -151,62 +154,35 @@ export default function AttendanceAdminPage() {
           )}
         </div>
 
-        <TabsContent value="harian" className="mt-0">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <TabsContent value="harian" className="mt-0">
               <AttendanceDataTable logs={filteredLogs} students={students} exams={exams} />
-            </div>
-            <div className="lg:col-span-4 space-y-6">
-              <VisualStatsCard valid={stats.validCount} invalid={stats.invalidCount} />
-              <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
-                <CardHeader className="bg-slate-50 border-b">
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Info Tab Harian</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <p className="text-xs text-muted-foreground leading-relaxed">Data pada tab ini diambil secara otomatis dari pemindaian <strong>Kartu Pelajar</strong> melalui Mode Scanner untuk sesi Masuk dan Pulang.</p>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center py-2 border-b border-dashed">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Siswa Terdaftar</span>
-                      <span className="font-black text-[#2E50B8]">{students.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Scan Hari Ini</span>
-                      <span className="font-black text-emerald-600">{filteredLogs.length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="ujian" className="mt-0">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8">
+            </TabsContent>
+            <TabsContent value="ujian" className="mt-0">
               <AttendanceDataTable logs={filteredLogs} students={students} exams={exams} isExamTab />
-            </div>
-            <div className="lg:col-span-4 space-y-6">
-              <VisualStatsCard valid={stats.validCount} invalid={stats.invalidCount} color="#f97316" />
-              <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
-                <CardHeader className="bg-orange-50 border-b border-orange-100">
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-orange-600">Info Tab Ujian</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <p className="text-xs text-muted-foreground leading-relaxed">Data otomatis disinkronkan dari pemindaian <strong>Kartu Peserta Ujian</strong>. Memastikan identitas peserta sesuai dengan database Event Ujian.</p>
-                  <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-orange-600" />
-                      <span className="text-[10px] font-black uppercase text-orange-800">Event Aktif Terdeteksi</span>
-                    </div>
-                    <div className="text-xl font-black text-orange-600 leading-tight">
-                      {selectedExamFilter === 'all' ? `${exams.length} Event` : exams.find(e => e.id === selectedExamFilter)?.name || 'Pilih Event'}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            </TabsContent>
           </div>
-        </TabsContent>
+          <div className="lg:col-span-4 space-y-6">
+            <ComparisonStatsCard harian={stats.harianCount} ujian={stats.ujianCount} />
+            <VisualStatsCard valid={stats.validCount} invalid={stats.invalidCount} color={activeTab === 'ujian' ? '#f97316' : '#2E50B8'} />
+            
+            <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b">
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Info Otomatisasi</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">Seluruh data yang ditampilkan masuk secara otomatis melalui pemindaian Kartu oleh <strong>Mode Scanner</strong>. Integritas data terjamin melalui enkripsi kode kartu.</p>
+                <div className="p-4 bg-[#2E50B8]/5 rounded-2xl border border-[#2E50B8]/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Total Scan Hari Ini</span>
+                    <span className="font-black text-[#2E50B8]">{stats.harianCount + stats.ujianCount}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </Tabs>
     </div>
   );
@@ -220,7 +196,7 @@ function StatSummaryCard({ label, value, subLabel, icon: Icon, color }: { label:
           <div className={`p-3 rounded-2xl ${color} transition-transform group-hover:scale-110 duration-300`}>
             <Icon className="h-5 w-5" />
           </div>
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Auto Sync</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Live Sync</span>
         </div>
         <div>
           <h3 className="text-3xl font-black text-slate-800 leading-none">{value}</h3>
@@ -237,7 +213,7 @@ function AttendanceDataTable({ logs, students, exams, isExamTab = false }: { log
     <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-white">
       <CardHeader className="bg-white border-b border-slate-50 py-6 px-8">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-bold text-slate-800">Riwayat Log Absensi</CardTitle>
+          <CardTitle className="text-lg font-bold text-slate-800">Riwayat Log {isExamTab ? 'Ujian' : 'Harian'}</CardTitle>
           <Badge variant="outline" className="rounded-full text-[9px] font-black uppercase tracking-[0.2em] py-1 px-4 text-slate-400 border-slate-100">
             {logs.length} Records
           </Badge>
@@ -308,6 +284,32 @@ function AttendanceDataTable({ logs, students, exams, isExamTab = false }: { log
   );
 }
 
+function ComparisonStatsCard({ harian, ujian }: { harian: number, ujian: number }) {
+  const data = [
+    { name: 'Harian', value: harian, fill: '#2E50B8' },
+    { name: 'Ujian', value: ujian, fill: '#f97316' }
+  ];
+
+  return (
+    <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-white">
+      <CardHeader className="bg-white border-b border-slate-50">
+        <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500 text-center">Volume Scan (Jenis)</CardTitle>
+      </CardHeader>
+      <CardContent className="h-[200px] pt-6">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: -20, right: 30 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+            <XAxis type="number" hide />
+            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={10} fontWeight="bold" />
+            <Tooltip cursor={{fill: 'transparent'}} />
+            <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={30} />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 function VisualStatsCard({ valid, invalid, color = "#2E50B8" }: { valid: number, invalid: number, color?: string }) {
   const data = [
     { name: 'Valid', value: valid, color },
@@ -319,7 +321,7 @@ function VisualStatsCard({ valid, invalid, color = "#2E50B8" }: { valid: number,
       <CardHeader className="bg-white border-b border-slate-50">
         <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500 text-center">Proporsi Keabsahan Scan</CardTitle>
       </CardHeader>
-      <CardContent className="h-[240px] pt-6 flex items-center justify-center">
+      <CardContent className="h-[200px] pt-6 flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
             <XAxis 

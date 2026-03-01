@@ -45,7 +45,9 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  Tooltip,
+  Legend
 } from 'recharts';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -272,6 +274,15 @@ export default function LandingPage() {
   const activeIdTemplate = templates.find(t => t.type === 'ID_CARD' && t.is_active);
   const latestExam = exams.length > 0 ? exams[0] : undefined;
 
+  // Dummy comparison data for the chart
+  const statsData = [
+    { name: 'Sen', harian: 92, ujian: 85 },
+    { name: 'Sel', harian: 95, ujian: 88 },
+    { name: 'Rab', harian: 88, ujian: 92 },
+    { name: 'Kam', harian: 94, ujian: 90 },
+    { name: 'Jum', harian: 90, ujian: 82 },
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-body selection:bg-primary/20">
       <div className="fixed -left-[3000px] top-0 pointer-events-none" ref={downloadRef}>
@@ -353,19 +364,24 @@ export default function LandingPage() {
       <section className="pt-20 pb-16 bg-white">
         <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 text-center lg:text-left">
-            <Badge className="bg-primary/5 text-primary border-primary/20 px-6 py-2 text-[10px] font-black tracking-[0.4em] uppercase rounded-full">Integrasi Database Firestore</Badge>
             <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.95] tracking-tighter uppercase">Digital Identity<br/><span className="text-primary italic">Tracer Hub.</span></h1>
             <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-lg mx-auto lg:mx-0">Verifikasi identitas siswa, cek keabsahan kartu, dan pantau log kehadiran melalui portal resmi SMKN 2 Tana Toraja.</p>
           </div>
           <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100 shadow-2xl">
-             <div className="flex items-center justify-between mb-8"><h4 className="font-black uppercase tracking-tighter text-slate-400">Statistik Kehadiran Harian</h4><CalendarCheck className="h-5 w-5 text-primary opacity-30" /></div>
+             <div className="flex items-center justify-between mb-8"><h4 className="font-black uppercase tracking-tighter text-slate-400">Statistik Aktivitas Kehadiran</h4><CalendarCheck className="h-5 w-5 text-primary opacity-30" /></div>
              <div className="h-[280px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={[{name:'Sen',rate:92},{name:'Sel',rate:95},{name:'Rab',rate:88},{name:'Kam',rate:94},{name:'Jum',rate:90}]}>
+                 <BarChart data={statsData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
                     <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                    <Bar dataKey="rate" fill="#2E50B8" radius={[6,6,0,0]} barSize={40} />
+                    <Tooltip 
+                      cursor={{fill: 'transparent'}}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }} />
+                    <Bar name="Sesi Harian" dataKey="harian" fill="#2E50B8" radius={[4,4,0,0]} barSize={24} />
+                    <Bar name="Sesi Ujian" dataKey="ujian" fill="#f97316" radius={[4,4,0,0]} barSize={24} />
                  </BarChart>
                </ResponsiveContainer>
              </div>
