@@ -62,7 +62,7 @@ export default function CardsPage() {
   const { data: settings } = useDoc<SchoolSettings>(settingsRef);
 
   const templatesQuery = useMemoFirebase(() => db ? collection(db, 'templates') : null, [db]);
-  const { data: templates } = useCollection<CardTemplate>(templatesQuery);
+  const { data: templates, isLoading: loadingTemplates } = useCollection<CardTemplate>(templatesQuery);
   
   // Ambil template aktif untuk sinkronisasi otomatis dengan desain terbaru
   const activeTemplate = useMemo(() => 
@@ -163,11 +163,11 @@ export default function CardsPage() {
     }
   };
 
-  if (loadingStudents) {
+  if (loadingStudents || loadingTemplates) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sinkronisasi Data Kartu...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sinkronisasi Desain Kartu...</p>
       </div>
     );
   }
@@ -306,7 +306,7 @@ export default function CardsPage() {
 
                 <div className="w-full h-px bg-slate-100 mt-4" />
 
-                <div className="flex gap-4 w-full max-w-sm">
+                <div className="flex gap-4 w-full max-sm:flex-col max-w-sm">
                   <Button variant="outline" className="flex-1 h-14 font-black uppercase tracking-widest text-[10px] rounded-2xl border-2 border-slate-100 hover:bg-slate-50 gap-2" onClick={handleDownloadSingle} disabled={isProcessing}>
                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} UNDUH PDF
                   </Button>

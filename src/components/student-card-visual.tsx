@@ -98,14 +98,17 @@ export function StudentCardVisual({
 
   const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(watermarkSvg)}")` : 'none';
 
-  const showLogoLeft = side === 'front' ? settings.student_show_logo_front : settings.student_show_logo_back;
-  const showLogoRight = side === 'front' ? settings.student_show_logo_right_front : settings.student_show_logo_right_back;
-  const showSig = side === 'front' ? settings.student_show_sig_front : settings.student_show_sig_back;
-  const showStamp = side === 'front' ? settings.student_show_stamp_front : settings.student_show_stamp_back;
-  const showPhoto = side === 'front' ? settings.student_show_photo_front : settings.student_show_photo_back;
-  const showInfo = side === 'front' ? settings.student_show_info_front : settings.student_show_info_back;
-  const showQr = side === 'front' ? settings.student_show_qr_front : settings.student_show_qr_back;
-  const showValid = side === 'front' ? settings.student_show_valid_front : settings.student_show_valid_back;
+  // Safe defaults for visibility flags
+  const showLogoLeft = side === 'front' ? (settings?.student_show_logo_front ?? true) : (settings?.student_show_logo_back ?? true);
+  const showLogoRight = side === 'front' ? (settings?.student_show_logo_right_front ?? true) : (settings?.student_show_logo_right_back ?? false);
+  const showSig = side === 'front' ? (settings?.student_show_sig_front ?? false) : (settings?.student_show_sig_back ?? true);
+  const showStamp = side === 'front' ? (settings?.student_show_stamp_front ?? false) : (settings?.student_show_stamp_back ?? true);
+  const showPhoto = side === 'front' ? (settings?.student_show_photo_front ?? true) : (settings?.student_show_photo_back ?? false);
+  const showInfo = side === 'front' ? (settings?.student_show_info_front ?? true) : (settings?.student_show_info_back ?? false);
+  const showQr = side === 'front' ? (settings?.student_show_qr_front ?? false) : (settings?.student_show_qr_back ?? true);
+  const showValid = side === 'front' ? (settings?.student_show_valid_front ?? true) : (settings?.student_show_valid_back ?? false);
+
+  const photoUrl = student.photo_url || (student as any).photoUrl;
 
   return (
     <div style={cardStyle} className="rounded-xl shadow-lg border text-[10px] select-none">
@@ -128,23 +131,22 @@ export function StudentCardVisual({
       )}
 
       <div style={{ backgroundColor: current.headerBg }} className="h-14 flex items-center px-4 relative z-10 border-b">
-        {showLogoLeft && settings.logo_left && (
+        {showLogoLeft && settings?.logo_left && (
           <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 mr-3">
             <Image src={settings.logo_left} alt="Logo" fill className="object-contain" priority unoptimized />
           </div>
         )}
         <div className="flex-1 flex flex-col text-white text-center">
-          <span className="font-bold text-[10px] uppercase leading-tight tracking-tight">{settings.school_name}</span>
-          <span className="text-[6.5px] opacity-90 leading-tight block mt-0.5">{settings.address}</span>
+          <span className="font-bold text-[10px] uppercase leading-tight tracking-tight">{settings?.school_name || 'SMKN 2 TANA TORAJA'}</span>
+          <span className="text-[6.5px] opacity-90 leading-tight block mt-0.5">{settings?.address}</span>
         </div>
-        {showLogoRight && settings.logo_right && (
+        {showLogoRight && settings?.logo_right && (
           <div className="w-10 h-10 relative bg-white rounded-md p-1 shrink-0 ml-3">
             <Image src={settings.logo_right} alt="Logo R" fill className="object-contain" priority unoptimized />
           </div>
         )}
       </div>
 
-      {/* Label KARTU PELAJAR di tengah */}
       {side === 'front' && (
         <div className="absolute top-[58px] left-0 right-0 text-center z-10">
           <span className="text-[9px] font-black uppercase tracking-[0.2em] px-4 py-0.5 rounded-full border border-slate-100 bg-slate-50/50 inline-block shadow-sm" style={{ color: current.footerBg }}>
@@ -158,8 +160,8 @@ export function StudentCardVisual({
           className="absolute bg-muted rounded-md overflow-hidden border-2 border-white shadow-md z-10"
           style={{ left: els.photo.x, top: els.photo.y, width: els.photo.w, height: els.photo.h }}
         >
-          {student.photo_url ? (
-            <Image src={student.photo_url} alt={student.name} fill className="object-cover" priority unoptimized />
+          {photoUrl ? (
+            <Image src={photoUrl} alt={student.name} fill className="object-cover" priority unoptimized />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100 text-[8px] text-slate-400 uppercase">FOTO</div>
           )}
@@ -224,12 +226,12 @@ export function StudentCardVisual({
               <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white px-3 relative z-10 border border-slate-100 rounded-full">Ketentuan Pengguna</span>
            </div>
            <p className="text-[7.5px] italic text-slate-500 leading-relaxed whitespace-pre-line text-left px-4">
-             {settings.terms_student}
+             {settings?.terms_student || '1. Kartu wajib dibawa setiap hari.\n2. Dilarang dipinjamkan.\n3. Jika hilang segera lapor ke sekolah.'}
            </p>
         </div>
       )}
 
-      {showStamp && settings.stamp_image && (
+      {showStamp && settings?.stamp_image && (
         <div 
           className="absolute z-10"
           style={{ 
@@ -255,13 +257,13 @@ export function StudentCardVisual({
         }}
       >
         <div className="text-center">
-          {showSig && settings.signature_image && (
+          {showSig && settings?.signature_image && (
             <div className="w-14 h-7 relative mb-1">
               <Image src={settings.signature_image} alt="TTD" fill className="object-contain" unoptimized />
             </div>
           )}
-          <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings.principal_name}</p>
-          <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings.principal_nip}</p>
+          <p className="text-[6px] font-bold border-t border-slate-300 leading-none pt-1">{settings?.principal_name || 'Kepala Sekolah'}</p>
+          <p className="text-[5px] opacity-70 mt-0.5">NIP: {settings?.principal_nip}</p>
         </div>
       </div>
 

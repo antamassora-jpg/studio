@@ -98,14 +98,17 @@ export function IdCardVisual({
 
   const watermarkDataUri = wm.enabled ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(watermarkSvg)}")` : 'none';
 
-  const showLogo = side === 'front' ? settings.id_show_logo_front : settings.id_show_logo_back;
-  const showLogoRight = side === 'front' ? settings.id_show_logo_right_front : settings.id_show_logo_right_back;
-  const showSig = side === 'front' ? settings.id_show_sig_front : settings.id_show_sig_back;
-  const showStamp = side === 'front' ? settings.id_show_stamp_front : settings.id_show_stamp_back;
-  const showPhoto = side === 'front' ? settings.id_show_photo_front : settings.id_show_photo_back;
-  const showInfo = side === 'front' ? settings.id_show_info_front : settings.id_show_info_back;
-  const showQr = side === 'front' ? settings.id_show_qr_front : settings.id_show_qr_back;
-  const showValid = side === 'front' ? settings.id_show_valid_front : settings.id_show_valid_back;
+  // Safe defaults for visibility flags
+  const showLogo = side === 'front' ? (settings?.id_show_logo_front ?? true) : (settings?.id_show_logo_back ?? true);
+  const showLogoRight = side === 'front' ? (settings?.id_show_logo_right_front ?? false) : (settings?.id_show_logo_right_back ?? false);
+  const showSig = side === 'front' ? (settings?.id_show_sig_front ?? false) : (settings?.id_show_sig_back ?? true);
+  const showStamp = side === 'front' ? (settings?.id_show_stamp_front ?? false) : (settings?.id_show_stamp_back ?? true);
+  const showPhoto = side === 'front' ? (settings?.id_show_photo_front ?? true) : (settings?.id_show_photo_back ?? false);
+  const showInfo = side === 'front' ? (settings?.id_show_info_front ?? true) : (settings?.id_show_info_back ?? false);
+  const showQr = side === 'front' ? (settings?.id_show_qr_front ?? false) : (settings?.id_show_qr_back ?? true);
+  const showValid = side === 'front' ? (settings?.id_show_valid_front ?? true) : (settings?.id_show_valid_back ?? false);
+
+  const photoUrl = student.photo_url || (student as any).photoUrl;
 
   return (
     <div style={cardStyle} className="rounded-2xl shadow-2xl border select-none">
@@ -130,17 +133,17 @@ export function IdCardVisual({
       {/* Header */}
       <div style={{ backgroundColor: current.headerBg }} className="relative z-20 pt-8 pb-5 px-6 flex flex-col items-center shadow-lg border-b border-white/10">
         <div className="flex items-center w-full text-white">
-          {showLogo && settings.logo_left_id && (
+          {showLogo && settings?.logo_left_id && (
             <div className="w-10 h-10 relative bg-white rounded-xl p-1.5 shrink-0 mr-3">
               <Image src={settings.logo_left_id} alt="Logo" fill className="object-contain" priority unoptimized />
             </div>
           )}
           <div className="flex-1 flex flex-col">
-            <h2 className="font-black text-[10px] uppercase leading-tight tracking-tight">{settings.school_name}</h2>
-            <span className="text-[6px] opacity-80 leading-tight block mt-0.5">{settings.address}</span>
+            <h2 className="font-black text-[10px] uppercase leading-tight tracking-tight">{settings?.school_name || 'SMKN 2 TANA TORAJA'}</h2>
+            <span className="text-[6px] opacity-80 leading-tight block mt-0.5">{settings?.address}</span>
             <h2 className="font-bold text-[7px] uppercase opacity-70 mt-0.5 block">Digital Identity Card</h2>
           </div>
-          {showLogoRight && settings.logo_right_id && (
+          {showLogoRight && settings?.logo_right_id && (
             <div className="w-10 h-10 relative bg-white rounded-xl p-1.5 shrink-0 ml-2">
               <Image src={settings.logo_right_id} alt="Logo R" fill className="object-contain" priority unoptimized />
             </div>
@@ -154,8 +157,8 @@ export function IdCardVisual({
           className="absolute rounded-2xl border-4 border-white shadow-2xl overflow-hidden bg-slate-100 z-10"
           style={{ left: els.photo.x, top: els.photo.y, width: els.photo.w, height: els.photo.h }}
         >
-          {student.photo_url ? (
-            <Image src={student.photo_url} alt={student.name} fill className="object-cover object-top" priority unoptimized />
+          {photoUrl ? (
+            <Image src={photoUrl} alt={student.name} fill className="object-cover object-top" priority unoptimized />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 uppercase font-bold">FOTO</div>
           )}
@@ -198,7 +201,7 @@ export function IdCardVisual({
         </div>
       )}
 
-      {showStamp && settings.stamp_id && (
+      {showStamp && settings?.stamp_id && (
         <div 
           className="absolute z-10"
           style={{ 
@@ -224,13 +227,13 @@ export function IdCardVisual({
         }}
       >
         <div className="text-left">
-          {showSig && settings.signature_id && (
+          {showSig && settings?.signature_id && (
             <div className="w-16 h-8 relative mb-1">
               <Image src={settings.signature_id} alt="Sig" fill className="object-contain" unoptimized />
             </div>
           )}
-          <p className="text-[7px] font-bold uppercase opacity-80 leading-none border-t border-slate-300 pt-1">{settings.principal_name}</p>
-          <p className="text-[5px] opacity-60">NIP: {settings.principal_nip}</p>
+          <p className="text-[7px] font-bold uppercase opacity-80 leading-none border-t border-slate-300 pt-1">{settings?.principal_name || 'Kepala Sekolah'}</p>
+          <p className="text-[5px] opacity-60">NIP: {settings?.principal_nip}</p>
         </div>
       </div>
 
@@ -248,7 +251,7 @@ export function IdCardVisual({
               <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white px-3 relative z-10 border border-slate-100 rounded-full">Ketentuan ID Card</span>
            </div>
            <p className="text-[8px] italic text-slate-500 leading-relaxed whitespace-pre-line text-left px-4">
-             {settings.terms_id}
+             {settings?.terms_id || 'Ketentuan ID Card default.'}
            </p>
         </div>
       )}
